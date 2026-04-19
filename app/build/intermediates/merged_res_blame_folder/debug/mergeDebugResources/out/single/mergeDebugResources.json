@@ -1,0 +1,246 @@
+[
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-mdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\raw_azan_makkah.mp3.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\raw\\azan_makkah.mp3"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_ic_hide.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\ic_hide.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout_fragment_app_drawer.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout\\fragment_app_drawer.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\raw_azan_marylebone.mp3.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\raw\\azan_marylebone.mp3"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout_adapter_app_drawer.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout\\adapter_app_drawer.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-mdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_ic_rename.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\ic_rename.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_rounded_rectangle_dark.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\rounded_rectangle_dark.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\xml_locales_config.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\xml\\locales_config.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-xxhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_focus_mode_dialog_button.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\focus_mode_dialog_button.xml"
+    },
+    {
+        "merged": "app.sukun.app-debug-53:/layout_fragment_settings.xml.flat",
+        "source": "app.sukun.app-main-55:/layout/fragment_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_rounded_rect_shade_color.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\rounded_rect_shade_color.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-xhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout_activity_fake_home.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout\\activity_fake_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout_dialog_focus_mode_duration.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout\\dialog_focus_mode_duration.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\xml_backup_rules.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\xml\\backup_rules.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-hdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout-land_fragment_settings.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout-land\\fragment_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-xxxhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_rounded_primary_gradient.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\rounded_primary_gradient.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_ic_close.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\ic_close.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_ic_info.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\ic_info.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-xhdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-xhdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout-land_fragment_home.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout-land\\fragment_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout_dialog_focus_mode_custom.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout\\dialog_focus_mode_custom.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\anim_fade_enter.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\anim\\fade_enter.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\xml_data_extraction_rules.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\xml\\data_extraction_rules.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-mdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-mdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\anim_slide_out_top.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\anim\\slide_out_top.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-hdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-xxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-xxhdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout_fragment_settings.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout\\fragment_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-xxxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-xxxhdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout_adapter_private_space_header.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout\\adapter_private_space_header.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout-land_fragment_app_drawer.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout-land\\fragment_app_drawer.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_logo.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\logo.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\anim_layout_anim_from_bottom.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\anim\\layout_anim_from_bottom.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_ic_rounded.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\ic_rounded.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-xxhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\anim_slide_in_top.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\anim\\slide_in_top.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\xml_accessibility_service_config.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\xml\\accessibility_service_config.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_text_colors_default.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\text_colors_default.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\anim_item_anim_from_bottom.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\anim\\item_anim_from_bottom.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\xml_policies.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\xml\\policies.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\navigation_nav_graph.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\navigation\\nav_graph.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\layout_fragment_home.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\layout\\fragment_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_bg_shade_circular.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\bg_shade_circular.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-xxxhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_text_colors_light.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\text_colors_light.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-xhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_ic_check.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\ic_check.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\mipmap-hdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\mipmap-hdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "app.sukun.app-debug-53:/layout-land_fragment_settings.xml.flat",
+        "source": "app.sukun.app-main-55:/layout-land/fragment_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\drawable_ic_delete.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\drawable\\ic_delete.xml"
+    },
+    {
+        "merged": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-debug-53:\\anim_fade_exit.xml.flat",
+        "source": "C:\\Users\\SaadRehman\\.gradle\\daemon\\8.11.1\\app.sukun.app-main-55:\\anim\\fade_exit.xml"
+    }
+]
