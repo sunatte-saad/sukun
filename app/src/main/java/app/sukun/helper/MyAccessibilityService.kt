@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import app.sukun.BuildConfig
 import app.sukun.R
 import app.sukun.data.Prefs
 import app.sukun.helper.canOpenNotificationsInFocusMode
@@ -16,6 +17,7 @@ class MyAccessibilityService : AccessibilityService() {
     private val keyguardManager by lazy {
         getSystemService(KEYGUARD_SERVICE) as KeyguardManager
     }
+    private var notificationShadeActive = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return START_STICKY
@@ -23,7 +25,9 @@ class MyAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         val packageName = event.packageName?.toString().orEmpty()
+        updateNotificationShadeState(packageName, event.eventType)
         if (shouldBlockPackage(packageName)) {
+            notificationShadeActive = false
             performGlobalAction(GLOBAL_ACTION_HOME)
             return
         }
@@ -55,10 +59,33 @@ class MyAccessibilityService : AccessibilityService() {
         if (packageName == SYSTEM_UI_PACKAGE) {
             return !keyguardManager.isKeyguardLocked && !prefs.canOpenNotificationsInFocusMode()
         }
+        if (notificationShadeActive
+            && packageName != BuildConfig.APPLICATION_ID
+            && packageName != ANDROID_PACKAGE
+        ) {
+            return true
+        }
         return packageName !in applicationContext.getFocusModeAllowedPackages(prefs)
     }
 
+    private fun updateNotificationShadeState(packageName: String, eventType: Int) {
+        if (!prefs.isFocusModeActive() || !prefs.canOpenNotificationsInFocusMode()) {
+            notificationShadeActive = false
+            return
+        }
+        when {
+            packageName == SYSTEM_UI_PACKAGE && eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                notificationShadeActive = !keyguardManager.isKeyguardLocked
+            }
+
+            packageName == BuildConfig.APPLICATION_ID || packageName == ANDROID_PACKAGE -> {
+                notificationShadeActive = false
+            }
+        }
+    }
+
     companion object {
+        private const val ANDROID_PACKAGE = "android"
         private const val SYSTEM_UI_PACKAGE = "com.android.systemui"
     }
 }
