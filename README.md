@@ -13,6 +13,10 @@ Sukun is a minimal Android launcher focused on calm defaults, low visual noise, 
 - Private Space support
 - Daily wallpaper support
 
+## Download
+
+- Debug APK: [`artifacts/sukun-debug.apk`](artifacts/sukun-debug.apk)
+
 ## Development
 
 ### Requirements
