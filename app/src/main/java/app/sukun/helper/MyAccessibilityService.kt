@@ -8,6 +8,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import app.sukun.R
 import app.sukun.data.Prefs
+import app.sukun.helper.canOpenNotificationsInFocusMode
 import app.sukun.helper.getFocusModeAllowedPackages
 
 class MyAccessibilityService : AccessibilityService() {
@@ -52,7 +53,7 @@ class MyAccessibilityService : AccessibilityService() {
     private fun shouldBlockPackage(packageName: String): Boolean {
         if (!prefs.isFocusModeActive() || packageName.isBlank()) return false
         if (packageName == SYSTEM_UI_PACKAGE) {
-            return !keyguardManager.isKeyguardLocked
+            return !keyguardManager.isKeyguardLocked && !prefs.canOpenNotificationsInFocusMode()
         }
         return packageName !in applicationContext.getFocusModeAllowedPackages(prefs)
     }

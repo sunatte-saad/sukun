@@ -514,6 +514,10 @@ fun Context.getFocusModeAllowedPackages(prefs: Prefs): Set<String> {
     return allowedPackages
 }
 
+fun Prefs.canOpenNotificationsInFocusMode(): Boolean {
+    return swipeDownAction == Constants.SwipeDownAction.NOTIFICATIONS
+}
+
 fun Prefs.getFocusModeStatus(context: Context): String {
     if (!isFocusModeActive()) return context.getString(R.string.off)
     return context.getString(

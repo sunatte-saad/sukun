@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.content.res.Configuration
+import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.ColorDrawable
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
@@ -40,6 +42,7 @@ import app.sukun.data.PrayerState
 import app.sukun.data.WeatherData
 import app.sukun.databinding.FragmentHomeBinding
 import app.sukun.helper.appUsagePermissionGranted
+import app.sukun.helper.canOpenNotificationsInFocusMode
 import app.sukun.helper.dpToPx
 import app.sukun.helper.expandNotificationDrawer
 import app.sukun.helper.getFocusModeStatus
@@ -985,6 +988,15 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
     }
 
+    private fun handleSwipeDownDuringFocusMode(): Boolean {
+        val isFocusModeActive = syncFocusModeState()
+        if (!isFocusModeActive) return false
+        if (prefs.canOpenNotificationsInFocusMode()) {
+            swipeDownAction()
+        }
+        return true
+    }
+
     private fun lockPhone() {
         requireActivity().runOnUiThread {
             try {
@@ -1092,55 +1104,60 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             getString(R.string.focus_1h) to Constants.FocusModeDuration.ONE_HOUR,
             getString(R.string.focus_2h) to Constants.FocusModeDuration.TWO_HOURS,
         )
-        val items = durationOptions.map { it.first } + getString(R.string.custom)
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.focus_mode_duration_prompt)
-            .setItems(items.toTypedArray()) { _, which ->
-                if (which < durationOptions.size) {
-                    activateFocusMode(durationOptions[which].second)
-                } else {
-                    showCustomFocusModePrompt()
-                }
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        val dialogView = layoutInflater.inflate(R.layout.dialog_focus_mode_duration, null)
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        dialogView.findViewById<TextView>(R.id.focusDuration15m).setOnClickListener {
+            dialog.dismiss()
+            activateFocusMode(durationOptions[0].second)
+        }
+        dialogView.findViewById<TextView>(R.id.focusDuration30m).setOnClickListener {
+            dialog.dismiss()
+            activateFocusMode(durationOptions[1].second)
+        }
+        dialogView.findViewById<TextView>(R.id.focusDuration1h).setOnClickListener {
+            dialog.dismiss()
+            activateFocusMode(durationOptions[2].second)
+        }
+        dialogView.findViewById<TextView>(R.id.focusDuration2h).setOnClickListener {
+            dialog.dismiss()
+            activateFocusMode(durationOptions[3].second)
+        }
+        dialogView.findViewById<TextView>(R.id.focusDurationCustom).setOnClickListener {
+            dialog.dismiss()
+            showCustomFocusModePrompt()
+        }
+        dialogView.findViewById<TextView>(R.id.focusDurationCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showCustomFocusModePrompt() {
         val lastDurationMinutes = (prefs.focusModeLastDuration / Constants.ONE_MINUTE_IN_MILLIS)
             .coerceIn(Constants.MIN_CUSTOM_FOCUS_MINUTES, Constants.MAX_CUSTOM_FOCUS_MINUTES)
-        val input = EditText(requireContext()).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            setText(lastDurationMinutes.toString())
-            setSelection(text?.length ?: 0)
-            hint = getString(R.string.minutes)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_focus_mode_custom, null)
+        val input = dialogView.findViewById<TextView>(R.id.focusCustomMinutesInput)
+        input.text = lastDurationMinutes.toString()
+        if (input is android.widget.EditText) {
+            input.inputType = InputType.TYPE_CLASS_NUMBER
+            input.setSelection(input.text?.length ?: 0)
         }
-        val content = FrameLayout(requireContext()).apply {
-            val padding = 20.dpToPx()
-            setPadding(padding, 8.dpToPx(), padding, 0)
-            addView(
-                input,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
+
         val dialog = AlertDialog.Builder(requireContext())
-            .setTitle(R.string.focus_mode_custom_prompt)
-            .setMessage(
-                getString(
-                    R.string.focus_custom_duration_error,
-                    Constants.MIN_CUSTOM_FOCUS_MINUTES.toInt(),
-                    Constants.MAX_CUSTOM_FOCUS_MINUTES.toInt()
-                )
-            )
-            .setView(content)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.start_focus_mode, null)
+            .setView(dialogView)
             .create()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            dialogView.findViewById<TextView>(R.id.focusCustomCancel).setOnClickListener {
+                dialog.dismiss()
+            }
+            dialogView.findViewById<TextView>(R.id.focusCustomStart).setOnClickListener {
                 val customMinutes = input.text?.toString()?.trim()?.toLongOrNull()
                 if (customMinutes == null || customMinutes !in Constants.MIN_CUSTOM_FOCUS_MINUTES..Constants.MAX_CUSTOM_FOCUS_MINUTES) {
                     requireContext().showToast(
@@ -1194,7 +1211,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
             override fun onSwipeDown() {
                 super.onSwipeDown()
-                if (syncFocusModeState()) return
+                if (handleSwipeDownDuringFocusMode()) return
                 swipeDownAction()
             }
 
@@ -1259,7 +1276,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
             override fun onSwipeDown() {
                 super.onSwipeDown()
-                if (syncFocusModeState()) return
+                if (handleSwipeDownDuringFocusMode()) return
                 swipeDownAction()
             }
 
