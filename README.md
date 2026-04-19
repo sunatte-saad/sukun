@@ -2,10 +2,6 @@
 
 Sukun is a minimal Android launcher focused on calm defaults, low visual noise, and fast everyday navigation.
 
-## Status
-
-This repository is being actively rebranded and cleaned up for independent ownership. Public release links, store listings, and repository URLs will be added once the new hosting details are ready.
-
 ## Current feature set
 
 - Minimal home screen with customizable app slots

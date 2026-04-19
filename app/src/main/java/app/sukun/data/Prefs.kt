@@ -475,35 +475,35 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(APP_PACKAGE_8, value).apply() }
 
     var appActivityClassName1: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_1, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_1, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_1, value).apply() }
 
     var appActivityClassName2: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_2, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_2, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_2, value).apply() }
 
     var appActivityClassName3: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_3, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_3, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_3, value).apply() }
 
     var appActivityClassName4: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_4, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_4, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_4, value).apply() }
 
     var appActivityClassName5: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_5, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_5, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_5, value).apply() }
 
     var appActivityClassName6: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_6, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_6, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_6, value).apply() }
 
     var appActivityClassName7: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_7, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_7, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_7, value).apply() }
 
     var appActivityClassName8: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_8, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_8, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_8, value).apply() }
 
     var appUser1: String
@@ -551,7 +551,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(APP_PACKAGE_SWIPE_LEFT, value).apply() }
 
     var appActivityClassNameSwipeLeft: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_SWIPE_LEFT, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_SWIPE_LEFT, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_SWIPE_LEFT, value).apply() }
 
     var appPackageSwipeRight: String
@@ -559,7 +559,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(APP_PACKAGE_SWIPE_RIGHT, value).apply() }
 
     var appActivityClassNameSwipeRight: String?
-        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_SWIPE_RIGHT, "").toString()
+        get() = prefs.getString(APP_ACTIVITY_CLASS_NAME_SWIPE_RIGHT, null)
         set(value) = prefs.edit { putString(APP_ACTIVITY_CLASS_NAME_SWIPE_RIGHT, value).apply() }
 
     var appUserSwipeLeft: String
@@ -579,7 +579,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(CLOCK_APP_USER, value).apply() }
 
     var clockAppClassName: String?
-        get() = prefs.getString(CLOCK_APP_CLASS_NAME, "").toString()
+        get() = prefs.getString(CLOCK_APP_CLASS_NAME, null)
         set(value) = prefs.edit { putString(CLOCK_APP_CLASS_NAME, value).apply() }
 
     var calendarAppPackage: String
@@ -591,7 +591,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(CALENDAR_APP_USER, value).apply() }
 
     var calendarAppClassName: String?
-        get() = prefs.getString(CALENDAR_APP_CLASS_NAME, "").toString()
+        get() = prefs.getString(CALENDAR_APP_CLASS_NAME, null)
         set(value) = prefs.edit { putString(CALENDAR_APP_CLASS_NAME, value).apply() }
 
     var screenTimeAppPackage: String
@@ -603,7 +603,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(SCREEN_TIME_APP_USER, value).apply() }
 
     var screenTimeAppClassName: String?
-        get() = prefs.getString(SCREEN_TIME_APP_CLASS_NAME, "").toString()
+        get() = prefs.getString(SCREEN_TIME_APP_CLASS_NAME, null)
         set(value) = prefs.edit { putString(SCREEN_TIME_APP_CLASS_NAME, value).apply() }
 
     var isShortcut1: Boolean
