@@ -33,27 +33,147 @@
         android:visibility="gone"
         tools:visibility="visible">
 
-        <TextClock
-            android:id="@+id/clock"
-            style="@style/TextDefault"
+        <LinearLayout
+            android:id="@+id/dateTimeStandardLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-light"
-            android:format12Hour="h:mm"
-            android:textSize="@dimen/time_size"
-            tools:text="02:34" />
+            android:orientation="vertical"
+            tools:visibility="visible">
 
-        <TextView
-            android:id="@+id/date"
-            style="@style/TextDefault"
+            <TextClock
+                android:id="@+id/clock"
+                style="@style/TextDefault"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
+                android:format12Hour="h:mm"
+                android:format24Hour="HH:mm"
+                android:textSize="@dimen/time_size"
+                tools:text="02:34" />
+
+            <TextView
+                android:id="@+id/date"
+                style="@style/TextDefault"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:format12Hour="EEE, dd MMM"
+                android:format24Hour="EEE, dd MMM"
+                android:paddingHorizontal="3dp"
+                android:textSize="@dimen/date_size"
+                tools:text="Thu, 30 Dec" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/ringClockLayout"
+            android:layout_width="220dp"
+            android:layout_height="220dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <app.sukun.widget.DayProgressRingView
+                android:id="@+id/dayProgressRingView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingHorizontal="28dp">
+
+                <TextClock
+                    android:id="@+id/ringClock"
+                    style="@style/TextDefault"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-light"
+                    android:format12Hour="h:mm"
+                    android:format24Hour="HH:mm"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:textSize="44sp"
+                    tools:text="19:24" />
+
+                <TextView
+                    android:id="@+id/ringDate"
+                    style="@style/TextDefault"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:textAlignment="center"
+                    android:textSize="@dimen/date_size"
+                    tools:text="Sunday, 11 April" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/weatherText"
+        style="@style/TextSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="112dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textSize="@dimen/date_size"
+        android:visibility="gone"
+        tools:text="21°C  Lahore, PK"
+        tools:visibility="visible" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/prayerText"
+        style="@style/TextSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="126dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textSize="@dimen/date_size"
+        android:visibility="gone"
+        tools:text="Maghrib  6:43 PM  24m left"
+        tools:visibility="visible" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/focusModeStatus"
+        style="@style/TextSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="154dp"
+        android:textSize="@dimen/date_size"
+        android:visibility="gone"
+        tools:text="Focus mode active"
+        tools:visibility="visible" />
+
+    <FrameLayout
+        android:id="@+id/dailyNotesCard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="56dp"
+        android:background="@drawable/rounded_rect_shade_color"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/dailyNotesText"
+            style="@style/TextSmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:format12Hour="EEE, dd MMM"
-            android:format24Hour="EEE, dd MMM"
-            android:paddingHorizontal="3dp"
+            android:gravity="end"
+            android:maxWidth="220dp"
+            android:maxLines="6"
+            android:textAlignment="viewEnd"
             android:textSize="@dimen/date_size"
-            tools:text="Thu, 30 Dec" />
-    </LinearLayout>
+            tools:text="- Call Mom&#10;- Finish report&#10;- Walk" />
+    </FrameLayout>
 
     <!-- Screen time-->
     <androidx.appcompat.widget.AppCompatTextView

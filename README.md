@@ -1,34 +1,52 @@
-![Olauncher](https://repository-images.githubusercontent.com/278638069/db0acb80-661b-11eb-803e-926cae5dccb4)
+# Sukun
 
+Sukun is a minimal Android launcher focused on calm defaults, low visual noise, and fast everyday navigation.
 
-# Olauncher | Minimal AF Launcher
-AF stands for Ad-Free
+## Status
 
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-    alt="Get it on F-Droid"
-    height="80">](https://f-droid.org/packages/app.olauncher)
-[<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-    alt="Get it on Play Store"
-    height="80">](https://play.google.com/store/apps/details?id=app.olauncher)
+This repository is being actively rebranded and cleaned up for independent ownership. Public release links, store listings, and repository URLs will be added once the new hosting details are ready.
 
-### Install using [F-Droid](https://f-droid.org/packages/app.olauncher), [Play Store](https://play.google.com/store/apps/details?id=app.olauncher) or the [latest APK](https://github.com/tanujnotes/Olauncher/releases/).
+## Current feature set
 
-- To maintain the simplicity of the launcher, a few niche features are available but hidden.
+- Minimal home screen with customizable app slots
+- App drawer with search and fast scrolling
+- Focus mode and lock gestures
+- Daily notes on the home screen
+- Weather support
+- Prayer times and azan reminders
+- Private Space support
+- Daily wallpaper support
 
-- Please check out the **[About](https://tanujnotes.substack.com/p/olauncher-minimal-af-launcher?utm_source=github)** page in the Olauncher settings for a complete list of features and **FAQs**.
+## Development
 
-##
+### Requirements
 
-License: [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)
+- Android Studio with a current Android SDK
+- JDK 17
 
-Dev: [X/twitter](https://x.com/tanujnotes) • [Bluesky](https://bsky.app/profile/tanujnotes.bsky.social)
+### Build
 
-##
+```bash
+./gradlew :app:assembleDebug
+```
 
-### My other apps:
+On Windows, use:
 
-- [Pro Launcher](https://play.google.com/store/apps/details?id=app.prolauncher) - Pro version of Olauncher with extra features like widgets, weather, folders, etc.
+```powershell
+.\gradlew.bat :app:assembleDebug
+```
 
-- [Note to Self](https://play.google.com/store/apps/details?id=com.makenotetoself) - Free and [open source](https://github.com/jeerovan/ntsapp) notes app with chat like interface and end-to-end encryption.
+## Project identity
 
-- [Pentastic](https://play.google.com/store/apps/details?id=app.pentastic) - Minimal todo lists. Free and [open source](https://github.com/tanujnotes/Pentastic).
+- App name: `Sukun`
+- Android application ID: `app.sukun`
+- Namespace: `app.sukun`
+
+## Notes
+
+- Some public-facing links are intentionally blank until the new project URLs are finalized.
+- The existing git remote is expected to be replaced with your own repository URL in a follow-up step.
+
+## License
+
+[GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)

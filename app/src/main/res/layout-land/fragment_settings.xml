@@ -43,7 +43,7 @@
                     android:layout_height="wrap_content">
 
                     <TextView
-                        android:id="@+id/olauncherHiddenApps"
+                        android:id="@+id/sukunHiddenApps"
                         style="@style/TextLarge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -68,28 +68,6 @@
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="8dp"
                     android:text="@string/set_as_default_launcher" />
-
-                <TextView
-                    android:id="@+id/aboutOlauncher"
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="8dp"
-                    android:drawablePadding="8dp"
-                    android:gravity="center"
-                    android:text="@string/about_olauncher" />
-
-                <TextView
-                    android:id="@+id/moreFeatures"
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="@string/more_features" />
 
             </LinearLayout>
 
@@ -246,6 +224,130 @@
 
                 </FrameLayout>
 
+                <LinearLayout
+                    android:id="@+id/dateTimeOptionsLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/clock_style"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/clockStyle"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/clock_style_standard" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:id="@+id/dayStartHourRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/day_start_hour"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/dayStartHour"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/not_set"
+                                tools:text="06:00" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:id="@+id/dayEndHourRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/day_end_hour"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/dayEndHour"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/not_set"
+                                tools:text="22:00" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </LinearLayout>
+
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -324,6 +426,778 @@
 
                     </LinearLayout>
 
+                </FrameLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:animateLayoutChanges="true">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:paddingVertical="8dp"
+                        android:text="@string/weather"
+                        android:textColor="?attr/primaryColor" />
+
+                    <TextView
+                        android:id="@+id/weatherOnOff"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|bottom"
+                        android:layout_marginEnd="4dp"
+                        android:padding="8dp"
+                        android:text="@string/off" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/weatherOptionsLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/weather_source"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/weatherSource"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/manual_location" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/weatherSourceSelectLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:animateLayoutChanges="true"
+                            android:background="@drawable/rounded_primary_gradient"
+                            android:elevation="8dp"
+                            android:orientation="horizontal"
+                            android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                            android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="2dp"
+                            android:visibility="gone"
+                            tools:ignore="UnusedAttribute">
+
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/weatherSourceManual"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/manual_location" />
+
+                            <TextView
+                                android:id="@+id/weatherSourceDevice"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/device_location" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:id="@+id/weatherLocationRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/weather_location"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/weatherLocation"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/not_set" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/weatherLocationEditLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:animateLayoutChanges="true"
+                            android:background="@drawable/rounded_primary_gradient"
+                            android:gravity="end|center_vertical"
+                            android:orientation="horizontal"
+                            android:visibility="gone">
+
+                            <androidx.appcompat.widget.AppCompatEditText
+                                android:id="@+id/etWeatherLocation"
+                                style="@style/TextSmall"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_marginEnd="8dp"
+                                android:layout_weight="1"
+                                android:background="@null"
+                                android:hint="@string/type_city_name"
+                                android:imeOptions="actionDone"
+                                android:inputType="textCapWords"
+                                android:maxLines="1"
+                                android:paddingVertical="8dp"
+                                android:textColorHint="?attr/primaryColorTrans50" />
+
+                            <TextView
+                                android:id="@+id/weatherLocationSave"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/save" />
+
+                            <TextView
+                                android:id="@+id/weatherLocationClose"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/close" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/weather_units"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/weatherUnits"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/celsius_short" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/weatherUnitsSelectLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:animateLayoutChanges="true"
+                            android:background="@drawable/rounded_primary_gradient"
+                            android:elevation="8dp"
+                            android:orientation="horizontal"
+                            android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                            android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="2dp"
+                            android:visibility="gone"
+                            tools:ignore="UnusedAttribute">
+
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/weatherUnitCelsius"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/celsius_short" />
+
+                            <TextView
+                                android:id="@+id/weatherUnitFahrenheit"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/fahrenheit_short" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:animateLayoutChanges="true">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:paddingVertical="8dp"
+                        android:text="@string/prayer_times"
+                        android:textColor="?attr/primaryColor" />
+
+                    <TextView
+                        android:id="@+id/prayerOnOff"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|bottom"
+                        android:layout_marginEnd="4dp"
+                        android:padding="8dp"
+                        android:text="@string/off" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/prayerOptionsLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/prayer_source"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/prayerSource"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/manual_location" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/prayerSourceSelectLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:animateLayoutChanges="true"
+                            android:background="@drawable/rounded_primary_gradient"
+                            android:elevation="8dp"
+                            android:orientation="horizontal"
+                            android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                            android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="2dp"
+                            android:visibility="gone"
+                            tools:ignore="UnusedAttribute">
+
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/prayerSourceManual"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/manual_location" />
+
+                            <TextView
+                                android:id="@+id/prayerSourceDevice"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/device_location" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:id="@+id/prayerLocationRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/prayer_location"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/prayerLocation"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/not_set" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/prayerLocationEditLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:animateLayoutChanges="true"
+                            android:background="@drawable/rounded_primary_gradient"
+                            android:gravity="end|center_vertical"
+                            android:orientation="horizontal"
+                            android:visibility="gone">
+
+                            <androidx.appcompat.widget.AppCompatEditText
+                                android:id="@+id/etPrayerLocation"
+                                style="@style/TextSmall"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_marginEnd="8dp"
+                                android:layout_weight="1"
+                                android:background="@null"
+                                android:hint="@string/type_city_name"
+                                android:imeOptions="actionDone"
+                                android:inputType="textCapWords"
+                                android:maxLines="1"
+                                android:paddingVertical="8dp"
+                                android:textColorHint="?attr/primaryColorTrans50" />
+
+                            <TextView
+                                android:id="@+id/prayerLocationSave"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/save" />
+
+                            <TextView
+                                android:id="@+id/prayerLocationClose"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/close" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/azan"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/azanOnOff"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/on" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/azan_sound"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/azanSound"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/azan_sound_makkah" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/azanSoundSelectLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:animateLayoutChanges="true"
+                            android:background="@drawable/rounded_primary_gradient"
+                            android:elevation="8dp"
+                            android:orientation="horizontal"
+                            android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                            android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="2dp"
+                            android:visibility="gone"
+                            tools:ignore="UnusedAttribute">
+
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/azanSoundMakkah"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/azan_sound_makkah" />
+
+                            <TextView
+                                android:id="@+id/azanSoundMarylebone"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/azan_sound_marylebone" />
+
+                            <TextView
+                                android:id="@+id/azanSoundCustom"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/custom" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:id="@+id/customAzanRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/custom_azan_file"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/customAzanFile"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/not_set" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:animateLayoutChanges="true">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:paddingVertical="8dp"
+                        android:text="@string/focus_mode"
+                        android:textColor="?attr/primaryColor" />
+
+                    <TextView
+                        android:id="@+id/focusMode"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|bottom"
+                        android:layout_marginEnd="4dp"
+                        android:padding="8dp"
+                        android:text="@string/off" />
+
+                    <LinearLayout
+                        android:id="@+id/focusModeSelectLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:animateLayoutChanges="true"
+                        android:background="@drawable/rounded_primary_gradient"
+                        android:elevation="8dp"
+                        android:orientation="horizontal"
+                        android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                        android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="2dp"
+                        android:visibility="gone"
+                        tools:ignore="UnusedAttribute">
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/focus15m"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="24dp"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/focus_15m" />
+
+                        <TextView
+                            android:id="@+id/focus30m"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="24dp"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/focus_30m" />
+
+                        <TextView
+                            android:id="@+id/focus1h"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="24dp"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/focus_1h" />
+
+                        <TextView
+                            android:id="@+id/focus2h"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="24dp"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/focus_2h" />
+
+                        <TextView
+                            android:id="@+id/focusCustom"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/custom" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/focusCustomLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:animateLayoutChanges="true"
+                        android:background="@drawable/rounded_primary_gradient"
+                        android:gravity="end|center_vertical"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <androidx.appcompat.widget.AppCompatEditText
+                            android:id="@+id/etFocusCustomMinutes"
+                            style="@style/TextSmall"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:hint="@string/minutes"
+                            android:imeOptions="actionDone"
+                            android:inputType="number"
+                            android:maxLines="1"
+                            android:paddingVertical="8dp"
+                            android:textColorHint="?attr/primaryColorTrans50" />
+
+                        <TextView
+                            android:id="@+id/focusCustomStart"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/focus" />
+
+                        <TextView
+                            android:id="@+id/focusCustomClose"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/close" />
+                    </LinearLayout>
                 </FrameLayout>
 
                 <FrameLayout
@@ -508,6 +1382,33 @@
                     android:animateLayoutChanges="true">
 
                     <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="80dp"
+                        android:paddingVertical="8dp"
+                        android:text="@string/app_drawer_fast_scroller"
+                        android:textColor="?attr/primaryColor" />
+
+                    <TextView
+                        android:id="@+id/appDrawerFastScroller"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|bottom"
+                        android:layout_marginEnd="4dp"
+                        android:padding="8dp"
+                        android:text="@string/on" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:animateLayoutChanges="true">
+
+                    <TextView
                         android:id="@+id/dailyWallpaperUrl"
                         style="@style/TextSmall"
                         android:layout_width="wrap_content"
@@ -526,6 +1427,70 @@
                         android:padding="8dp"
                         android:text="@string/off" />
                 </FrameLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:animateLayoutChanges="true">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:paddingVertical="8dp"
+                        android:text="@string/daily_notes"
+                        android:textColor="?attr/primaryColor" />
+
+                    <TextView
+                        android:id="@+id/dailyNotesOnOff"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|bottom"
+                        android:layout_marginEnd="4dp"
+                        android:padding="8dp"
+                        android:text="@string/off" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/dailyNotesOptionsLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/daily_notes_list"
+                            android:textColor="?attr/primaryColor" />
+
+                        <TextView
+                            android:id="@+id/dailyNotesList"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|bottom"
+                            android:layout_marginEnd="4dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:padding="8dp"
+                            android:text="@string/not_set"
+                            tools:text="Call Mom" />
+                    </FrameLayout>
+                </LinearLayout>
 
                 <FrameLayout
                     android:layout_width="match_parent"
@@ -868,6 +1833,71 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="12dp"
+                    android:animateLayoutChanges="true">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="8dp"
+                        android:text="@string/double_tap_action"
+                        android:textColor="?attr/primaryColor" />
+
+                    <TextView
+                        android:id="@+id/doubleTapAction"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:padding="10dp"
+                        android:text="@string/lock" />
+
+                    <LinearLayout
+                        android:id="@+id/doubleTapActionSelectLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:animateLayoutChanges="true"
+                        android:background="@drawable/rounded_primary_gradient"
+                        android:elevation="8dp"
+                        android:orientation="horizontal"
+                        android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                        android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="2dp"
+                        android:visibility="gone"
+                        tools:ignore="UnusedAttribute">
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/doubleTapLock"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="24dp"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/lock" />
+
+                        <TextView
+                            android:id="@+id/doubleTapFocus"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/focus" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="12dp"
                     android:visibility="visible">
 
                     <TextView
@@ -913,71 +1943,6 @@
                         android:text="@string/off" />
                 </FrameLayout>
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:gravity="center_horizontal"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/twitter"
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="8dp"
-                    android:padding="10dp"
-                    android:text="@string/twitter" />
-
-                <TextView
-                    android:id="@+id/share"
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="8dp"
-                    android:padding="10dp"
-                    android:text="@string/share" />
-
-                <TextView
-                    android:id="@+id/rate"
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="8dp"
-                    android:padding="10dp"
-                    android:text="@string/rate" />
-
-                <TextView
-                    android:id="@+id/github"
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="8dp"
-                    android:padding="10dp"
-                    android:text="@string/github" />
-
-                <TextView
-                    android:id="@+id/privacy"
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="8dp"
-                    android:padding="10dp"
-                    android:text="@string/privacy" />
-
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/footer"
-                style="@style/TextSmallBold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:gravity="center"
-                android:letterSpacing="0.03"
-                android:padding="12dp"
-                android:text="@string/new_app_note_safe" />
 
         </LinearLayout>
 

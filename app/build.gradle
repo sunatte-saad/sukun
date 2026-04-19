@@ -14,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "app.olauncher"
+        applicationId "app.sukun"
         minSdkVersion 24
         targetSdkVersion 35
         versionCode 105
@@ -41,7 +41,7 @@ android {
         viewBinding = true
         buildConfig = true
     }
-    namespace 'app.olauncher'
+    namespace 'app.sukun'
 }
 
 dependencies {
@@ -50,6 +50,7 @@ dependencies {
     implementation libs.core.ktx
     implementation libs.appcompat
     implementation libs.recyclerview
+    implementation libs.adhan
 
     // Android lifecycle
     implementation libs.lifecycle.extensions
