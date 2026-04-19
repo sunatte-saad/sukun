@@ -15,35 +15,79 @@ Sukun is a minimal Android launcher built around a calm home screen, low visual 
 
 ### Home screen
 
-The home screen keeps the layout intentionally quiet: a large circular clock, date, selected apps, and optional contextual information like weather and prayer times.
+The home screen keeps the layout intentionally quiet. Instead of filling the page with widgets, it gives you:
 
-![Home screen with day ring clock, weather, prayer time, and app shortcuts](screenshots/Media%20(8).jpg)
+- a large day-ring clock and date
+- a short list of selected apps
+- optional weather and prayer information
+- a wallpaper-led design with low visual clutter
+
+<p align="center">
+  <a href="screenshots/Media%20(8).jpg">
+    <img src="screenshots/Media%20(8).jpg" alt="Home screen with day ring clock, weather, prayer time, and app shortcuts" width="280" />
+  </a>
+</p>
 
 ### Home screen settings
 
-Sukun lets you tune the home screen without overwhelming the interface. The settings shown here cover app count, clock style, day start and end hours, date visibility, app icons, daily notes, weather, and prayer configuration.
+Sukun lets you tune the home screen without turning settings into a maze. This part of the app covers:
 
-![Home screen settings with clock, weather, notes, and prayer options](screenshots/Media%20(7).jpg)
+- number of apps shown on the home screen
+- clock style and day timing
+- date and app icon visibility
+- daily notes
+- weather source, location, and units
+- prayer time visibility and related options
+
+<p align="center">
+  <a href="screenshots/Media%20(7).jpg">
+    <img src="screenshots/Media%20(7).jpg" alt="Home screen settings with clock, weather, notes, and prayer options" width="280" />
+  </a>
+</p>
 
 ### Appearance and gestures
 
-Appearance and gesture settings stay simple and readable while still exposing useful launcher controls like auto-show keyboard, app drawer fast scroller, theme mode, text size, swipe shortcuts, double tap action, and home-button recents behavior.
+Appearance and gesture settings stay simple and readable while still exposing useful controls such as:
 
-![Appearance and gestures settings including fast scroller, theme, and swipe actions](screenshots/Media%20(4).jpg)
+- auto-show keyboard
+- app drawer fast scroller
+- daily wallpaper and status bar visibility
+- theme mode and text size
+- swipe-left and swipe-right app shortcuts
+- double tap behavior and optional recents access
+
+<p align="center">
+  <a href="screenshots/Media%20(4).jpg">
+    <img src="screenshots/Media%20(4).jpg" alt="Appearance and gestures settings including fast scroller, theme, and swipe actions" width="280" />
+  </a>
+</p>
 
 ### Focus mode
 
-Focus mode is designed to be quick to start and easy to understand. You can launch it from a preset duration picker or choose a custom duration, both using the same translucent dialog style shown in the screenshots.
+Focus mode is designed to be quick to start and easy to understand. You can:
 
-![Focus mode preset duration dialog](screenshots/Media%20(6).jpg)
+- start a common preset in one tap
+- choose a fully custom duration
+- keep the dialog visually consistent with the launcher instead of switching to a heavy system-style sheet
 
-![Custom focus mode duration dialog](screenshots/Media%20(5).jpg)
+<p align="center">
+  <a href="screenshots/Media%20(6).jpg">
+    <img src="screenshots/Media%20(6).jpg" alt="Focus mode preset duration dialog" width="260" />
+  </a>
+  <a href="screenshots/Media%20(5).jpg">
+    <img src="screenshots/Media%20(5).jpg" alt="Custom focus mode duration dialog" width="260" />
+  </a>
+</p>
 
 ### Minimal home variant
 
-The same home screen can stay even cleaner depending on your settings, with distractions reduced while keeping the main launcher actions within reach.
+The same home screen can stay even cleaner depending on your settings, with distractions reduced while keeping the core launcher actions within reach.
 
-![Minimal home screen variant](screenshots/Media%20(3).jpg)
+<p align="center">
+  <a href="screenshots/Media%20(3).jpg">
+    <img src="screenshots/Media%20(3).jpg" alt="Minimal home screen variant" width="280" />
+  </a>
+</p>
 
 ## Download
 
