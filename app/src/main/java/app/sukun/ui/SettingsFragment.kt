@@ -132,6 +132,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateAlignment()
         populateHomeAppIcons()
         populateFocusMode()
+        populateFocusModeNotificationsLock()
         populateWeatherSettings()
         populateDailyNotesSettings()
         populatePrayerSettings()
@@ -246,6 +247,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.focus2h -> startFocusMode(Constants.FocusModeDuration.TWO_HOURS)
             R.id.focusCustom -> showFocusCustomEditor()
             R.id.focusCustomStart -> startCustomFocusMode()
+            R.id.focusModeNotificationsLock -> toggleFocusModeNotificationsLock()
             R.id.focusCustomClose -> {
                 binding.focusCustomLayout.visibility = View.GONE
                 binding.etFocusCustomMinutes.hideKeyboard()
@@ -369,6 +371,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.focus2h.setOnClickListener(this)
         binding.focusCustom.setOnClickListener(this)
         binding.focusCustomStart.setOnClickListener(this)
+        binding.focusModeNotificationsLock.setOnClickListener(this)
         binding.focusCustomClose.setOnClickListener(this)
         binding.statusBar.setOnClickListener(this)
         binding.dateTime.setOnClickListener(this)
@@ -527,6 +530,17 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             binding.focusModeSelectLayout?.visibility = View.GONE
             binding.focusCustomLayout.visibility = View.GONE
         }
+    }
+
+    private fun toggleFocusModeNotificationsLock() {
+        prefs.focusModeLockNotifications = !prefs.focusModeLockNotifications
+        populateFocusModeNotificationsLock()
+    }
+
+    private fun populateFocusModeNotificationsLock() {
+        binding.focusModeNotificationsLock.text = getString(
+            if (prefs.focusModeLockNotifications) R.string.on else R.string.off
+        )
     }
 
     private fun startFocusMode(durationInMillis: Long) {

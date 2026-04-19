@@ -49,6 +49,7 @@ class Prefs(context: Context) {
     private val HOME_BUTTON_SHOW_RECENTS = "HOME_BUTTON_SHOW_RECENTS"
     private val FOCUS_MODE_ENDS_AT = "FOCUS_MODE_ENDS_AT"
     private val FOCUS_MODE_LAST_DURATION = "FOCUS_MODE_LAST_DURATION"
+    private val FOCUS_MODE_LOCK_NOTIFICATIONS = "FOCUS_MODE_LOCK_NOTIFICATIONS"
     private val DOUBLE_TAP_ACTION = "DOUBLE_TAP_ACTION"
     private val SHOW_WEATHER_ON_HOME = "SHOW_WEATHER_ON_HOME"
     private val WEATHER_UNITS = "WEATHER_UNITS"
@@ -277,6 +278,10 @@ class Prefs(context: Context) {
     var focusModeLastDuration: Long
         get() = prefs.getLong(FOCUS_MODE_LAST_DURATION, Constants.FocusModeDuration.FIFTEEN_MIN)
         set(value) = prefs.edit { putLong(FOCUS_MODE_LAST_DURATION, value).apply() }
+
+    var focusModeLockNotifications: Boolean
+        get() = prefs.getBoolean(FOCUS_MODE_LOCK_NOTIFICATIONS, false)
+        set(value) = prefs.edit { putBoolean(FOCUS_MODE_LOCK_NOTIFICATIONS, value).apply() }
 
     var doubleTapAction: String
         get() = prefs.getString(DOUBLE_TAP_ACTION, Constants.DoubleTapAction.LOCK).toString()

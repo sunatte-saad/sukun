@@ -65,6 +65,7 @@
     <string name="focus_mode_custom_prompt_subtitle">Enter a duration in minutes.</string>
     <string name="start_focus_mode">Start focus mode</string>
     <string name="cancel">Cancel</string>
+    <string name="focus_mode_lock_notifications">Lock notifications in focus mode</string>
     <string name="focus_custom_duration_error">Enter a focus duration between %1$d and %2$d minutes</string>
     <string name="weather">Weather</string>
     <string name="weather_source">Weather source</string>
