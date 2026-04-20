@@ -981,21 +981,23 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun showStatusBar() {
+        val decorView = activity?.window?.decorView ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            requireActivity().window.insetsController?.show(WindowInsets.Type.statusBars())
+            decorView.windowInsetsController?.show(WindowInsets.Type.statusBars())
         else
             @Suppress("DEPRECATION", "InlinedApi")
-            requireActivity().window.decorView.apply {
+            decorView.apply {
                 systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             }
     }
 
     private fun hideStatusBar() {
+        val decorView = activity?.window?.decorView ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            requireActivity().window.insetsController?.hide(WindowInsets.Type.statusBars())
+            decorView.windowInsetsController?.hide(WindowInsets.Type.statusBars())
         else {
             @Suppress("DEPRECATION")
-            requireActivity().window.decorView.apply {
+            decorView.apply {
                 systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE or View.SYSTEM_UI_FLAG_FULLSCREEN
             }
         }
