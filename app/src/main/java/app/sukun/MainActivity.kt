@@ -120,7 +120,15 @@ class MainActivity : AppCompatActivity() {
                 addAction(Intent.ACTION_PROFILE_AVAILABLE)
                 addAction(Intent.ACTION_PROFILE_UNAVAILABLE)
             }
-            registerReceiver(profileReceiver, filter)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    registerReceiver(profileReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+                } else {
+                    registerReceiver(profileReceiver, filter)
+                }
+            } catch (_: SecurityException) {
+                profileReceiver = null
+            }
         }
     }
 
