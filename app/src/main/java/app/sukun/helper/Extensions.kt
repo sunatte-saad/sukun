@@ -12,6 +12,8 @@ import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.UserHandle
 import android.provider.Settings
 import android.view.View
@@ -60,19 +62,27 @@ fun Context.resetDefaultLauncher() {
         val selector = Intent(Intent.ACTION_MAIN)
         selector.addCategory(Intent.CATEGORY_HOME)
         startActivity(selector)
-        packageManager.setComponentEnabledSetting(
-            componentName,
-            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-            PackageManager.DONT_KILL_APP
-        )
+        // Delay disabling FakeHomeActivity so the chooser has time to render before it disappears
+        Handler(Looper.getMainLooper()).postDelayed({
+            try {
+                packageManager.setComponentEnabledSetting(
+                    componentName,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            } catch (_: Exception) {}
+        }, 1500)
     } catch (e: Exception) {
         e.printStackTrace()
     }
 }
 
 fun Context.isDefaultLauncher(): Boolean {
-    val launcherPackageName = getDefaultLauncherPackage(this)
-    return BuildConfig.APPLICATION_ID == launcherPackageName
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
+        return roleManager.isRoleHeld(RoleManager.ROLE_HOME)
+    }
+    return BuildConfig.APPLICATION_ID == getDefaultLauncherPackage(this)
 }
 
 fun Context.resetLauncherViaFakeActivity() {

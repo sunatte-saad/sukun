@@ -171,6 +171,13 @@ object Constants {
     const val WEATHER_WORKER_NAME = "WEATHER_WORKER_NAME"
     const val WEATHER_REFRESH_HOURS = 4L
     const val WEATHER_STALE_MINUTES = 30
+    object HourlyChime {
+        const val DEFAULT_START_HOUR = 8
+        const val DEFAULT_END_HOUR = 22
+        const val ACTION = "app.sukun.HOURLY_CHIME"
+        const val REQUEST_CODE = 7501
+    }
+
     const val PRAYER_REMINDER_ACTION = "app.sukun.PRAYER_REMINDER"
     const val PRAYER_BOOT_ACTION = "app.sukun.PRAYER_BOOT"
     const val PRAYER_STOP_ACTION = "app.sukun.PRAYER_STOP"

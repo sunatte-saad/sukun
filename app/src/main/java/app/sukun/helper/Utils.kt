@@ -3,12 +3,14 @@ package app.sukun.helper
 import android.annotation.SuppressLint
 import android.app.SearchManager
 import android.app.WallpaperManager
+import android.app.role.RoleManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Bitmap
@@ -280,16 +282,18 @@ fun getUserHandleFromString(context: Context, userHandleString: String): UserHan
 }
 
 fun isSukunDefault(context: Context): Boolean {
-    val launcherPackageName = getDefaultLauncherPackage(context)
-    return BuildConfig.APPLICATION_ID == launcherPackageName
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val roleManager = context.getSystemService(Context.ROLE_SERVICE) as RoleManager
+        return roleManager.isRoleHeld(RoleManager.ROLE_HOME)
+    }
+    return BuildConfig.APPLICATION_ID == getDefaultLauncherPackage(context)
 }
 
 fun getDefaultLauncherPackage(context: Context): String {
     val intent = Intent()
     intent.action = Intent.ACTION_MAIN
     intent.addCategory(Intent.CATEGORY_HOME)
-    val packageManager = context.packageManager
-    val result = packageManager.resolveActivity(intent, 0)
+    val result = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
     return if (result?.activityInfo != null) {
         result.activityInfo.packageName
     } else "android"

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(adb devices *)",
+      "Bash(.\\\\gradlew.bat :app:assembleDebug)",
+      "Bash(cmd.exe /c \"gradlew.bat :app:assembleDebug\")",
+      "Bash(cmd.exe *)",
+      "Bash(adb install *)",
+      "Bash(adb logcat *)"
+    ]
+  }
+}

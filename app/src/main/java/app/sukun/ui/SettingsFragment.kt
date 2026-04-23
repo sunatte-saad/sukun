@@ -32,6 +32,7 @@ import app.sukun.R
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.databinding.FragmentSettingsBinding
+import app.sukun.helper.HourlyChimeScheduler
 import app.sukun.helper.PrayerReminderScheduler
 import app.sukun.helper.animateAlpha
 import app.sukun.helper.appUsagePermissionGranted
@@ -136,6 +137,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateWeatherSettings()
         populateDailyNotesSettings()
         populatePrayerSettings()
+        populateHourlyChime()
         populateStatusBar()
         populateDateTime()
         populateSwipeApps()
@@ -252,6 +254,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.focusCustomLayout.visibility = View.GONE
                 binding.etFocusCustomMinutes.hideKeyboard()
             }
+            R.id.hourlyChimeOnOff -> toggleHourlyChime()
+            R.id.hourlyChimeStartHour -> showHourPicker(isStart = true)
+            R.id.hourlyChimeEndHour -> showHourPicker(isStart = false)
             R.id.statusBar -> toggleStatusBar()
             R.id.dateTime -> binding.dateTimeSelectLayout.visibility = View.VISIBLE
             R.id.dateTimeOn -> toggleDateTime(Constants.DateTime.ON)
@@ -373,6 +378,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.focusCustomStart.setOnClickListener(this)
         binding.focusModeNotificationsLock.setOnClickListener(this)
         binding.focusCustomClose.setOnClickListener(this)
+        binding.hourlyChimeOnOff?.setOnClickListener(this)
+        binding.hourlyChimeStartHour?.setOnClickListener(this)
+        binding.hourlyChimeEndHour?.setOnClickListener(this)
         binding.statusBar.setOnClickListener(this)
         binding.dateTime.setOnClickListener(this)
         binding.dateTimeOn.setOnClickListener(this)
@@ -1347,6 +1355,45 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateFocusMode()
         populatePrayerSettings()
         refreshPrayerIfConfigured(forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
+    }
+
+    private fun populateHourlyChime() {
+        val enabled = prefs.hourlyChimeEnabled
+        binding.hourlyChimeOnOff?.text = getString(if (enabled) R.string.on else R.string.off)
+        binding.hourlyChimeTimeLayout?.isVisible = enabled
+        binding.hourlyChimeStartHour?.text = formatHourLabel(prefs.hourlyChimeStartHour)
+        binding.hourlyChimeEndHour?.text = formatHourLabel(prefs.hourlyChimeEndHour)
+    }
+
+    private fun toggleHourlyChime() {
+        prefs.hourlyChimeEnabled = !prefs.hourlyChimeEnabled
+        if (prefs.hourlyChimeEnabled) {
+            HourlyChimeScheduler.scheduleNext(requireContext())
+        } else {
+            HourlyChimeScheduler.cancel(requireContext())
+        }
+        populateHourlyChime()
+    }
+
+    private fun showHourPicker(isStart: Boolean) {
+        val current = if (isStart) prefs.hourlyChimeStartHour else prefs.hourlyChimeEndHour
+        val hours = (0..23).map { formatHourLabel(it) }.toTypedArray()
+        AlertDialog.Builder(requireContext())
+            .setTitle(if (isStart) R.string.hourly_chime_from else R.string.hourly_chime_to)
+            .setSingleChoiceItems(hours, current) { dialog, which ->
+                if (isStart) {
+                    prefs.hourlyChimeStartHour = which
+                    if (which >= prefs.hourlyChimeEndHour) prefs.hourlyChimeEndHour = (which + 1).coerceAtMost(23)
+                } else {
+                    prefs.hourlyChimeEndHour = which
+                    if (which <= prefs.hourlyChimeStartHour) prefs.hourlyChimeStartHour = (which - 1).coerceAtLeast(0)
+                }
+                HourlyChimeScheduler.scheduleNext(requireContext())
+                populateHourlyChime()
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     override fun onDestroy() {

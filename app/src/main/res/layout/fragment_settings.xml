@@ -1430,6 +1430,85 @@
 
                 </FrameLayout>
 
+                <LinearLayout
+                    android:id="@+id/hourlyChimeLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:animateLayoutChanges="true"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/hourly_chime"
+                            android:textColor="?attr/primaryColor" />
+
+                        <TextView
+                            android:id="@+id/hourlyChimeOnOff"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|bottom"
+                            android:layout_marginEnd="4dp"
+                            android:padding="8dp"
+                            android:text="@string/off" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:id="@+id/hourlyChimeTimeLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="end"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingVertical="8dp"
+                            android:text="@string/hourly_chime_from"
+                            android:textColor="?attr/primaryColor" />
+
+                        <TextView
+                            android:id="@+id/hourlyChimeStartHour"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="40dp"
+                            android:gravity="center"
+                            android:padding="8dp"
+                            android:text="8:00" />
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingVertical="8dp"
+                            android:text="@string/hourly_chime_to"
+                            android:textColor="?attr/primaryColor" />
+
+                        <TextView
+                            android:id="@+id/hourlyChimeEndHour"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="40dp"
+                            android:gravity="center"
+                            android:padding="8dp"
+                            android:text="22:00" />
+                    </LinearLayout>
+                </LinearLayout>
+
                 <FrameLayout
                     android:id="@+id/screenTimeLayout"
                     android:layout_width="match_parent"

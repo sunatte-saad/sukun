@@ -75,6 +75,9 @@ class Prefs(context: Context) {
     private val AZAN_ENABLED = "AZAN_ENABLED"
     private val AZAN_SOUND = "AZAN_SOUND"
     private val AZAN_CUSTOM_URI = "AZAN_CUSTOM_URI"
+    private val HOURLY_CHIME_ENABLED = "HOURLY_CHIME_ENABLED"
+    private val HOURLY_CHIME_START_HOUR = "HOURLY_CHIME_START_HOUR"
+    private val HOURLY_CHIME_END_HOUR = "HOURLY_CHIME_END_HOUR"
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -382,6 +385,18 @@ class Prefs(context: Context) {
     var azanCustomUri: String
         get() = prefs.getString(AZAN_CUSTOM_URI, "").toString()
         set(value) = prefs.edit { putString(AZAN_CUSTOM_URI, value).apply() }
+
+    var hourlyChimeEnabled: Boolean
+        get() = prefs.getBoolean(HOURLY_CHIME_ENABLED, false)
+        set(value) = prefs.edit { putBoolean(HOURLY_CHIME_ENABLED, value).apply() }
+
+    var hourlyChimeStartHour: Int
+        get() = prefs.getInt(HOURLY_CHIME_START_HOUR, Constants.HourlyChime.DEFAULT_START_HOUR)
+        set(value) = prefs.edit { putInt(HOURLY_CHIME_START_HOUR, value).apply() }
+
+    var hourlyChimeEndHour: Int
+        get() = prefs.getInt(HOURLY_CHIME_END_HOUR, Constants.HourlyChime.DEFAULT_END_HOUR)
+        set(value) = prefs.edit { putInt(HOURLY_CHIME_END_HOUR, value).apply() }
 
     var hiddenApps: MutableSet<String>
         get() = prefs.getStringSet(HIDDEN_APPS, mutableSetOf()) as MutableSet<String>

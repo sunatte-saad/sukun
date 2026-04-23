@@ -241,7 +241,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             populateHomeScreen(it)
         }
         viewModel.isSukunDefault.observe(viewLifecycleOwner, Observer {
-            if (it != true) {
+            if (it == true) {
+                // Reset so the button reappears if the app later loses default status
+                prefs.hideSetDefaultLauncher = false
+            } else {
                 if (prefs.dailyWallpaper && prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES) {
                     prefs.dailyWallpaper = false
                     viewModel.cancelWallpaperWorker()

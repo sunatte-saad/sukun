@@ -131,6 +131,9 @@
     <string name="app_drawer_fast_scroller">App drawer fast scroller</string>
     <string name="hide">Hide</string>
     <string name="status_bar">Status bar on top</string>
+    <string name="hourly_chime">Hourly chime</string>
+    <string name="hourly_chime_from">From</string>
+    <string name="hourly_chime_to">to</string>
     <string name="rename">Rename</string>
     <string name="show_date_time">Show date time</string>
     <string name="appearance">Appearance</string>
