@@ -15,6 +15,7 @@ import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import app.sukun.data.AppModel
@@ -30,6 +31,7 @@ import app.sukun.helper.formattedTimeSpent
 import app.sukun.helper.getAppsList
 import app.sukun.helper.getCachedPrayerState
 import app.sukun.helper.getCachedWeatherData
+import app.sukun.helper.getRandomLocalWallpaperAsset
 import app.sukun.helper.getPrivateSpaceApps
 import app.sukun.helper.getPrivateSpaceUserHandle
 import app.sukun.helper.hasBeenMinutes
@@ -39,6 +41,8 @@ import app.sukun.helper.isPrivateSpaceLocked
 import app.sukun.helper.isExpired
 import app.sukun.helper.refreshPrayerState
 import app.sukun.helper.refreshWeather
+import app.sukun.helper.setWallpaperFromAsset
+import app.sukun.helper.setPlainWallpaper
 import app.sukun.helper.showToast
 import app.sukun.helper.usageStats.EventLogWrapper
 import kotlinx.coroutines.launch
@@ -62,6 +66,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val screenTimeValue = MutableLiveData<String>()
     val weatherData = MutableLiveData<WeatherData?>()
     val prayerData = MutableLiveData<PrayerState?>()
+    val recentAppPackages = MutableLiveData<List<String>>(emptyList())
 
     val privateSpaceApps = MutableLiveData<List<AppModel>?>()
     val privateSpaceLocked = MutableLiveData<Boolean>()
@@ -119,12 +124,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         launcher.getShortcuts(query, appModel.user)?.find { it.id == appModel.shortcutId }
             ?.let { shortcut ->
                 launcher.startShortcut(shortcut, null, null)
+                prefs.pushRecentApp(appModel.appPackage)
             }
     }
 
     private fun saveHomeApp(appModel: AppModel, position: Int) {
         when (appModel) {
             is AppModel.PrivateSpaceHeader -> return
+            is AppModel.SectionHeader -> return
             is AppModel.App -> {
                 when (position) {
                     1 -> {
@@ -283,6 +290,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun saveSwipeApp(appModel: AppModel, isLeft: Boolean) {
         when (appModel) {
             is AppModel.PrivateSpaceHeader -> return
+            is AppModel.SectionHeader -> return
             is AppModel.App -> {
                 if (isLeft) {
                     prefs.appNameSwipeLeft = appModel.appLabel
@@ -385,9 +393,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         try {
             launcher.startMainActivity(component, userHandle, null, null)
+            prefs.pushRecentApp(packageName)
         } catch (e: SecurityException) {
             try {
                 launcher.startMainActivity(component, android.os.Process.myUserHandle(), null, null)
+                prefs.pushRecentApp(packageName)
             } catch (e: Exception) {
                 appContext.showToast(appContext.getString(R.string.unable_to_open_app))
             }
@@ -400,6 +410,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val apps = getAppsList(appContext, prefs, includeRegularApps = true, includeHiddenApps)
             appList.value = apps
+            if (!includeHiddenApps) {
+                recentAppPackages.value = getRecentAppPackages(apps)
+            }
         }
         getPrivateSpaceAppList()
     }
@@ -416,12 +429,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setWallpaperWorker() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
         val uploadWorkRequest = PeriodicWorkRequestBuilder<WallpaperWorker>(4, TimeUnit.HOURS)
             .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.HOURS)
-            .setConstraints(constraints)
             .build()
         WorkManager
             .getInstance(appContext)
@@ -430,6 +439,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
                 uploadWorkRequest
             )
+    }
+
+    fun refreshWallpaperNow() {
+        viewModelScope.launch {
+            prefs.dailyWallpaper = true
+            val localWallpaper = getRandomLocalWallpaperAsset(appContext, prefs.dailyWallpaperUrl)
+            if (localWallpaper != null) {
+                val (assetName, wallpaperKey) = localWallpaper
+                val success = setWallpaperFromAsset(
+                    appContext = appContext,
+                    assetName = assetName,
+                    darkWallpaper = true
+                )
+                if (success) {
+                    prefs.dailyWallpaperUrl = wallpaperKey
+                    setWallpaperWorker()
+                    return@launch
+                }
+            }
+
+            prefs.dailyWallpaperUrl = ""
+            setPlainWallpaper(appContext, android.R.color.black)
+            WorkManager.getInstance(appContext).enqueue(OneTimeWorkRequestBuilder<WallpaperWorker>().build())
+            setWallpaperWorker()
+        }
     }
 
     fun cancelWallpaperWorker() {
@@ -613,6 +647,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    private fun getRecentAppPackages(apps: List<AppModel>): List<String> {
+        return try {
+            val appPackages = apps
+                .asSequence()
+                .filterIsInstance<AppModel.App>()
+                .map { it.appPackage }
+                .filter { it.isNotBlank() }
+                .toSet()
+            if (appPackages.isEmpty()) return emptyList()
+
+            val trackedRecent = prefs.recentApps
+                .filter { it.isNotBlank() && appPackages.contains(it) && it != appContext.packageName }
+                .distinct()
+                .take(6)
+            if (trackedRecent.isNotEmpty()) return trackedRecent
+
+            val end = System.currentTimeMillis()
+            val start = end - TimeUnit.DAYS.toMillis(7)
+            val foregroundStats = EventLogWrapper(appContext).getForegroundStatsByTimestamps(start, end)
+            if (foregroundStats.isEmpty()) return emptyList()
+
+            foregroundStats
+                .asSequence()
+                .groupBy { it.packageName }
+                .mapValues { (_, stats) -> stats.maxOfOrNull { it.endTime } ?: 0L }
+                .filter { (pkg, timestamp) ->
+                    pkg.isNotBlank() &&
+                            pkg != appContext.packageName &&
+                            timestamp > 0L &&
+                            appPackages.contains(pkg)
+                }
+                .toList()
+                .sortedByDescending { it.second }
+                .map { it.first }
+                .take(6)
+        } catch (_: Exception) {
+            emptyList()
         }
     }
 }

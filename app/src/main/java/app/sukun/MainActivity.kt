@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        restartLauncherOrCheckTheme()
+        checkTheme()
     }
 
     override fun onResume() {
@@ -335,9 +335,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setPlainWallpaper() {
-        if (this.isDarkThemeOn())
-            setPlainWallpaper(this, android.R.color.black)
-        else setPlainWallpaper(this, android.R.color.white)
+        setPlainWallpaper(this, android.R.color.black)
     }
 
     private fun openLauncherChooser(resetFailed: Boolean) {
@@ -347,23 +345,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun restartLauncherOrCheckTheme(forceRestart: Boolean = false) {
-        if (forceRestart || prefs.launcherRestartTimestamp.hasBeenHours(4)) {
-            prefs.launcherRestartTimestamp = System.currentTimeMillis()
-            cacheDir.deleteRecursively()
-            recreate()
-        } else
-            checkTheme()
-    }
-
     private fun checkTheme() {
         timerJob?.cancel()
         timerJob = lifecycleScope.launch {
             delay(200)
             if ((prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES && getColorFromAttr(R.attr.primaryColor) != getColor(R.color.white))
                 || (prefs.appTheme == AppCompatDelegate.MODE_NIGHT_NO && getColorFromAttr(R.attr.primaryColor) != getColor(R.color.black))
-            )
-                restartLauncherOrCheckTheme(true)
+            ) {
+                cacheDir.deleteRecursively()
+                recreate()
+            }
         }
     }
 

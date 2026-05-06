@@ -65,11 +65,13 @@ fun Context.resetDefaultLauncher() {
         // Delay disabling FakeHomeActivity so the chooser has time to render before it disappears
         Handler(Looper.getMainLooper()).postDelayed({
             try {
-                packageManager.setComponentEnabledSetting(
-                    componentName,
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                    PackageManager.DONT_KILL_APP
-                )
+                if (getDefaultLauncherComponentName() != componentName) {
+                    packageManager.setComponentEnabledSetting(
+                        componentName,
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.DONT_KILL_APP
+                    )
+                }
             } catch (_: Exception) {}
         }, 1500)
     } catch (e: Exception) {
@@ -89,6 +91,13 @@ fun Context.resetLauncherViaFakeActivity() {
     resetDefaultLauncher()
     if (getDefaultLauncherPackage(this).contains("."))
         startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
+}
+
+fun Context.getDefaultLauncherComponentName(): ComponentName? {
+    val selector = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+    return packageManager.resolveActivity(selector, PackageManager.MATCH_DEFAULT_ONLY)
+        ?.activityInfo
+        ?.let { ComponentName(it.packageName, it.name) }
 }
 
 fun Context.openSearch(query: String? = null) {

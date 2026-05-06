@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
-    android:background="?attr/primaryShadeDarkColor">
+    android:background="#B3000000">
 
     <ScrollView
         android:id="@+id/scrollView"
@@ -533,9 +533,19 @@
                                 style="@style/TextSmallBold"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
                                 android:gravity="center"
                                 android:paddingVertical="6dp"
                                 android:text="@string/device_location" />
+
+                            <TextView
+                                android:id="@+id/weatherSourceGoogle"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/google_weather" />
                         </LinearLayout>
                     </FrameLayout>
 
@@ -1225,6 +1235,16 @@
                         android:padding="8dp"
                         android:text="@string/off" />
                 </FrameLayout>
+
+                <TextView
+                    android:id="@+id/changeWallpaperNow"
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="4dp"
+                    android:paddingVertical="8dp"
+                    android:text="@string/change_wallpaper_now" />
 
                 <FrameLayout
                     android:layout_width="match_parent"

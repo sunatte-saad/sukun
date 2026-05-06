@@ -59,6 +59,8 @@ class Prefs(context: Context) {
     private val WEATHER_LATITUDE = "WEATHER_LATITUDE"
     private val WEATHER_LONGITUDE = "WEATHER_LONGITUDE"
     private val WEATHER_TEMPERATURE_TEXT = "WEATHER_TEMPERATURE_TEXT"
+    private val WEATHER_CONDITION_TEXT = "WEATHER_CONDITION_TEXT"
+    private val WEATHER_PRECIPITATION_TEXT = "WEATHER_PRECIPITATION_TEXT"
     private val WEATHER_LAST_UPDATED = "WEATHER_LAST_UPDATED"
     private val SHOW_PRAYER_ON_HOME = "SHOW_PRAYER_ON_HOME"
     private val SHOW_DAILY_NOTES_ON_HOME = "SHOW_DAILY_NOTES_ON_HOME"
@@ -78,6 +80,7 @@ class Prefs(context: Context) {
     private val HOURLY_CHIME_ENABLED = "HOURLY_CHIME_ENABLED"
     private val HOURLY_CHIME_START_HOUR = "HOURLY_CHIME_START_HOUR"
     private val HOURLY_CHIME_END_HOUR = "HOURLY_CHIME_END_HOUR"
+    private val RECENT_APPS = "RECENT_APPS"
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -299,7 +302,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(WEATHER_UNITS, value).apply() }
 
     var weatherSourceMode: String
-        get() = prefs.getString(WEATHER_SOURCE_MODE, Constants.WeatherSource.MANUAL).toString()
+        get() = prefs.getString(WEATHER_SOURCE_MODE, Constants.WeatherSource.DEVICE).toString()
         set(value) = prefs.edit { putString(WEATHER_SOURCE_MODE, value).apply() }
 
     var weatherLocationQuery: String
@@ -322,12 +325,20 @@ class Prefs(context: Context) {
         get() = prefs.getString(WEATHER_TEMPERATURE_TEXT, "").toString()
         set(value) = prefs.edit { putString(WEATHER_TEMPERATURE_TEXT, value).apply() }
 
+    var weatherConditionText: String
+        get() = prefs.getString(WEATHER_CONDITION_TEXT, "").toString()
+        set(value) = prefs.edit { putString(WEATHER_CONDITION_TEXT, value).apply() }
+
+    var weatherPrecipitationText: String
+        get() = prefs.getString(WEATHER_PRECIPITATION_TEXT, "").toString()
+        set(value) = prefs.edit { putString(WEATHER_PRECIPITATION_TEXT, value).apply() }
+
     var weatherLastUpdated: Long
         get() = prefs.getLong(WEATHER_LAST_UPDATED, 0L)
         set(value) = prefs.edit { putLong(WEATHER_LAST_UPDATED, value).apply() }
 
     var showPrayerOnHome: Boolean
-        get() = prefs.getBoolean(SHOW_PRAYER_ON_HOME, false)
+        get() = prefs.getBoolean(SHOW_PRAYER_ON_HOME, true)
         set(value) = prefs.edit { putBoolean(SHOW_PRAYER_ON_HOME, value).apply() }
 
     var showDailyNotesOnHome: Boolean
@@ -339,7 +350,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(DAILY_NOTES_LIST, value).apply() }
 
     var prayerSourceMode: String
-        get() = prefs.getString(PRAYER_SOURCE_MODE, Constants.PrayerSource.MANUAL).toString()
+        get() = prefs.getString(PRAYER_SOURCE_MODE, Constants.PrayerSource.DEVICE).toString()
         set(value) = prefs.edit { putString(PRAYER_SOURCE_MODE, value).apply() }
 
     var prayerLocationQuery: String
@@ -401,6 +412,14 @@ class Prefs(context: Context) {
     var hiddenApps: MutableSet<String>
         get() = prefs.getStringSet(HIDDEN_APPS, mutableSetOf()) as MutableSet<String>
         set(value) = prefs.edit { putStringSet(HIDDEN_APPS, value).apply() }
+
+    var recentApps: List<String>
+        get() = prefs.getString(RECENT_APPS, "")
+            .orEmpty()
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+        set(value) = prefs.edit { putString(RECENT_APPS, value.joinToString(",")).apply() }
 
     var hiddenAppsUpdated: Boolean
         get() = prefs.getBoolean(HIDDEN_APPS_UPDATED, false)
@@ -818,8 +837,20 @@ class Prefs(context: Context) {
 
     fun setAppRenameLabel(appPackage: String, renameLabel: String) = prefs.edit { putString(appPackage, renameLabel).apply() }
 
+    fun pushRecentApp(packageName: String, maxSize: Int = 6) {
+        if (packageName.isBlank()) return
+        val updated = recentApps.toMutableList().apply {
+            remove(packageName)
+            add(0, packageName)
+            while (size > maxSize) removeAt(lastIndex)
+        }
+        recentApps = updated
+    }
+
     fun clearWeatherCache() {
         weatherTemperatureText = ""
+        weatherConditionText = ""
+        weatherPrecipitationText = ""
         weatherLastUpdated = 0L
     }
 

@@ -2,13 +2,12 @@ package app.sukun.widget
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import androidx.core.graphics.ColorUtils
-import app.sukun.R
-import app.sukun.helper.getColorFromAttr
 import kotlin.math.min
 
 class DayProgressRingView @JvmOverloads constructor(
@@ -38,7 +37,7 @@ class DayProgressRingView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val ringColor = context.getColorFromAttr(R.attr.primaryColor)
+        val ringColor = Color.WHITE
         trackPaint.color = ColorUtils.setAlphaComponent(ringColor, 70)
         progressPaint.color = ringColor
 

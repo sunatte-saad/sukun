@@ -19,6 +19,7 @@ import app.sukun.R
 import app.sukun.data.AppModel
 import app.sukun.data.Constants
 import app.sukun.databinding.AdapterAppDrawerBinding
+import app.sukun.databinding.AdapterAppSectionHeaderBinding
 import app.sukun.databinding.AdapterPrivateSpaceHeaderBinding
 import app.sukun.helper.dpToPx
 import app.sukun.helper.hideKeyboard
@@ -43,6 +44,7 @@ class AppDrawerAdapter(
     companion object {
         const val VIEW_TYPE_APP = 0
         const val VIEW_TYPE_PRIVATE_HEADER = 1
+        const val VIEW_TYPE_SECTION_HEADER = 2
 
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<AppModel>() {
             override fun areItemsTheSame(oldItem: AppModel, newItem: AppModel): Boolean = when {
@@ -53,6 +55,8 @@ class AppDrawerAdapter(
                     oldItem.shortcutId == newItem.shortcutId && oldItem.user == newItem.user
 
                 oldItem is AppModel.PrivateSpaceHeader && newItem is AppModel.PrivateSpaceHeader -> true
+                oldItem is AppModel.SectionHeader && newItem is AppModel.SectionHeader ->
+                    oldItem.appLabel == newItem.appLabel
 
                 else -> false
             }
@@ -74,6 +78,7 @@ class AppDrawerAdapter(
     override fun getItemViewType(position: Int): Int {
         return when (appFilteredList.getOrNull(position)) {
             is AppModel.PrivateSpaceHeader -> VIEW_TYPE_PRIVATE_HEADER
+            is AppModel.SectionHeader -> VIEW_TYPE_SECTION_HEADER
             else -> VIEW_TYPE_APP
         }
     }
@@ -82,6 +87,13 @@ class AppDrawerAdapter(
         return when (viewType) {
             VIEW_TYPE_PRIVATE_HEADER -> PrivateSpaceHeaderViewHolder(
                 AdapterPrivateSpaceHeaderBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+            )
+            VIEW_TYPE_SECTION_HEADER -> SectionHeaderViewHolder(
+                AdapterAppSectionHeaderBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
                     false
@@ -110,6 +122,7 @@ class AppDrawerAdapter(
                         privateSpaceSettingsListener,
                     )
                 }
+                is SectionHeaderViewHolder -> holder.bind(appModel.appLabel, appLabelGravity)
 
                 is ViewHolder -> holder.bind(
                     flag,
@@ -139,7 +152,9 @@ class AppDrawerAdapter(
 
                 val appFilteredList = (if (charSearch.isNullOrBlank()) appsList
                 else appsList.filter { app ->
-                    app !is AppModel.PrivateSpaceHeader && appLabelMatches(app.appLabel, charSearch)
+                    app !is AppModel.PrivateSpaceHeader &&
+                            app !is AppModel.SectionHeader &&
+                            appLabelMatches(app.appLabel, charSearch)
                 } as MutableList<AppModel>)
 
                 val filterResults = FilterResults()
@@ -170,6 +185,7 @@ class AppDrawerAdapter(
                 && flag == Constants.FLAG_LAUNCH_APP
                 && appFilteredList.isNotEmpty()
                 && appFilteredList[0] !is AppModel.PrivateSpaceHeader
+                && appFilteredList[0] !is AppModel.SectionHeader
             ) appClickListener(appFilteredList[0])
         } catch (e: Exception) {
             e.printStackTrace()
@@ -207,7 +223,9 @@ class AppDrawerAdapter(
     }
 
     fun launchFirstInList() {
-        val first = appFilteredList.firstOrNull { it !is AppModel.PrivateSpaceHeader }
+        val first = appFilteredList.firstOrNull {
+            it !is AppModel.PrivateSpaceHeader && it !is AppModel.SectionHeader
+        }
         if (first != null) appClickListener(first)
     }
 
@@ -226,11 +244,19 @@ class AppDrawerAdapter(
     }
 
     private fun getSectionLabel(item: AppModel): String? {
-        if (item is AppModel.PrivateSpaceHeader || item.appLabel.isBlank()) return null
+        if (item is AppModel.PrivateSpaceHeader || item is AppModel.SectionHeader || item.appLabel.isBlank()) return null
         val normalized = Normalizer.normalize(item.appLabel.trim(), Normalizer.Form.NFD)
             .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
         val leadingChar = normalized.firstOrNull { char -> char.isLetterOrDigit() } ?: return "#"
         return if (leadingChar.isLetter()) leadingChar.uppercaseChar().toString() else "#"
+    }
+
+    class SectionHeaderViewHolder(private val binding: AdapterAppSectionHeaderBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(title: String, appLabelGravity: Int) = with(binding) {
+            sectionTitle.text = title
+            sectionTitle.gravity = appLabelGravity
+        }
     }
 
     class PrivateSpaceHeaderViewHolder(private val binding: AdapterPrivateSpaceHeaderBinding) :

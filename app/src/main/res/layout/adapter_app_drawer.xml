@@ -14,7 +14,8 @@
         android:maxLines="1"
         android:paddingHorizontal="24dp"
         android:paddingVertical="@dimen/app_padding_vertical"
-        android:text="@string/app" />
+        android:text="@string/app"
+        android:textColor="@color/white" />
 
     <ImageView
         android:id="@+id/otherProfileIndicator"
@@ -25,7 +26,7 @@
         android:layout_marginTop="1dp"
         android:gravity="center"
         android:src="@drawable/ic_rounded"
-        app:tint="?attr/primaryColor" />
+        app:tint="@color/white" />
 
     <LinearLayout
         android:id="@+id/appHideLayout"
@@ -33,7 +34,7 @@
         android:layout_height="match_parent"
         android:layout_marginVertical="1dp"
         android:animateLayoutChanges="true"
-        android:background="?attr/primaryShadeDarkColor"
+        android:background="@color/whiteInverseTrans90"
         android:clickable="true"
         android:focusable="true"
         android:gravity="end|center_vertical"
@@ -52,7 +53,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/delete"
+            android:textColor="@color/white"
             android:textSize="12sp"
+            app:drawableTint="@color/white"
             app:drawableTopCompat="@drawable/ic_delete" />
 
         <TextView
@@ -67,7 +70,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/rename"
+            android:textColor="@color/white"
             android:textSize="12sp"
+            app:drawableTint="@color/white"
             app:drawableTopCompat="@drawable/ic_rename" />
 
         <TextView
@@ -82,7 +87,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/hide"
+            android:textColor="@color/white"
             android:textSize="12sp"
+            app:drawableTint="@color/white"
             app:drawableTopCompat="@drawable/ic_hide" />
 
         <TextView
@@ -97,7 +104,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/info"
+            android:textColor="@color/white"
             android:textSize="12sp"
+            app:drawableTint="@color/white"
             app:drawableTopCompat="@drawable/ic_info" />
 
         <TextView
@@ -112,7 +121,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/close"
+            android:textColor="@color/white"
             android:textSize="12sp"
+            app:drawableTint="@color/white"
             app:drawableTopCompat="@drawable/ic_close" />
 
     </LinearLayout>
@@ -125,6 +136,7 @@
         android:clickable="true"
         android:focusable="true"
         android:gravity="end|center_vertical"
+        android:background="@color/whiteInverseTrans90"
         android:orientation="horizontal"
         android:visibility="gone"
         tools:visibility="gone">
@@ -143,7 +155,8 @@
             android:maxLength="30"
             android:maxLines="1"
             android:paddingVertical="@dimen/app_padding_vertical"
-            android:textColorHint="?attr/primaryColorTrans50" />
+            android:textColor="@color/white"
+            android:textColorHint="@color/whiteTrans50" />
 
         <TextView
             android:id="@+id/tvSaveRename"
@@ -157,7 +170,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/rename"
+            android:textColor="@color/white"
             android:textSize="12sp"
+            app:drawableTint="@color/white"
             app:drawableTopCompat="@drawable/ic_check" />
 
         <TextView
@@ -171,7 +186,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/close"
+            android:textColor="@color/white"
             android:textSize="12sp"
+            app:drawableTint="@color/white"
             app:drawableTopCompat="@drawable/ic_close" />
     </LinearLayout>
 

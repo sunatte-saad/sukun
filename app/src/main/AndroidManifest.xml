@@ -71,7 +71,7 @@
         <activity
             android:name=".helper.FakeHomeActivity"
             android:enabled="false"
-            android:exported="false"
+            android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="stateHidden">
             <intent-filter>
@@ -79,7 +79,6 @@
 
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 

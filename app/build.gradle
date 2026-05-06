@@ -41,6 +41,11 @@ android {
         viewBinding = true
         buildConfig = true
     }
+    sourceSets {
+        main {
+            assets.srcDirs += ['src/main/wallpapers']
+        }
+    }
     namespace 'app.sukun'
 }
 

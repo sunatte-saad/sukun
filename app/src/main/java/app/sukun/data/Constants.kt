@@ -53,6 +53,7 @@ object Constants {
     object WeatherSource {
         const val MANUAL = "manual"
         const val DEVICE = "device"
+        const val GOOGLE = "google"
     }
 
     object PrayerSource {
@@ -156,10 +157,11 @@ object Constants {
 
     const val URL_DOUBLE_TAP = ""
     const val URL_SUKUN_PLAY_STORE = ""
-    const val URL_WALLPAPERS = ""
+    const val URL_WALLPAPERS = "https://unsplash.com/s/photos/phone-wallpaper"
     const val URL_DEFAULT_DARK_WALLPAPER = "https://images.unsplash.com/photo-1512551980832-13df02babc9e"
     const val URL_DEFAULT_LIGHT_WALLPAPER = "https://images.unsplash.com/photo-1515549832467-8783363e19b6"
     const val URL_DUCK_SEARCH = "https://duck.co/?q="
+    const val URL_GOOGLE_WEATHER = "https://www.google.com/search?q=weather"
     const val URL_WEATHER_GEOCODING = "https://geocoding-api.open-meteo.com/v1/search"
     const val URL_WEATHER_FORECAST = "https://api.open-meteo.com/v1/forecast"
 

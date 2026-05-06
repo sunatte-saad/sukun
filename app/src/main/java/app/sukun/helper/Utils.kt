@@ -16,8 +16,11 @@ import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Shader
 import android.location.Geocoder
 import android.graphics.Point
 import android.location.Location
@@ -302,11 +305,9 @@ fun getDefaultLauncherPackage(context: Context): String {
 fun setPlainWallpaperByTheme(context: Context, appTheme: Int) {
     when (appTheme) {
         AppCompatDelegate.MODE_NIGHT_YES -> setPlainWallpaper(context, android.R.color.black)
-        AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(context, android.R.color.white)
+        AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(context, android.R.color.black)
         else -> {
-            if (context.isDarkThemeOn())
-                setPlainWallpaper(context, android.R.color.black)
-            else setPlainWallpaper(context, android.R.color.white)
+            setPlainWallpaper(context, android.R.color.black)
         }
     }
 }
@@ -366,6 +367,41 @@ suspend fun getBitmapFromURL(src: String?): Bitmap? {
     }
 }
 
+suspend fun getRandomLocalWallpaperAsset(context: Context, currentWallpaperKey: String?): Pair<String, String>? {
+    return withContext(Dispatchers.IO) {
+        val imageFiles = context.assets.list("")
+            .orEmpty()
+            .map { fileName -> fileName to fileName.lowercase(Locale.ENGLISH) }
+            .filter { (_, normalizedName) ->
+                normalizedName.endsWith(".jpg") ||
+                        normalizedName.endsWith(".jpeg") ||
+                        normalizedName.endsWith(".png") ||
+                        normalizedName.endsWith(".webp")
+            }
+        if (imageFiles.isEmpty()) return@withContext null
+
+        val selectableFiles = imageFiles
+            .filter { (_, normalizedName) -> LOCAL_WALLPAPER_PREFIX + normalizedName != currentWallpaperKey }
+            .ifEmpty { imageFiles }
+        val selected = selectableFiles.random()
+        selected.first to LOCAL_WALLPAPER_PREFIX + selected.second
+    }
+}
+
+suspend fun setWallpaperFromAsset(appContext: Context, assetName: String, darkWallpaper: Boolean): Boolean {
+    val originalImageBitmap = withContext(Dispatchers.IO) {
+        try {
+            appContext.assets.open(assetName).use { inputStream ->
+                BitmapFactory.decodeStream(inputStream)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    } ?: return false
+    return setWallpaperBitmap(appContext, originalImageBitmap, darkWallpaper)
+}
+
 suspend fun getWallpaperBitmap(originalImage: Bitmap, width: Int, height: Int): Bitmap {
     return withContext(Dispatchers.IO) {
 
@@ -396,19 +432,25 @@ suspend fun getWallpaperBitmap(originalImage: Bitmap, width: Int, height: Int): 
     }
 }
 
-suspend fun setWallpaper(appContext: Context, url: String): Boolean {
-    return withContext(Dispatchers.IO) {
-        val originalImageBitmap = getBitmapFromURL(url) ?: return@withContext false
-        if (appContext.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && isTablet(appContext).not())
-            return@withContext false
+suspend fun setWallpaper(appContext: Context, url: String, darkWallpaper: Boolean): Boolean {
+    val originalImageBitmap = getBitmapFromURL(url) ?: return false
+    return setWallpaperBitmap(appContext, originalImageBitmap, darkWallpaper)
+}
 
+private suspend fun setWallpaperBitmap(appContext: Context, originalImageBitmap: Bitmap, darkWallpaper: Boolean): Boolean {
+    return withContext(Dispatchers.IO) {
+        if (appContext.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && isTablet(appContext).not()) {
+            originalImageBitmap.recycle()
+            return@withContext false
+        }
         val wallpaperManager = WallpaperManager.getInstance(appContext)
         val (width, height) = getScreenDimensions(appContext)
         val scaledBitmap = getWallpaperBitmap(originalImageBitmap, width, height)
+        val readableBitmap = enhanceWallpaperReadability(scaledBitmap, darkWallpaper)
 
         try {
-            wallpaperManager.setBitmap(scaledBitmap, null, false, WallpaperManager.FLAG_SYSTEM)
-            wallpaperManager.setBitmap(scaledBitmap, null, false, WallpaperManager.FLAG_LOCK)
+            wallpaperManager.setBitmap(readableBitmap, null, false, WallpaperManager.FLAG_SYSTEM)
+            wallpaperManager.setBitmap(readableBitmap, null, false, WallpaperManager.FLAG_LOCK)
         } catch (e: Exception) {
             return@withContext false
         }
@@ -416,11 +458,43 @@ suspend fun setWallpaper(appContext: Context, url: String): Boolean {
         try {
             originalImageBitmap.recycle()
             scaledBitmap.recycle()
+            if (readableBitmap != scaledBitmap) readableBitmap.recycle()
         } catch (e: Exception) {
             e.printStackTrace()
         }
         true
     }
+}
+
+private const val LOCAL_WALLPAPER_PREFIX = "local:"
+
+private fun enhanceWallpaperReadability(bitmap: Bitmap, darkWallpaper: Boolean): Bitmap {
+    val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+    val canvas = Canvas(mutableBitmap)
+
+    // Apply a global scrim so app text stays legible on noisy backgrounds.
+    val globalOverlay = if (darkWallpaper) {
+        Color.argb(72, 0, 0, 0)
+    } else {
+        Color.argb(84, 255, 255, 255)
+    }
+    canvas.drawColor(globalOverlay)
+
+    // Strengthen contrast in the top area where time/date are displayed.
+    val topHeight = (mutableBitmap.height * 0.45f).toInt().coerceAtLeast(1)
+    val gradient = LinearGradient(
+        0f,
+        0f,
+        0f,
+        topHeight.toFloat(),
+        if (darkWallpaper) Color.argb(110, 0, 0, 0) else Color.argb(124, 255, 255, 255),
+        Color.TRANSPARENT,
+        Shader.TileMode.CLAMP
+    )
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { shader = gradient }
+    canvas.drawRect(0f, 0f, mutableBitmap.width.toFloat(), topHeight.toFloat(), paint)
+
+    return mutableBitmap
 }
 
 fun getScreenDimensions(context: Context): Pair<Int, Int> {
@@ -554,7 +628,9 @@ suspend fun getCachedWeatherData(prefs: Prefs): WeatherData? = withContext(Dispa
     WeatherData(
         temperatureText = prefs.weatherTemperatureText,
         locationLabel = prefs.weatherLocationLabel,
-        updatedAt = prefs.weatherLastUpdated
+        updatedAt = prefs.weatherLastUpdated,
+        conditionText = prefs.weatherConditionText,
+        precipitationText = prefs.weatherPrecipitationText,
     )
 }
 
@@ -563,7 +639,7 @@ suspend fun refreshWeather(context: Context, prefs: Prefs): WeatherData? = withC
     val weatherUrl = Uri.parse(Constants.URL_WEATHER_FORECAST).buildUpon()
         .appendQueryParameter("latitude", location.latitude)
         .appendQueryParameter("longitude", location.longitude)
-        .appendQueryParameter("current", "temperature_2m")
+        .appendQueryParameter("current", "temperature_2m,precipitation,weather_code")
         .appendQueryParameter("temperature_unit", prefs.weatherUnits)
         .appendQueryParameter("forecast_days", "1")
         .toString()
@@ -572,19 +648,44 @@ suspend fun refreshWeather(context: Context, prefs: Prefs): WeatherData? = withC
     val current = json.optJSONObject("current") ?: return@withContext null
     val temperature = current.optDouble("temperature_2m", Double.NaN)
     if (temperature.isNaN()) return@withContext null
+    val weatherCode = current.optInt("weather_code", -1)
+    val precipitation = current.optDouble("precipitation", Double.NaN)
 
     val weather = WeatherData(
         temperatureText = formatWeatherTemperature(temperature, prefs.weatherUnits),
         locationLabel = location.label,
-        updatedAt = System.currentTimeMillis()
+        updatedAt = System.currentTimeMillis(),
+        conditionText = formatWeatherCondition(weatherCode),
+        precipitationText = formatPrecipitationChance(precipitation),
     )
 
     prefs.weatherLatitude = location.latitude
     prefs.weatherLongitude = location.longitude
     prefs.weatherLocationLabel = location.label
     prefs.weatherTemperatureText = weather.temperatureText
+    prefs.weatherConditionText = weather.conditionText
+    prefs.weatherPrecipitationText = weather.precipitationText
     prefs.weatherLastUpdated = weather.updatedAt
     weather
+}
+
+private fun formatWeatherCondition(weatherCode: Int): String {
+    return when (weatherCode) {
+        0 -> "Clear"
+        1, 2 -> "Partly cloudy"
+        3 -> "Cloudy"
+        45, 48 -> "Fog"
+        51, 53, 55, 56, 57 -> "Drizzle"
+        61, 63, 65, 66, 67, 80, 81, 82 -> "Rain"
+        71, 73, 75, 77, 85, 86 -> "Snow"
+        95, 96, 99 -> "Storm"
+        else -> ""
+    }
+}
+
+private fun formatPrecipitationChance(precipitation: Double): String {
+    if (precipitation.isNaN() || precipitation <= 0.0) return ""
+    return "${precipitation.toInt().coerceAtLeast(1)}mm"
 }
 
 private suspend fun resolveWeatherLocation(context: Context, prefs: Prefs): WeatherLocationResult? =

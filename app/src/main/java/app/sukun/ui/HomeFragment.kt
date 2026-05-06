@@ -26,6 +26,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
@@ -105,6 +106,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         setHomeAlignment(prefs.homeAlignment)
         initSwipeTouchListener()
         initClickListeners()
+        applyReadableHomeTextColors()
     }
 
     override fun onResume() {
@@ -303,10 +305,44 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.ringDate.setOnLongClickListener(this)
         binding.setDefaultLauncher.setOnClickListener(this)
         binding.setDefaultLauncher.setOnLongClickListener(this)
+        binding.weatherText?.setOnClickListener { openGoogleWeather() }
         binding.tvScreenTime?.setOnClickListener(this)
         binding.tvScreenTime?.setOnLongClickListener(this)
         binding.dailyNotesCard.setOnClickListener(this)
     }
+
+    private fun applyReadableHomeTextColors() {
+        val primaryTextColor = Color.WHITE
+        val hintTextColor = Color.argb(190, 255, 255, 255)
+        val shadowColor = Color.argb(230, 0, 0, 0)
+        readableTextViews().forEach { textView ->
+            textView.setTextColor(primaryTextColor)
+            textView.setHintTextColor(hintTextColor)
+            textView.setShadowLayer(7f, 0f, 2f, shadowColor)
+        }
+    }
+
+    private fun readableTextViews(): List<TextView> = listOfNotNull(
+        binding.clock,
+        binding.date,
+        binding.ringClock,
+        binding.ringDate,
+        binding.weatherText,
+        binding.prayerText,
+        binding.focusModeStatus,
+        binding.dailyNotesText,
+        binding.tvScreenTime,
+        binding.homeApp1,
+        binding.homeApp2,
+        binding.homeApp3,
+        binding.homeApp4,
+        binding.homeApp5,
+        binding.homeApp6,
+        binding.homeApp7,
+        binding.homeApp8,
+        binding.firstRunTips,
+        binding.setDefaultLauncher,
+    )
 
     private fun setHomeAlignment(horizontalGravity: Int = prefs.homeAlignment) {
         val verticalGravity = if (prefs.homeBottomAlignment) Gravity.BOTTOM else Gravity.CENTER_VERTICAL
@@ -340,6 +376,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (binding.dateTimeLayout.isVisible) startDateTimeTicker()
         else stopDateTimeTicker()
         positionOverlayText()
+        binding.dateTimeLayout.doOnLayout {
+            positionOverlayText()
+        }
     }
 
     private fun updateDateTimeDisplay() {
@@ -375,14 +414,32 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun populateWeather(weather: WeatherData?) {
-        if (!prefs.showWeatherOnHome || weather == null) {
+        if (!prefs.showWeatherOnHome) {
             binding.weatherText?.visibility = View.GONE
+            positionOverlayText()
+            return
+        }
+        if (weather == null) {
+            binding.weatherText?.text = getString(R.string.google_weather_card)
+            binding.weatherText?.visibility = View.VISIBLE
             positionOverlayText()
             return
         }
         binding.weatherText?.text = weather.displayText
         binding.weatherText?.visibility = View.VISIBLE
         positionOverlayText()
+    }
+
+    private fun openGoogleWeather() {
+        val location = prefs.weatherLocationLabel
+            .ifBlank { prefs.weatherLocationQuery }
+            .trim()
+        val query = if (location.isBlank()) "weather" else "weather $location"
+        val uri = android.net.Uri.parse("https://www.google.com/search")
+            .buildUpon()
+            .appendQueryParameter("q", query)
+            .build()
+        startActivity(Intent(Intent.ACTION_VIEW, uri))
     }
 
     private fun populatePrayer(prayerState: PrayerState?) {
@@ -517,14 +574,23 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             } else {
                 0
             }
-            val notesTopMargin = max(max(overlayBottom, screenTimeBottom) + spacing, 56.dpToPx())
-            updateDailyNotesLayout(notesTopMargin)
+            val topOverlayBottom = max(overlayBottom, screenTimeBottom)
+            val notesTopMargin = max(topOverlayBottom + spacing, 56.dpToPx())
+            updateDailyNotesLayout(notesTopMargin, topOverlayBottom + spacing)
         }
     }
 
     private fun getDateTimeBottom(): Int? {
         if (!binding.dateTimeLayout.isVisible) return null
-        return binding.dateTimeLayout.top + binding.dateTimeLayout.height
+        val layoutBottom = binding.dateTimeLayout.top + binding.dateTimeLayout.height
+        val visibleClockBottom = when {
+            binding.ringClockLayout.isVisible ->
+                binding.dateTimeLayout.top + binding.ringClockLayout.top + binding.ringClockLayout.height
+            binding.dateTimeStandardLayout.isVisible ->
+                binding.dateTimeLayout.top + binding.dateTimeStandardLayout.top + binding.dateTimeStandardLayout.height
+            else -> layoutBottom
+        }
+        return max(layoutBottom, visibleClockBottom)
     }
 
     private fun updateOverlayLayout(
@@ -539,15 +605,15 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         overlayView.layoutParams = params
     }
 
-    private fun updateDailyNotesLayout(topMargin: Int) {
+    private fun updateDailyNotesLayout(topMargin: Int, homeAppsMinTop: Int) {
         val params = binding.dailyNotesCard.layoutParams as? FrameLayout.LayoutParams ?: return
         params.gravity = Gravity.TOP or Gravity.END
         params.topMargin = topMargin
         binding.dailyNotesCard.layoutParams = params
-        updateHomeAppsTopPadding(topMargin)
+        updateHomeAppsTopPadding(topMargin, homeAppsMinTop)
     }
 
-    private fun updateHomeAppsTopPadding(notesTopMargin: Int) {
+    private fun updateHomeAppsTopPadding(notesTopMargin: Int, homeAppsMinTop: Int) {
         val notesBottom = if (binding.dailyNotesCard.isVisible) {
             notesTopMargin + binding.dailyNotesCard.height + 12.dpToPx()
         } else {
@@ -555,7 +621,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
         binding.homeAppsLayout.setPadding(
             binding.homeAppsLayout.paddingLeft,
-            max(defaultHomeAppsPaddingTop, notesBottom),
+            max(max(defaultHomeAppsPaddingTop, notesBottom), homeAppsMinTop),
             binding.homeAppsLayout.paddingRight,
             defaultHomeAppsPaddingBottom
         )

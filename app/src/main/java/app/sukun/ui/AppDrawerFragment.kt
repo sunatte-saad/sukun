@@ -1,5 +1,6 @@
 package app.sukun.ui
 
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -42,6 +43,7 @@ class AppDrawerFragment : Fragment() {
     private var flag = Constants.FLAG_LAUNCH_APP
     private var canRename = false
     private var currentAppList: List<AppModel>? = null
+    private var currentRecentPackages: List<String> = emptyList()
     private var currentPrivateSpaceApps: List<AppModel>? = null
     private var currentPrivateSpaceLocked: Boolean = true
     private var currentPrivateSpaceAvailable: Boolean = false
@@ -80,13 +82,21 @@ class AppDrawerFragment : Fragment() {
     }
 
     private fun initViews() {
+        binding.root.setBackgroundColor(Color.argb(179, 0, 0, 0))
+        binding.appRename.setTextColor(Color.WHITE)
+        binding.appRename.setShadowLayer(4f, 0f, 2f, Color.BLACK)
         if (flag == Constants.FLAG_HIDDEN_APPS)
             binding.search.queryHint = getString(R.string.hidden_apps)
         else if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_CALENDAR_APP)
             binding.search.queryHint = "Please select an app"
         try {
             val searchTextView = binding.search.findViewById<TextView>(R.id.search_src_text)
-            if (searchTextView != null) searchTextView.gravity = prefs.appLabelAlignment
+            if (searchTextView != null) {
+                searchTextView.gravity = prefs.appLabelAlignment
+                searchTextView.setTextColor(Color.WHITE)
+                searchTextView.setHintTextColor(Color.argb(204, 255, 255, 255))
+                searchTextView.setShadowLayer(4f, 0f, 2f, Color.BLACK)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -145,6 +155,7 @@ class AppDrawerFragment : Fragment() {
             appDeleteListener = { appModel ->
                 when (appModel) {
                     is AppModel.PrivateSpaceHeader -> {}
+                    is AppModel.SectionHeader -> {}
                     is AppModel.PinnedShortcut ->
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
                             requireContext().deletePinnedShortcut(
@@ -257,6 +268,10 @@ class AppDrawerFragment : Fragment() {
                 currentAppList = it
                 updateCombinedAppList()
             }
+            viewModel.recentAppPackages.observe(viewLifecycleOwner) {
+                currentRecentPackages = it ?: emptyList()
+                updateCombinedAppList()
+            }
             if (flag == Constants.FLAG_LAUNCH_APP) {
                 viewModel.privateSpaceAvailable.observe(viewLifecycleOwner) {
                     currentPrivateSpaceAvailable = it
@@ -276,7 +291,22 @@ class AppDrawerFragment : Fragment() {
 
     private fun updateCombinedAppList() {
         val apps = currentAppList ?: return
-        val combined = apps.toMutableList()
+        val combined = mutableListOf<AppModel>()
+
+        if (flag == Constants.FLAG_LAUNCH_APP) {
+            val firstByPackage = apps
+                .filterIsInstance<AppModel.App>()
+                .groupBy { it.appPackage }
+                .mapValues { (_, items) -> items.first() }
+
+            val recentApps = currentRecentPackages.mapNotNull { firstByPackage[it] }
+            if (recentApps.isNotEmpty()) {
+                combined.add(AppModel.SectionHeader(getString(R.string.recently_used)))
+                combined.addAll(recentApps)
+            }
+            combined.add(AppModel.SectionHeader(getString(R.string.all_apps)))
+        }
+        combined.addAll(apps)
 
         if (flag == Constants.FLAG_LAUNCH_APP && currentPrivateSpaceAvailable) {
             combined.add(AppModel.PrivateSpaceHeader(isLocked = currentPrivateSpaceLocked))

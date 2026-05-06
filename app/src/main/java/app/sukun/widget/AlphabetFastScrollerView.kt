@@ -2,13 +2,12 @@ package app.sukun.widget
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
-import app.sukun.R
-import app.sukun.helper.getColorFromAttr
 
 class AlphabetFastScrollerView @JvmOverloads constructor(
     context: Context,
@@ -56,9 +55,7 @@ class AlphabetFastScrollerView @JvmOverloads constructor(
         sections.forEachIndexed { index, section ->
             val isSelected = index == selectedIndex
             textPaint.textSize = if (isSelected) selectedTextSize else defaultTextSize
-            textPaint.color = context.getColorFromAttr(
-                if (isSelected) R.attr.primaryColor else R.attr.primaryColorTrans50
-            )
+            textPaint.color = if (isSelected) Color.WHITE else Color.argb(160, 255, 255, 255)
             val centerY = slotHeight * index + slotHeight / 2f
             val baseline = centerY - (textPaint.descent() + textPaint.ascent()) / 2f
             canvas.drawText(section, centerX, baseline, textPaint)

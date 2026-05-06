@@ -194,7 +194,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.sukunHiddenApps -> showHiddenApps()
             R.id.screenTimeOnOff -> viewModel.showDialog.postValue(Constants.Dialog.DIGITAL_WELLBEING)
             R.id.appInfo -> openAppInfo(requireContext(), Process.myUserHandle(), BuildConfig.APPLICATION_ID)
-            R.id.setLauncher -> viewModel.resetLauncherLiveData.call()
+            R.id.setLauncher -> {
+                if (viewModel.isSukunDefault.value == true) {
+                    confirmTurnOffSukunLauncher()
+                } else {
+                    viewModel.resetLauncherLiveData.call()
+                }
+            }
             R.id.toggleLock -> toggleLockMode()
             R.id.homeButtonRecents -> toggleHomeButtonRecents()
             R.id.autoShowKeyboard -> toggleKeyboardText()
@@ -202,6 +208,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.homeAppsNum -> binding.appsNumSelectLayout.visibility = View.VISIBLE
             R.id.dailyWallpaperUrl -> requireContext().openUrl(prefs.dailyWallpaperUrl)
             R.id.dailyWallpaper -> toggleDailyWallpaperUpdate()
+            R.id.changeWallpaperNow -> changeWallpaperNow()
             R.id.alignment -> binding.alignmentSelectLayout.visibility = View.VISIBLE
             R.id.alignmentLeft -> viewModel.updateHomeAlignment(Gravity.START)
             R.id.alignmentCenter -> viewModel.updateHomeAlignment(Gravity.CENTER)
@@ -214,6 +221,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.weatherSource -> binding.weatherSourceSelectLayout.visibility = View.VISIBLE
             R.id.weatherSourceManual -> updateWeatherSource(Constants.WeatherSource.MANUAL)
             R.id.weatherSourceDevice -> selectDeviceWeatherSource()
+            R.id.weatherSourceGoogle -> updateWeatherSource(Constants.WeatherSource.GOOGLE)
             R.id.weatherLocation -> showWeatherLocationEditor()
             R.id.weatherLocationSave -> saveWeatherLocation()
             R.id.weatherLocationClose -> {
@@ -338,6 +346,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
         binding.dailyWallpaper.setOnClickListener(this)
+        binding.changeWallpaperNow.setOnClickListener(this)
         binding.alignment.setOnClickListener(this)
         binding.alignmentLeft.setOnClickListener(this)
         binding.alignmentCenter.setOnClickListener(this)
@@ -350,6 +359,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.weatherSource.setOnClickListener(this)
         binding.weatherSourceManual.setOnClickListener(this)
         binding.weatherSourceDevice.setOnClickListener(this)
+        binding.weatherSourceGoogle.setOnClickListener(this)
         binding.weatherLocation.setOnClickListener(this)
         binding.weatherLocationSave.setOnClickListener(this)
         binding.weatherLocationClose.setOnClickListener(this)
@@ -434,8 +444,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             prefs.firstSettingsOpen = false
         }
         viewModel.isSukunDefault.observe(viewLifecycleOwner) {
+            binding.setLauncher.text = getString(
+                if (it) R.string.turn_off_sukun_launcher
+                else R.string.set_as_default_launcher
+            )
             if (it) {
-                binding.setLauncher.text = getString(R.string.change_default_launcher)
                 prefs.toShowHintCounter += 1
             }
         }
@@ -620,10 +633,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.weatherOnOff.text = getString(if (prefs.showWeatherOnHome) R.string.on else R.string.off)
         binding.weatherOptionsLayout.isVisible = prefs.showWeatherOnHome
         binding.weatherSource.text = getString(
-            if (prefs.weatherSourceMode == Constants.WeatherSource.DEVICE)
-                R.string.device_location
-            else
-                R.string.manual_location
+            when (prefs.weatherSourceMode) {
+                Constants.WeatherSource.DEVICE -> R.string.device_location
+                Constants.WeatherSource.GOOGLE -> R.string.google_weather
+                else -> R.string.manual_location
+            }
         )
         binding.weatherUnits.text = getString(
             if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT)
@@ -631,7 +645,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             else
                 R.string.celsius_short
         )
-        binding.weatherLocationRow.isVisible = prefs.showWeatherOnHome
+        binding.weatherLocationRow.isVisible = prefs.showWeatherOnHome &&
+                prefs.weatherSourceMode != Constants.WeatherSource.GOOGLE
         if (prefs.weatherSourceMode != Constants.WeatherSource.MANUAL || !prefs.showWeatherOnHome) {
             binding.weatherLocationEditLayout?.visibility = View.GONE
         }
@@ -704,6 +719,16 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             viewModel.cancelWeatherWorker()
             viewModel.loadWeather()
             return
+        }
+        if (prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE) {
+            viewModel.cancelWeatherWorker(clearCachedWeather = true)
+            viewModel.loadWeather()
+            return
+        }
+
+        if (prefs.weatherSourceMode == Constants.WeatherSource.MANUAL && prefs.weatherLocationQuery.isBlank()) {
+            prefs.weatherSourceMode = Constants.WeatherSource.DEVICE
+            populateWeatherSettings()
         }
 
         val canRefreshWeather = when (prefs.weatherSourceMode) {
@@ -1080,6 +1105,18 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
     }
 
+    private fun confirmTurnOffSukunLauncher() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.turn_off_sukun_launcher)
+            .setMessage(R.string.turn_off_sukun_confirmation)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.turn_off) { _, _ ->
+                requireContext().showToast(R.string.turn_off_sukun_hint, Toast.LENGTH_LONG)
+                viewModel.resetLauncherLiveData.call()
+            }
+            .show()
+    }
+
     private fun removeWallpaper() {
         if (requireContext().isEinkDisplay()) {
             prefs.appTheme = AppCompatDelegate.MODE_NIGHT_NO
@@ -1112,6 +1149,14 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             requireContext().showToast(getString(R.string.your_wallpaper_will_update_shortly))
         else
             requireContext().showToast(getString(R.string.sukun_is_not_default_launcher), Toast.LENGTH_LONG)
+    }
+
+    private fun changeWallpaperNow() {
+        prefs.dailyWallpaper = true
+        populateWallpaperText()
+        setPlainWallpaper(requireContext(), android.R.color.black)
+        viewModel.refreshWallpaperNow()
+        requireContext().showToast(R.string.your_wallpaper_will_update_shortly)
     }
 
     private fun updateHomeAppsNum(num: Int) {
@@ -1174,11 +1219,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private fun setPlainWallpaper(appTheme: Int) {
         when (appTheme) {
             AppCompatDelegate.MODE_NIGHT_YES -> setPlainWallpaper(requireContext(), android.R.color.black)
-            AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(requireContext(), android.R.color.white)
+            AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(requireContext(), android.R.color.black)
             else -> {
-                if (requireContext().isDarkThemeOn())
-                    setPlainWallpaper(requireContext(), android.R.color.black)
-                else setPlainWallpaper(requireContext(), android.R.color.white)
+                setPlainWallpaper(requireContext(), android.R.color.black)
             }
         }
     }
@@ -1344,6 +1387,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     override fun onResume() {
         super.onResume()
+        viewModel.isSukunDefault()
         if (prefs.isFocusModeActive()) {
             populateFocusMode()
             if (findNavController().currentDestination?.id == R.id.settingsFragment) {
@@ -1353,6 +1397,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             return
         }
         populateFocusMode()
+        populateWeatherSettings()
+        refreshWeatherIfConfigured()
         populatePrayerSettings()
         refreshPrayerIfConfigured(forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
     }

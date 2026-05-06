@@ -31,6 +31,10 @@
     <string name="black">Black</string>
     <string name="white">White</string>
     <string name="change_default_launcher">Change default launcher</string>
+    <string name="turn_off_sukun_launcher">Turn off Sukun launcher</string>
+    <string name="turn_off_sukun_confirmation">This will switch your phone back to another home screen. Sukun will stay installed and you can open it again from the app icon.</string>
+    <string name="turn_off_sukun_hint">Select your phone launcher to turn off Sukun</string>
+    <string name="turn_off">Turn off</string>
     <string name="privacy">Privacy</string>
     <string name="share">Share</string>
     <string name="share_now">Share now</string>
@@ -73,6 +77,8 @@
     <string name="weather_units">Weather units</string>
     <string name="manual_location">Manual</string>
     <string name="device_location">Device</string>
+    <string name="google_weather">Google Weather</string>
+    <string name="google_weather_card">Google Weather&#10;Tap to open forecast</string>
     <string name="current_location">Current location</string>
     <string name="type_city_name">Type city name</string>
     <string name="save">Save</string>
@@ -109,6 +115,7 @@
     <string name="custom_azan_file">Custom azan file</string>
     <string name="prayer_azan_saved">Custom azan updated</string>
     <string name="daily_wallpaper_update">Daily new wallpaper</string>
+    <string name="change_wallpaper_now">Change wallpaper now</string>
     <string name="left">Left</string>
     <string name="right">Right</string>
     <string name="center">Center</string>
@@ -233,6 +240,8 @@
     <string name="are_you_using_your_phone_or_is_your_phone_using_you">Are you using your phone, or is your phone using you?</string>
     <string name="about_sukun">About and FAQs</string>
     <string name="screen_time">Screen time</string>
+    <string name="recently_used">Recently used</string>
+    <string name="all_apps">All apps</string>
     <string name="learn_more">Learn more</string>
     <string name="did_you_know">Did you know?</string>
     <string name="leave_a_review">Leave a review</string>
