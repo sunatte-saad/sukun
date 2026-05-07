@@ -28,7 +28,7 @@ class HourlyChimeReceiver : BroadcastReceiver() {
         }
         try {
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            if (hour >= prefs.hourlyChimeStartHour && hour < prefs.hourlyChimeEndHour) {
+            if (hour >= prefs.hourlyChimeStartHour && hour <= prefs.hourlyChimeEndHour) {
                 playChime(appContext)
             }
             HourlyChimeScheduler.scheduleNext(appContext, prefs)

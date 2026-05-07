@@ -57,7 +57,7 @@ object HourlyChimeScheduler {
         val nextHour = cal.get(Calendar.HOUR_OF_DAY)
         if (nextHour < startHour) {
             cal.set(Calendar.HOUR_OF_DAY, startHour)
-        } else if (nextHour >= endHour) {
+        } else if (nextHour > endHour) {
             cal.add(Calendar.DAY_OF_YEAR, 1)
             cal.set(Calendar.HOUR_OF_DAY, startHour)
         }
