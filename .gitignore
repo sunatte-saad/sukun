@@ -17,3 +17,4 @@ build/
 .cxx
 google-services.json
 *.md
+!CHANGELOG.md
