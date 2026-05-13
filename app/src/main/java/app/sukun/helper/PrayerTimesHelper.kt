@@ -109,7 +109,7 @@ private suspend fun resolvePrayerLocation(
     prefs: Prefs,
     forceLocationRefresh: Boolean,
 ): PrayerLocationResult? = withContext(Dispatchers.IO) {
-    when (prefs.prayerSourceMode) {
+    val location = when (prefs.prayerSourceMode) {
         Constants.PrayerSource.DEVICE -> {
             resolveDevicePrayerLocation(context, prefs)
                 ?: storedPrayerLocation(
@@ -131,6 +131,11 @@ private suspend fun resolvePrayerLocation(
             }
         }
     }
+    location ?: PrayerLocationResult(
+        label = "Mecca",
+        latitude = "21.4225",
+        longitude = "39.8262"
+    )
 }
 
 private fun storedPrayerLocation(

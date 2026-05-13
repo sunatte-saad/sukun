@@ -9,6 +9,7 @@
         android:targetSdkVersion="35" />
 
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
@@ -110,6 +111,9 @@
             android:exported="false" />
         <receiver
             android:name="app.sukun.helper.HourlyChimeReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="app.sukun.helper.ReminderReceiver"
             android:exported="false" />
         <receiver
             android:name="app.sukun.helper.PrayerBootReceiver"

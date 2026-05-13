@@ -30,8 +30,9 @@ class PrayerBootReceiver : BroadcastReceiver() {
                 pendingResult.finish()
             }
         }
-        // Reschedule hourly chime on boot (runs on main thread, lightweight)
+        // Reschedule hourly chime and reminders on boot (runs on main thread, lightweight)
         val appContext = context.applicationContext
         HourlyChimeScheduler.scheduleNext(appContext)
+        ReminderScheduler.scheduleAll(appContext)
     }
 }

@@ -262,6 +262,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.focusCustomLayout.visibility = View.GONE
                 binding.etFocusCustomMinutes.hideKeyboard()
             }
+            R.id.remindersManage -> findNavController().navigate(R.id.action_settingsFragment_to_remindersFragment)
             R.id.hourlyChimeOnOff -> toggleHourlyChime()
             R.id.hourlyChimeStartHour -> showHourPicker(isStart = true)
             R.id.hourlyChimeEndHour -> showHourPicker(isStart = false)
@@ -343,6 +344,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.toggleLock.setOnClickListener(this)
         binding.homeButtonRecents.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
+        binding.remindersManage.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
         binding.dailyWallpaper.setOnClickListener(this)

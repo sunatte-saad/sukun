@@ -640,7 +640,7 @@ suspend fun refreshWeather(context: Context, prefs: Prefs): WeatherData? = withC
         .appendQueryParameter("latitude", location.latitude)
         .appendQueryParameter("longitude", location.longitude)
         .appendQueryParameter("current", "temperature_2m,precipitation,weather_code")
-        .appendQueryParameter("temperature_unit", prefs.weatherUnits)
+        .appendQueryParameter("temperature_unit", "celsius")
         .appendQueryParameter("forecast_days", "1")
         .toString()
 
@@ -690,7 +690,7 @@ private fun formatPrecipitationChance(precipitation: Double): String {
 
 private suspend fun resolveWeatherLocation(context: Context, prefs: Prefs): WeatherLocationResult? =
     withContext(Dispatchers.IO) {
-        when (prefs.weatherSourceMode) {
+        val location = when (prefs.weatherSourceMode) {
             Constants.WeatherSource.DEVICE -> {
                 resolveDeviceWeatherLocation(context, prefs)
                     ?: storedWeatherLocation(
@@ -712,6 +712,11 @@ private suspend fun resolveWeatherLocation(context: Context, prefs: Prefs): Weat
                 }
             }
         }
+        location ?: WeatherLocationResult(
+            label = "London",
+            latitude = "51.5074",
+            longitude = "-0.1278"
+        )
     }
 
 private fun storedWeatherLocation(label: String, prefs: Prefs): WeatherLocationResult? {
@@ -837,11 +842,15 @@ private suspend fun getJsonObject(urlString: String): JSONObject? = withContext(
 }
 
 private fun formatWeatherTemperature(temperature: Double, units: String): String {
+    val temp = when (units) {
+        Constants.WeatherUnit.FAHRENHEIT -> temperature * 9 / 5 + 32
+        else -> temperature
+    }
     val unitSuffix = when (units) {
         Constants.WeatherUnit.FAHRENHEIT -> "F"
         else -> "C"
     }
-    return String.format(Locale.getDefault(), "%.0f\u00B0%s", temperature, unitSuffix)
+    return String.format(Locale.getDefault(), "%.0f\u00B0%s", temp, unitSuffix)
 }
 
 fun openSearch(context: Context) {

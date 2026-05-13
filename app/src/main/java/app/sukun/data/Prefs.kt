@@ -81,6 +81,7 @@ class Prefs(context: Context) {
     private val HOURLY_CHIME_START_HOUR = "HOURLY_CHIME_START_HOUR"
     private val HOURLY_CHIME_END_HOUR = "HOURLY_CHIME_END_HOUR"
     private val RECENT_APPS = "RECENT_APPS"
+    private val REMINDERS_JSON = "REMINDERS_JSON"
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -408,6 +409,10 @@ class Prefs(context: Context) {
     var hourlyChimeEndHour: Int
         get() = prefs.getInt(HOURLY_CHIME_END_HOUR, Constants.HourlyChime.DEFAULT_END_HOUR)
         set(value) = prefs.edit { putInt(HOURLY_CHIME_END_HOUR, value).apply() }
+
+    var remindersJson: String
+        get() = prefs.getString(REMINDERS_JSON, "").toString()
+        set(value) = prefs.edit { putString(REMINDERS_JSON, value).apply() }
 
     var hiddenApps: MutableSet<String>
         get() = prefs.getStringSet(HIDDEN_APPS, mutableSetOf()) as MutableSet<String>
