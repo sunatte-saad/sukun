@@ -108,6 +108,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".helper.ReminderDoneReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".helper.PrayerBootReceiver"
             android:enabled="true"
             android:exported="false">

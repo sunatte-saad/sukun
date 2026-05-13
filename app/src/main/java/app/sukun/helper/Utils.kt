@@ -559,6 +559,16 @@ fun Context.hasWeatherLocationPermission(): Boolean {
     return hasFineLocation || hasCoarseLocation
 }
 
+fun Context.isLocationServicesEnabled(): Boolean {
+    val lm = getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        lm.isLocationEnabled
+    } else {
+        lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+}
+
 fun Context.getFocusModeAllowedPackages(prefs: Prefs): Set<String> {
     val allowedPackages = mutableSetOf(
         BuildConfig.APPLICATION_ID,

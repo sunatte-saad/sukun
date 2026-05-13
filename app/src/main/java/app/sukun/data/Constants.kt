@@ -183,11 +183,13 @@ object Constants {
     object Reminder {
         const val NOTIFICATION_CHANNEL_ID = "custom_reminders"
         const val ACTION = "app.sukun.REMINDER_FIRE"
+        const val ACTION_DONE = "app.sukun.REMINDER_DONE"
         const val EXTRA_ID = "extra_reminder_id"
         const val EXTRA_TITLE = "extra_reminder_title"
         const val EXTRA_MESSAGE = "extra_reminder_message"
         const val BASE_REQUEST_CODE = 9000
         const val BASE_NOTIFICATION_ID = 9000
+        const val BASE_DONE_REQUEST_CODE = 10000
     }
 
     const val PRAYER_REMINDER_ACTION = "app.sukun.PRAYER_REMINDER"

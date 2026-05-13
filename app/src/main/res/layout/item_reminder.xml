@@ -33,6 +33,15 @@
                 android:alpha="0.6"
                 android:paddingVertical="2dp" />
 
+            <TextView
+                android:id="@+id/tvReminderStats"
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.45"
+                android:paddingVertical="2dp"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <TextView

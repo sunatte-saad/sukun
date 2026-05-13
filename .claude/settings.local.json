@@ -7,7 +7,10 @@
       "Bash(cmd.exe *)",
       "Bash(adb install *)",
       "Bash(adb logcat *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\SaadRehman\\\\Desktop\\\\github\\\\launcher\\\\Olauncher\" -Recurse -Directory)",
+      "Bash(Select-Object -First 20)",
+      "Bash(Format-Table FullName)"
     ]
   }
 }

@@ -16,6 +16,7 @@ import app.sukun.MainActivity
 import app.sukun.R
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
+import app.sukun.data.toJsonString
 import app.sukun.data.toReminderList
 
 class ReminderReceiver : BroadcastReceiver() {
@@ -26,12 +27,16 @@ class ReminderReceiver : BroadcastReceiver() {
         val title = intent.getStringExtra(Constants.Reminder.EXTRA_TITLE) ?: return
         val message = intent.getStringExtra(Constants.Reminder.EXTRA_MESSAGE) ?: ""
 
-        showNotification(context, id, title, message)
-
-        val reminder = Prefs(context).remindersJson.toReminderList().find { it.id == id }
-        if (reminder != null && reminder.enabled) {
-            ReminderScheduler.schedule(context, reminder)
+        val prefs = Prefs(context)
+        val allReminders = prefs.remindersJson.toReminderList().toMutableList()
+        val idx = allReminders.indexOfFirst { it.id == id }
+        if (idx >= 0) {
+            allReminders[idx] = allReminders[idx].copy(fireCount = allReminders[idx].fireCount + 1)
+            prefs.remindersJson = allReminders.toJsonString()
+            if (allReminders[idx].enabled) ReminderScheduler.schedule(context, allReminders[idx])
         }
+
+        showNotification(context, id, title, message)
     }
 
     private fun showNotification(context: Context, id: Int, title: String, message: String) {
@@ -52,6 +57,17 @@ class ReminderReceiver : BroadcastReceiver() {
             context, id, launchIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
+        val doneIntent = Intent(context, ReminderDoneReceiver::class.java).apply {
+            action = Constants.Reminder.ACTION_DONE
+            putExtra(Constants.Reminder.EXTRA_ID, id)
+        }
+        val donePi = PendingIntent.getBroadcast(
+            context,
+            Constants.Reminder.BASE_DONE_REQUEST_CODE + id,
+            doneIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val notification = NotificationCompat.Builder(context, Constants.Reminder.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
@@ -59,6 +75,7 @@ class ReminderReceiver : BroadcastReceiver() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pi)
+            .addAction(0, context.getString(R.string.reminder_done), donePi)
             .build()
 
         manager.notify(Constants.Reminder.BASE_NOTIFICATION_ID + id, notification)

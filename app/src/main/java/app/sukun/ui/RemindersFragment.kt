@@ -87,6 +87,14 @@ class RemindersFragment : Fragment() {
                 itemBinding.tvReminderSchedule.text = reminder.scheduleDescription()
                 itemBinding.tvReminderEnabled.text =
                     if (reminder.enabled) getString(R.string.on) else getString(R.string.off)
+                if (reminder.fireCount > 0) {
+                    itemBinding.tvReminderStats.visibility = View.VISIBLE
+                    val pct = (reminder.doneCount * 100) / reminder.fireCount
+                    itemBinding.tvReminderStats.text =
+                        getString(R.string.reminder_stats, reminder.doneCount, reminder.fireCount, pct)
+                } else {
+                    itemBinding.tvReminderStats.visibility = View.GONE
+                }
                 itemBinding.root.setOnClickListener { showReminderDialog(reminder) }
                 itemBinding.root.setOnLongClickListener {
                     showDeleteConfirmation(reminder)
@@ -250,7 +258,9 @@ class RemindersFragment : Fragment() {
                     minute = selectedMinute,
                     intervalHours = selectedInterval,
                     days = selectedDays.toSet(),
-                    enabled = existing?.enabled ?: true
+                    enabled = existing?.enabled ?: true,
+                    fireCount = existing?.fireCount ?: 0,
+                    doneCount = existing?.doneCount ?: 0
                 )
 
                 if (isEdit) {

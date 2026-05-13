@@ -86,6 +86,7 @@
     <string name="celsius_short">C</string>
     <string name="fahrenheit_short">F</string>
     <string name="weather_permission_needed">Location permission is needed for device weather</string>
+    <string name="location_services_disabled">Location is off — tap to enable</string>
     <string name="weather_location_required">Set a weather location first</string>
     <string name="weather_saved">Weather updated</string>
     <string name="weather_unavailable">Weather unavailable</string>
@@ -288,4 +289,6 @@
     <string name="reminder_notifications_needed">Enable notifications to receive reminders</string>
     <string name="reminder_channel_name">Reminders</string>
     <string name="reminder_channel_description">Custom reminder notifications</string>
+    <string name="reminder_done">Done</string>
+    <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
 </resources>

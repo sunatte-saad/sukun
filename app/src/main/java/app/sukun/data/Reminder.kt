@@ -13,7 +13,9 @@ data class Reminder(
     val minute: Int,
     val intervalHours: Int = 1,
     val days: Set<Int> = emptySet(),
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    val fireCount: Int = 0,
+    val doneCount: Int = 0
 ) {
     object Type {
         const val DAILY = "DAILY"
@@ -31,6 +33,8 @@ data class Reminder(
         put("intervalHours", intervalHours)
         put("days", JSONArray(days.toList()))
         put("enabled", enabled)
+        put("fireCount", fireCount)
+        put("doneCount", doneCount)
     }
 
     companion object {
@@ -46,7 +50,9 @@ data class Reminder(
                 minute = obj.getInt("minute"),
                 intervalHours = obj.optInt("intervalHours", 1),
                 days = days,
-                enabled = obj.optBoolean("enabled", true)
+                enabled = obj.optBoolean("enabled", true),
+                fireCount = obj.optInt("fireCount", 0),
+                doneCount = obj.optInt("doneCount", 0)
             )
         }
     }

@@ -39,6 +39,7 @@ import app.sukun.helper.appUsagePermissionGranted
 import app.sukun.helper.getFocusModeStatus
 import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hasWeatherLocationPermission
+import app.sukun.helper.isLocationServicesEnabled
 import app.sukun.helper.hideKeyboard
 import app.sukun.helper.isAccessServiceEnabled
 import app.sukun.helper.isDarkThemeOn
@@ -691,10 +692,27 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun showWeatherLocationEditor() {
-        if (prefs.weatherSourceMode != Constants.WeatherSource.MANUAL) return
-        binding.weatherLocationEditLayout?.visibility = View.VISIBLE
-        binding.etWeatherLocation?.setText(prefs.weatherLocationQuery)
-        binding.etWeatherLocation?.showKeyboard()
+        when (prefs.weatherSourceMode) {
+            Constants.WeatherSource.DEVICE -> {
+                if (!requireContext().hasWeatherLocationPermission()) {
+                    weatherLocationPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                } else if (!requireContext().isLocationServicesEnabled()) {
+                    requireContext().showToast(R.string.location_services_disabled)
+                    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                }
+            }
+            Constants.WeatherSource.MANUAL -> {
+                binding.weatherLocationEditLayout?.visibility = View.VISIBLE
+                binding.etWeatherLocation?.setText(prefs.weatherLocationQuery)
+                binding.etWeatherLocation?.showKeyboard()
+            }
+            else -> return
+        }
     }
 
     private fun saveWeatherLocation() {
