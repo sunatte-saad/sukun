@@ -9,12 +9,12 @@ data class WeatherData(
 ) {
     val displayText: String
         get() {
-            val title = locationLabel.ifBlank { "Weather" }
-            val detail = listOf(temperatureText, conditionText, precipitationText)
+            val location = locationLabel.ifBlank { "Weather" }
+            val details = listOf(temperatureText, conditionText, precipitationText)
                 .filter { it.isNotBlank() }
                 .joinToString("  ")
-            return listOf(title, detail)
+            return listOf(location, details)
                 .filter { it.isNotBlank() }
-                .joinToString("\n")
+                .joinToString("  ")
         }
 }

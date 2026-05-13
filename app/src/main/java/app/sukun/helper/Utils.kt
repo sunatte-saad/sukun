@@ -690,7 +690,7 @@ private fun formatPrecipitationChance(precipitation: Double): String {
 
 private suspend fun resolveWeatherLocation(context: Context, prefs: Prefs): WeatherLocationResult? =
     withContext(Dispatchers.IO) {
-        val location = when (prefs.weatherSourceMode) {
+        when (prefs.weatherSourceMode) {
             Constants.WeatherSource.DEVICE -> {
                 resolveDeviceWeatherLocation(context, prefs)
                     ?: storedWeatherLocation(
@@ -712,11 +712,6 @@ private suspend fun resolveWeatherLocation(context: Context, prefs: Prefs): Weat
                 }
             }
         }
-        location ?: WeatherLocationResult(
-            label = "London",
-            latitude = "51.5074",
-            longitude = "-0.1278"
-        )
     }
 
 private fun storedWeatherLocation(label: String, prefs: Prefs): WeatherLocationResult? {

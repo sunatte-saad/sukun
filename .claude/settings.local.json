@@ -6,7 +6,8 @@
       "Bash(cmd.exe /c \"gradlew.bat :app:assembleDebug\")",
       "Bash(cmd.exe *)",
       "Bash(adb install *)",
-      "Bash(adb logcat *)"
+      "Bash(adb logcat *)",
+      "Bash(git rm *)"
     ]
   }
 }
