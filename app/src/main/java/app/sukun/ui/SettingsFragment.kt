@@ -88,6 +88,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 requireContext().showToast(R.string.prayer_permission_needed)
             }
         }
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: system handles denial */ }
     private val customAzanPickerLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@registerForActivityResult
@@ -767,10 +769,22 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
     }
 
+    private fun requestNotificationPermissionIfNeeded() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    requireContext(), Manifest.permission.POST_NOTIFICATIONS
+                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     private fun togglePrayer() {
         prefs.showPrayerOnHome = !prefs.showPrayerOnHome
         populatePrayerSettings()
         if (prefs.showPrayerOnHome) {
+            requestNotificationPermissionIfNeeded()
             when (prefs.prayerSourceMode) {
                 Constants.PrayerSource.DEVICE -> {
                     if (requireContext().hasWeatherLocationPermission()) {
