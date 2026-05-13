@@ -123,16 +123,11 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="112dp"
-        android:background="@drawable/home_weather_card"
         android:ellipsize="end"
-        android:maxLines="2"
-        android:maxWidth="280dp"
-        android:minWidth="156dp"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="10dp"
+        android:maxLines="1"
         android:textSize="@dimen/date_size"
         android:visibility="gone"
-        tools:text="Lahore&#10;24°C  Partly cloudy"
+        tools:text="Lahore  24°C  Partly cloudy"
         tools:visibility="visible" />
 
     <androidx.appcompat.widget.AppCompatTextView
