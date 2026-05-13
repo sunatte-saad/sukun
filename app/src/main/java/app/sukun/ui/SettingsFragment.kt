@@ -264,6 +264,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.etFocusCustomMinutes.hideKeyboard()
             }
             R.id.remindersManage -> findNavController().navigate(R.id.action_settingsFragment_to_remindersFragment)
+            R.id.prayerAnalytics -> findNavController().navigate(R.id.action_settingsFragment_to_prayerAnalyticsFragment)
             R.id.hourlyChimeOnOff -> toggleHourlyChime()
             R.id.hourlyChimeStartHour -> showHourPicker(isStart = true)
             R.id.hourlyChimeEndHour -> showHourPicker(isStart = false)
@@ -346,6 +347,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.homeButtonRecents.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.remindersManage?.setOnClickListener(this)
+        binding.prayerAnalytics?.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
         binding.dailyWallpaper.setOnClickListener(this)
@@ -912,7 +914,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
 
         if (canRefreshPrayer) {
-            if (prefs.azanEnabled && promptForAlarmPermission) {
+            if (promptForAlarmPermission) {
                 ensureExactAlarmPermissionIfNeeded()
             }
             viewModel.refreshPrayerData(forceLocationRefresh = forceLocationRefresh)

@@ -533,10 +533,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             if (shouldRefresh) {
                 refreshPrayerData(forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
-            } else if (prefs.azanEnabled) {
-                PrayerReminderScheduler.scheduleNextReminder(appContext, prefs)
             } else {
-                PrayerReminderScheduler.cancelReminder(appContext)
+                PrayerReminderScheduler.scheduleNextReminder(appContext, prefs)
             }
         }
     }
@@ -545,7 +543,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val refreshedPrayer = refreshPrayerState(appContext, prefs, forceLocationRefresh)
             prayerData.value = refreshedPrayer ?: getCachedPrayerState(prefs)
-            if (prefs.showPrayerOnHome && prefs.azanEnabled && prayerData.value != null) {
+            if (prefs.showPrayerOnHome && prayerData.value != null) {
                 PrayerReminderScheduler.scheduleNextReminder(appContext, prefs)
             } else {
                 PrayerReminderScheduler.cancelReminder(appContext)

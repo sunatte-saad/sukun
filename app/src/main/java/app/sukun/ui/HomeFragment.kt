@@ -306,6 +306,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.setDefaultLauncher.setOnClickListener(this)
         binding.setDefaultLauncher.setOnLongClickListener(this)
         binding.weatherText?.setOnClickListener { openGoogleWeather() }
+        binding.prayerText?.setOnLongClickListener { promptMarkPrayerDone(); true }
         binding.tvScreenTime?.setOnClickListener(this)
         binding.tvScreenTime?.setOnLongClickListener(this)
         binding.dailyNotesCard.setOnClickListener(this)
@@ -454,6 +455,19 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.prayerText?.visibility = View.VISIBLE
         positionOverlayText()
         startPrayerTicker()
+    }
+
+    private fun promptMarkPrayerDone() {
+        val state = currentPrayerState ?: return
+        val prayerName = app.sukun.helper.getPrayerName(requireContext(), state.prayerKey)
+        AlertDialog.Builder(requireContext())
+            .setMessage(getString(R.string.prayer_mark_confirm, prayerName))
+            .setPositiveButton(R.string.prayer_mark_done) { _, _ ->
+                prefs.logPrayer(state.prayerKey)
+                requireContext().showToast(R.string.prayer_marked_prayed)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun populateDailyNotes() {

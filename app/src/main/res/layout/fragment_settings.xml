@@ -1175,6 +1175,22 @@
                                 android:text="@string/not_set" />
                         </LinearLayout>
                     </FrameLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:id="@+id/prayerAnalytics"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/prayer_analytics"
+                            android:textColor="?attr/primaryColor" />
+                    </FrameLayout>
                 </LinearLayout>
 
                 <FrameLayout

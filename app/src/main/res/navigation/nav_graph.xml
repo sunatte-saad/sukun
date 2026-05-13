@@ -60,7 +60,20 @@
             app:exitAnim="@anim/fade_exit"
             app:popEnterAnim="@anim/fade_enter"
             app:popExitAnim="@anim/fade_exit" />
+        <action
+            android:id="@+id/action_settingsFragment_to_prayerAnalyticsFragment"
+            app:destination="@id/prayerAnalyticsFragment"
+            app:enterAnim="@anim/fade_enter"
+            app:exitAnim="@anim/fade_exit"
+            app:popEnterAnim="@anim/fade_enter"
+            app:popExitAnim="@anim/fade_exit" />
     </fragment>
+
+    <fragment
+        android:id="@+id/prayerAnalyticsFragment"
+        android:name="app.sukun.ui.PrayerAnalyticsFragment"
+        android:label="PrayerAnalyticsFragment"
+        android:layout="@layout/fragment_prayer_analytics" />
 
     <fragment
         android:id="@+id/remindersFragment"

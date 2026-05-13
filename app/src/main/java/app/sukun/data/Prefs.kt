@@ -5,6 +5,11 @@ import android.content.SharedPreferences
 import android.view.Gravity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
+import org.json.JSONArray
+import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class Prefs(context: Context) {
     private val PREFS_FILENAME = "app.sukun"
@@ -82,6 +87,7 @@ class Prefs(context: Context) {
     private val HOURLY_CHIME_END_HOUR = "HOURLY_CHIME_END_HOUR"
     private val RECENT_APPS = "RECENT_APPS"
     private val REMINDERS_JSON = "REMINDERS_JSON"
+    private val PRAYER_LOGS = "PRAYER_LOGS"
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -872,6 +878,44 @@ class Prefs(context: Context) {
         prayerNextAt = 0L
         prayerDisplayTime = ""
         prayerLastUpdated = 0L
+    }
+
+    private var prayerLogsJson: String
+        get() = prefs.getString(PRAYER_LOGS, "[]") ?: "[]"
+        set(value) = prefs.edit { putString(PRAYER_LOGS, value).apply() }
+
+    fun logPrayer(prayerKey: String) {
+        val dateKey = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val logs = getPrayerLogs().toMutableList()
+        logs.removeAll { it.prayerKey == prayerKey && it.dateKey == dateKey }
+        logs.add(PrayerLog(prayerKey, dateKey, System.currentTimeMillis()))
+        val cutoff = System.currentTimeMillis() - 2L * 365 * 24 * 60 * 60 * 1000
+        val trimmed = logs.filter { it.timestamp > cutoff }
+        val arr = JSONArray()
+        trimmed.forEach { log ->
+            arr.put(JSONObject().apply {
+                put("p", log.prayerKey)
+                put("d", log.dateKey)
+                put("t", log.timestamp)
+            })
+        }
+        prayerLogsJson = arr.toString()
+    }
+
+    fun getPrayerLogs(): List<PrayerLog> {
+        return try {
+            val arr = JSONArray(prayerLogsJson)
+            (0 until arr.length()).map { i ->
+                val obj = arr.getJSONObject(i)
+                PrayerLog(
+                    prayerKey = obj.getString("p"),
+                    dateKey = obj.getString("d"),
+                    timestamp = obj.getLong("t"),
+                )
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     fun clearPrayerLocation() {

@@ -76,6 +76,8 @@ object Constants {
         const val REMINDER_WINDOW_MILLIS = 600000L
         const val NOTIFICATION_CHANNEL_ID = "prayer_reminders"
         const val NOTIFICATION_ID = 3011
+        const val MARK_NOTIFICATION_ID = 3012
+        const val MARK_REQUEST_CODE = 6402
         const val REMINDER_REQUEST_CODE = 6401
     }
 
@@ -193,6 +195,7 @@ object Constants {
     }
 
     const val PRAYER_REMINDER_ACTION = "app.sukun.PRAYER_REMINDER"
+    const val PRAYER_MARK_ACTION = "app.sukun.PRAYER_MARK"
     const val PRAYER_BOOT_ACTION = "app.sukun.PRAYER_BOOT"
     const val PRAYER_STOP_ACTION = "app.sukun.PRAYER_STOP"
     const val EXTRA_PRAYER_KEY = "extra_prayer_key"

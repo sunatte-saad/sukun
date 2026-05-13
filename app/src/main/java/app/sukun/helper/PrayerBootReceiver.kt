@@ -16,7 +16,7 @@ class PrayerBootReceiver : BroadcastReceiver() {
             try {
                 val appContext = context.applicationContext
                 val prefs = Prefs(appContext)
-                if (!prefs.showPrayerOnHome || !prefs.azanEnabled) {
+                if (!prefs.showPrayerOnHome) {
                     PrayerReminderScheduler.cancelReminder(appContext)
                     return@launch
                 }

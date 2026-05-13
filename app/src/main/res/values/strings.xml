@@ -109,6 +109,14 @@
     <string name="prayer_asr">Asr</string>
     <string name="prayer_maghrib">Maghrib</string>
     <string name="prayer_isha">Isha</string>
+    <string name="prayer_mark_done">Prayed ✓</string>
+    <string name="prayer_mark_confirm">Mark %1$s as prayed?</string>
+    <string name="prayer_marked_prayed">Marked as prayed</string>
+    <string name="prayer_analytics">Prayer Analytics</string>
+    <string name="prayer_today">Today</string>
+    <string name="prayer_this_month">This Month  %1$s</string>
+    <string name="prayer_this_year">This Year  %1$s</string>
+    <string name="total">Total</string>
     <string name="azan">Azan</string>
     <string name="azan_sound">Azan sound</string>
     <string name="azan_sound_makkah">Makkah</string>
