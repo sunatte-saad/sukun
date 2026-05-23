@@ -376,8 +376,10 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             Constants.REQUEST_CODE_ENABLE_ADMIN -> {
-                if (resultCode == Activity.RESULT_OK)
+                if (resultCode == Activity.RESULT_OK) {
                     prefs.lockModeOn = true
+                    prefs.doubleTapAction = app.sukun.data.Constants.DoubleTapAction.LOCK
+                }
             }
 
             Constants.REQUEST_CODE_LAUNCHER_SELECTOR -> {

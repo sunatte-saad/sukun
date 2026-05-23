@@ -87,6 +87,7 @@ object Constants {
     }
 
     object AzanSound {
+        const val OFF = "off"
         const val MAKKAH = "makkah"
         const val MARYLEBONE = "marylebone"
         const val CUSTOM = "custom"
@@ -100,6 +101,7 @@ object Constants {
     }
 
     object DoubleTapAction {
+        const val OFF = "off"
         const val LOCK = "lock"
         const val FOCUS = "focus"
     }

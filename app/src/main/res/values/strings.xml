@@ -89,6 +89,10 @@
     <string name="location_services_disabled">Location is off — tap to enable</string>
     <string name="weather_location_required">Set a weather location first</string>
     <string name="weather_saved">Weather updated</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="use_same_location_for_prayer">Use this location for prayer times too?</string>
+    <string name="use_same_location_for_weather">Use this location for weather too?</string>
     <string name="weather_unavailable">Weather unavailable</string>
     <string name="prayer_times">Prayer times</string>
     <string name="prayer_next">Next prayer</string>
@@ -98,6 +102,11 @@
     <string name="prayer_location_required">Set a prayer location first</string>
     <string name="prayer_saved">Prayer location updated</string>
     <string name="prayer_exact_alarm_permission_needed">Allow exact alarms so azan can play on time</string>
+    <string name="premium_feature_requires_upgrade">This feature requires Sukun Premium.</string>
+    <string name="go_premium">Go Premium</string>
+    <string name="upgrade_to_premium">Upgrade</string>
+    <string name="premium_enabled">Sukun Premium activated</string>
+    <string name="premium_already_active">Sukun Premium is already active</string>
     <string name="prayer_overlay_text">%1$s  %2$s  %3$s</string>
     <string name="prayer_reminder">Prayer reminder</string>
     <string name="prayer_reminder_channel_name">Prayer reminders</string>
@@ -147,6 +156,7 @@
     <string name="app_drawer_fast_scroller">App drawer fast scroller</string>
     <string name="hide">Hide</string>
     <string name="status_bar">Status bar on top</string>
+    <string name="audio">Audio</string>
     <string name="hourly_chime">Hourly chime</string>
     <string name="hourly_chime_from">From</string>
     <string name="hourly_chime_to">to</string>
@@ -258,6 +268,7 @@
         \n\nWe hope you enjoy it. Tell us what you think.</string>
     <string name="alignment_changed">Alignment changed ✅</string>
     <string name="home_screen">Home screen</string>
+    <string name="focus_and_productivity">Focus &amp; Productivity</string>
     <string name="hey">Hey</string>
     <string name="more_features"></string>
     <string name="new_year_wish">Here\'s to a year better than any before. Happy new year!</string>

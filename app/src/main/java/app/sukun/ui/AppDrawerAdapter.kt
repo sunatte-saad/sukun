@@ -150,12 +150,17 @@ class AppDrawerAdapter(
                 isBangSearch = charSearch?.startsWith("!") ?: false
                 autoLaunch = charSearch?.startsWith(" ")?.not() ?: true
 
-                val appFilteredList = (if (charSearch.isNullOrBlank()) appsList
-                else appsList.filter { app ->
-                    app !is AppModel.PrivateSpaceHeader &&
-                            app !is AppModel.SectionHeader &&
-                            appLabelMatches(app.appLabel, charSearch)
-                } as MutableList<AppModel>)
+                val appFilteredList = if (charSearch.isNullOrBlank()) {
+                    appsList
+                } else {
+                    appsList.filter { app ->
+                        app !is AppModel.PrivateSpaceHeader &&
+                                app !is AppModel.SectionHeader &&
+                                appLabelMatches(app.appLabel, charSearch)
+                    }.distinctBy { app ->
+                        if (app is AppModel.App) app.appPackage to app.user else app
+                    }.toMutableList()
+                }
 
                 val filterResults = FilterResults()
                 filterResults.values = appFilteredList

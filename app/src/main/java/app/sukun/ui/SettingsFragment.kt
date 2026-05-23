@@ -124,11 +124,19 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         componentName = ComponentName(requireContext(), DeviceAdmin::class.java)
         checkAdminPermission()
 
+        // Migrate: users who had azan disabled before the 4-way selector existed
+        if (!prefs.azanEnabled && prefs.azanSound != Constants.AzanSound.OFF) {
+            prefs.azanSound = Constants.AzanSound.OFF
+        }
+        // Migrate: users who had lockModeOn=false but doubleTapAction=lock (the old default)
+        if (!prefs.lockModeOn && prefs.doubleTapAction == Constants.DoubleTapAction.LOCK) {
+            prefs.doubleTapAction = Constants.DoubleTapAction.OFF
+        }
+
         binding.homeAppsNum.text = prefs.homeAppsNum.toString()
         populateKeyboardText()
         populateAppDrawerFastScroller()
         populateScreenTimeOnOff()
-        populateLockSettings()
         populateHomeButtonRecents()
         populateWallpaperText()
         populateAppThemeText()
@@ -139,6 +147,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateFocusModeNotificationsLock()
         populateWeatherSettings()
         populateDailyNotesSettings()
+        populatePremiumStatus()
         populatePrayerSettings()
         populateHourlyChime()
         populateStatusBar()
@@ -204,7 +213,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                     viewModel.resetLauncherLiveData.call()
                 }
             }
-            R.id.toggleLock -> toggleLockMode()
             R.id.homeButtonRecents -> toggleHomeButtonRecents()
             R.id.autoShowKeyboard -> toggleKeyboardText()
             R.id.appDrawerFastScroller -> toggleAppDrawerFastScroller()
@@ -221,6 +229,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.dailyNotesOnOff -> toggleDailyNotes()
             R.id.dailyNotesList -> showDailyNotesEditor()
             R.id.weatherOnOff -> toggleWeather()
+            R.id.goPremium -> showUpgradeDialog()
             R.id.weatherSource -> binding.weatherSourceSelectLayout.visibility = View.VISIBLE
             R.id.weatherSourceManual -> updateWeatherSource(Constants.WeatherSource.MANUAL)
             R.id.weatherSourceDevice -> selectDeviceWeatherSource()
@@ -244,8 +253,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.prayerLocationEditLayout?.visibility = View.GONE
                 binding.etPrayerLocation?.hideKeyboard()
             }
-            R.id.azanOnOff -> toggleAzan()
             R.id.azanSound -> binding.azanSoundSelectLayout?.visibility = View.VISIBLE
+            R.id.azanSoundOff -> updateAzanSound(Constants.AzanSound.OFF)
             R.id.azanSoundMakkah -> updateAzanSound(Constants.AzanSound.MAKKAH)
             R.id.azanSoundMarylebone -> updateAzanSound(Constants.AzanSound.MARYLEBONE)
             R.id.azanSoundCustom -> showCustomAzanPicker()
@@ -290,8 +299,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 else requireContext().openUrl(Constants.URL_DOUBLE_TAP)
             }
 
-            R.id.tvGestures -> binding.flSwipeDown.visibility = View.VISIBLE
-
             R.id.maxApps0 -> updateHomeAppsNum(0)
             R.id.maxApps1 -> updateHomeAppsNum(1)
             R.id.maxApps2 -> updateHomeAppsNum(2)
@@ -311,8 +318,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.notifications -> updateSwipeDownAction(Constants.SwipeDownAction.NOTIFICATIONS)
             R.id.search -> updateSwipeDownAction(Constants.SwipeDownAction.SEARCH)
             R.id.doubleTapAction -> binding.doubleTapActionSelectLayout.visibility = View.VISIBLE
-            R.id.doubleTapLock -> updateDoubleTapAction(Constants.DoubleTapAction.LOCK)
-            R.id.doubleTapFocus -> updateDoubleTapAction(Constants.DoubleTapAction.FOCUS)
+            R.id.doubleTapOff -> selectDoubleTapMode(Constants.DoubleTapAction.OFF)
+            R.id.doubleTapLock -> selectDoubleTapMode(Constants.DoubleTapAction.LOCK)
+            R.id.doubleTapFocus -> selectDoubleTapMode(Constants.DoubleTapAction.FOCUS)
 
         }
     }
@@ -333,7 +341,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
             R.id.swipeLeftApp -> toggleSwipeLeft()
             R.id.swipeRightApp -> toggleSwipeRight()
-            R.id.toggleLock -> startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            R.id.doubleTapAction -> startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
         return true
     }
@@ -345,7 +353,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.setLauncher.setOnClickListener(this)
         binding.autoShowKeyboard.setOnClickListener(this)
         binding.appDrawerFastScroller.setOnClickListener(this)
-        binding.toggleLock.setOnClickListener(this)
         binding.homeButtonRecents.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.remindersManage?.setOnClickListener(this)
@@ -362,6 +369,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.homeAppIcons?.setOnClickListener(this)
         binding.dailyNotesOnOff.setOnClickListener(this)
         binding.dailyNotesList.setOnClickListener(this)
+        binding.goPremium.setOnClickListener(this)
         binding.weatherOnOff.setOnClickListener(this)
         binding.weatherSource.setOnClickListener(this)
         binding.weatherSourceManual.setOnClickListener(this)
@@ -380,8 +388,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.prayerLocation?.setOnClickListener(this)
         binding.prayerLocationSave?.setOnClickListener(this)
         binding.prayerLocationClose?.setOnClickListener(this)
-        binding.azanOnOff?.setOnClickListener(this)
         binding.azanSound?.setOnClickListener(this)
+        binding.azanSoundOff?.setOnClickListener(this)
         binding.azanSoundMakkah?.setOnClickListener(this)
         binding.azanSoundMarylebone?.setOnClickListener(this)
         binding.azanSoundCustom?.setOnClickListener(this)
@@ -412,6 +420,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.search.setOnClickListener(this)
         binding.notifications.setOnClickListener(this)
         binding.doubleTapAction.setOnClickListener(this)
+        binding.doubleTapOff?.setOnClickListener(this)
         binding.doubleTapLock.setOnClickListener(this)
         binding.doubleTapFocus.setOnClickListener(this)
         binding.appThemeText.setOnClickListener(this)
@@ -422,7 +431,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.actionAccessibility.setOnClickListener(this)
         binding.closeAccessibility.setOnClickListener(this)
         binding.notWorking.setOnClickListener(this)
-        binding.tvGestures.setOnClickListener(this)
 
         binding.maxApps0.setOnClickListener(this)
         binding.maxApps1.setOnClickListener(this)
@@ -442,7 +450,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.appThemeText.setOnLongClickListener(this)
         binding.swipeLeftApp.setOnLongClickListener(this)
         binding.swipeRightApp.setOnLongClickListener(this)
-        binding.toggleLock.setOnLongClickListener(this)
+        binding.doubleTapAction.setOnLongClickListener(this)
     }
 
     private fun initObservers() {
@@ -518,6 +526,31 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.dailyNotesList.text = getDailyNotesSummary(prefs.dailyNotesList)
     }
 
+    private fun populatePremiumStatus() {
+        binding.premiumRow.isVisible = !prefs.isProUser
+        if (!prefs.isProUser) {
+            binding.goPremium.text = getString(R.string.upgrade_to_premium)
+            binding.goPremium.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
+        }
+    }
+
+    private fun showUpgradeDialog() {
+        if (prefs.isProUser) {
+            requireContext().showToast(R.string.premium_already_active)
+            return
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.go_premium)
+            .setMessage(R.string.premium_feature_requires_upgrade)
+            .setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
+                prefs.unlockPremium()
+                populatePremiumStatus()
+                requireContext().showToast(R.string.premium_enabled)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     private fun showDailyNotesEditor() {
         if (!prefs.showDailyNotesOnHome) return
         val input = EditText(requireContext()).apply {
@@ -541,6 +574,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun canUsePremiumFeature(): Boolean {
+        if (prefs.isProUser) return true
+        requireContext().showToast(R.string.premium_feature_requires_upgrade)
+        return false
     }
 
     private fun getDailyNotesSummary(rawNotes: String): String {
@@ -610,6 +649,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun toggleWeather() {
+        if (!prefs.showWeatherOnHome && !canUsePremiumFeature()) return
         prefs.showWeatherOnHome = !prefs.showWeatherOnHome
         populateWeatherSettings()
         if (prefs.showWeatherOnHome) {
@@ -736,6 +776,21 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateWeatherSettings()
         refreshWeatherIfConfigured()
         requireContext().showToast(R.string.weather_saved)
+        if (prefs.showPrayerOnHome && prefs.prayerSourceMode == Constants.PrayerSource.MANUAL
+            && prefs.prayerLocationQuery.isBlank()
+        ) {
+            AlertDialog.Builder(requireContext())
+                .setMessage(R.string.use_same_location_for_prayer)
+                .setPositiveButton(R.string.yes) { _, _ ->
+                    prefs.prayerLocationQuery = weatherLocationQuery
+                    prefs.prayerLocationLabel = weatherLocationQuery
+                    prefs.clearPrayerCache()
+                    populatePrayerSettings()
+                    refreshPrayerIfConfigured()
+                }
+                .setNegativeButton(R.string.no, null)
+                .show()
+        }
     }
 
     private fun refreshWeatherIfConfigured() {
@@ -781,6 +836,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun togglePrayer() {
+        if (!prefs.showPrayerOnHome && !canUsePremiumFeature()) return
         prefs.showPrayerOnHome = !prefs.showPrayerOnHome
         populatePrayerSettings()
         if (prefs.showPrayerOnHome) {
@@ -829,9 +885,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             prefs.prayerLocationLabel.isNotBlank() -> prefs.prayerLocationLabel
             else -> prefs.prayerLocationQuery
         }
-        binding.azanOnOff?.text = getString(if (prefs.azanEnabled) R.string.on else R.string.off)
         binding.azanSound?.text = getString(
             when (prefs.azanSound) {
+                Constants.AzanSound.OFF -> R.string.off
                 Constants.AzanSound.MARYLEBONE -> R.string.azan_sound_marylebone
                 Constants.AzanSound.CUSTOM -> R.string.custom
                 else -> R.string.azan_sound_makkah
@@ -890,22 +946,30 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populatePrayerSettings()
         refreshPrayerIfConfigured()
         requireContext().showToast(R.string.prayer_saved)
-    }
-
-    private fun toggleAzan() {
-        prefs.azanEnabled = !prefs.azanEnabled
-        populatePrayerSettings()
-        if (prefs.azanEnabled) {
-            ensureExactAlarmPermissionIfNeeded()
+        if (prefs.showWeatherOnHome && prefs.weatherSourceMode == Constants.WeatherSource.MANUAL
+            && prefs.weatherLocationQuery.isBlank()
+        ) {
+            AlertDialog.Builder(requireContext())
+                .setMessage(R.string.use_same_location_for_weather)
+                .setPositiveButton(R.string.yes) { _, _ ->
+                    prefs.weatherLocationQuery = prayerLocationQuery
+                    prefs.weatherLocationLabel = prayerLocationQuery
+                    prefs.clearWeatherCache()
+                    populateWeatherSettings()
+                    refreshWeatherIfConfigured()
+                }
+                .setNegativeButton(R.string.no, null)
+                .show()
         }
-        refreshPrayerIfConfigured(promptForAlarmPermission = true)
     }
 
     private fun updateAzanSound(sound: String) {
         if (prefs.azanSound == sound && sound != Constants.AzanSound.CUSTOM) return
         prefs.azanSound = sound
+        prefs.azanEnabled = sound != Constants.AzanSound.OFF
         populatePrayerSettings()
-        refreshPrayerIfConfigured()
+        if (prefs.azanEnabled) ensureExactAlarmPermissionIfNeeded()
+        refreshPrayerIfConfigured(promptForAlarmPermission = true)
     }
 
     private fun showCustomAzanPicker() {
@@ -1101,35 +1165,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun openAccessibilityService() {
         toggleAccessibilityVisibility(false)
-        // prefs.lockModeOn = true
-        populateLockSettings()
+        populateDoubleTapAction()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-    }
-
-    private fun toggleLockMode() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (!prefs.lockModeOn && !isAccessServiceEnabled(requireContext())) {
-                toggleAccessibilityVisibility(true)
-                return
-            }
-            prefs.lockModeOn = !prefs.lockModeOn
-        } else {
-            val isAdmin: Boolean = deviceManager.isAdminActive(componentName)
-            if (isAdmin) {
-                removeActiveAdmin("Admin permission removed.")
-                prefs.lockModeOn = false
-            } else {
-                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
-                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
-                intent.putExtra(
-                    DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                    getString(R.string.admin_permission_message)
-                )
-                requireActivity().startActivityForResult(intent, Constants.REQUEST_CODE_ENABLE_ADMIN)
-            }
-        }
-        populateLockSettings()
     }
 
     private fun removeActiveAdmin(toastMessage: String? = null) {
@@ -1168,6 +1206,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun toggleDailyWallpaperUpdate() {
+        if (!prefs.dailyWallpaper && !canUsePremiumFeature()) return
         if (prefs.dailyWallpaper.not() && prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES && viewModel.isSukunDefault.value == false) {
             requireContext().showToast(R.string.set_as_default_launcher_first)
             return
@@ -1188,6 +1227,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun changeWallpaperNow() {
+        if (!canUsePremiumFeature()) return
         prefs.dailyWallpaper = true
         populateWallpaperText()
         setPlainWallpaper(requireContext(), android.R.color.black)
@@ -1341,20 +1381,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         )
     }
 
-    private fun populateLockSettings() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            binding.toggleLock.text = getString(
-                if (prefs.lockModeOn && isAccessServiceEnabled(requireContext())) R.string.on
-                else R.string.off
-            )
-        } else {
-            binding.toggleLock.text = getString(
-                if (prefs.lockModeOn) R.string.on
-                else R.string.off
-            )
-        }
-    }
-
     private fun populateSwipeDownAction() {
         binding.swipeDownAction.text = when (prefs.swipeDownAction) {
             Constants.SwipeDownAction.NOTIFICATIONS -> getString(R.string.notifications)
@@ -1364,14 +1390,41 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateDoubleTapAction() {
         binding.doubleTapAction.text = when (prefs.doubleTapAction) {
+            Constants.DoubleTapAction.OFF -> getString(R.string.off)
             Constants.DoubleTapAction.FOCUS -> getString(R.string.focus)
             else -> getString(R.string.lock)
         }
     }
 
-    private fun updateDoubleTapAction(action: String) {
-        if (prefs.doubleTapAction == action) return
-        prefs.doubleTapAction = action
+    private fun selectDoubleTapMode(mode: String) {
+        if (prefs.doubleTapAction == mode) return
+        when (mode) {
+            Constants.DoubleTapAction.LOCK -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    if (!isAccessServiceEnabled(requireContext())) {
+                        toggleAccessibilityVisibility(true)
+                        return
+                    }
+                    prefs.lockModeOn = true
+                } else {
+                    val isAdmin = deviceManager.isAdminActive(componentName)
+                    if (!isAdmin) {
+                        val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                        intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
+                        intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, getString(R.string.admin_permission_message))
+                        requireActivity().startActivityForResult(intent, Constants.REQUEST_CODE_ENABLE_ADMIN)
+                        return
+                    }
+                    prefs.lockModeOn = true
+                }
+                prefs.doubleTapAction = Constants.DoubleTapAction.LOCK
+            }
+            else -> {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) removeActiveAdmin()
+                prefs.lockModeOn = false
+                prefs.doubleTapAction = mode
+            }
+        }
         populateDoubleTapAction()
     }
 
