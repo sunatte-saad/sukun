@@ -40,6 +40,8 @@ class Prefs(context: Context) {
     private val HIDDEN_APPS_UPDATED = "HIDDEN_APPS_UPDATED"
     private val SHOW_HINT_COUNTER = "SHOW_HINT_COUNTER"
     private val APP_THEME = "APP_THEME"
+    private val PRO_USER = "PRO_USER"
+    private val PRO_PURCHASE_TOKEN = "PRO_PURCHASE_TOKEN"
     private val ABOUT_CLICKED = "ABOUT_CLICKED"
     private val RATE_CLICKED = "RATE_CLICKED"
     private val WALLPAPER_MSG_SHOWN = "WALLPAPER_MSG_SHOWN"
@@ -353,6 +355,24 @@ class Prefs(context: Context) {
     var showPrayerOnHome: Boolean
         get() = prefs.getBoolean(SHOW_PRAYER_ON_HOME, true)
         set(value) = prefs.edit { putBoolean(SHOW_PRAYER_ON_HOME, value).apply() }
+
+    var isProUser: Boolean
+        get() = prefs.getBoolean(PRO_USER, true)
+        set(value) = prefs.edit { putBoolean(PRO_USER, value).apply() }
+
+    var proPurchaseToken: String
+        get() = prefs.getString(PRO_PURCHASE_TOKEN, "").toString()
+        set(value) = prefs.edit { putString(PRO_PURCHASE_TOKEN, value).apply() }
+
+    fun unlockPremium(token: String? = null) {
+        isProUser = true
+        proPurchaseToken = token.orEmpty()
+    }
+
+    fun revokePremium() {
+        isProUser = false
+        proPurchaseToken = ""
+    }
 
     var showDailyNotesOnHome: Boolean
         get() = prefs.getBoolean(SHOW_DAILY_NOTES_ON_HOME, false)
