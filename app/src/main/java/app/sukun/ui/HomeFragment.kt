@@ -1123,7 +1123,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun updateStatusBarVisibility(isFocusModeActive: Boolean = prefs.isFocusModeActive()) {
-        if (isFocusModeActive || !prefs.showStatusBar) {
+        val hideForFocus = isFocusModeActive && prefs.focusModeHideStatusBar
+        if (hideForFocus || !prefs.showStatusBar) {
             hideStatusBar()
         } else {
             showStatusBar()

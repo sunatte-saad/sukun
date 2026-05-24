@@ -261,6 +261,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.focusCustom -> showFocusCustomEditor()
             R.id.focusCustomStart -> startCustomFocusMode()
             R.id.focusModeNotificationsLock -> toggleFocusModeNotificationsLock()
+            R.id.focusModeHideStatusBar -> toggleFocusModeHideStatusBar()
             R.id.focusCustomClose -> {
                 binding.focusCustomLayout.visibility = View.GONE
                 binding.etFocusCustomMinutes.hideKeyboard()
@@ -394,6 +395,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.focusCustom.setOnClickListener(this)
         binding.focusCustomStart.setOnClickListener(this)
         binding.focusModeNotificationsLock.setOnClickListener(this)
+        binding.focusModeHideStatusBar.setOnClickListener(this)
         binding.focusCustomClose.setOnClickListener(this)
         binding.hourlyChimeOnOff?.setOnClickListener(this)
         binding.hourlyChimeStartHour?.setOnClickListener(this)
@@ -558,6 +560,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             binding.focusModeSelectLayout?.visibility = View.GONE
             binding.focusCustomLayout.visibility = View.GONE
         }
+        populateFocusModeHideStatusBar()
     }
 
     private fun toggleFocusModeNotificationsLock() {
@@ -565,9 +568,21 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateFocusModeNotificationsLock()
     }
 
+    private fun toggleFocusModeHideStatusBar() {
+        prefs.focusModeHideStatusBar = !prefs.focusModeHideStatusBar
+        populateFocusModeHideStatusBar()
+        viewModel.refreshHome(false)
+    }
+
     private fun populateFocusModeNotificationsLock() {
         binding.focusModeNotificationsLock.text = getString(
             if (prefs.focusModeLockNotifications) R.string.on else R.string.off
+        )
+    }
+
+    private fun populateFocusModeHideStatusBar() {
+        binding.focusModeHideStatusBar.text = getString(
+            if (prefs.focusModeHideStatusBar) R.string.on else R.string.off
         )
     }
 

@@ -55,6 +55,7 @@ class Prefs(context: Context) {
     private val FOCUS_MODE_ENDS_AT = "FOCUS_MODE_ENDS_AT"
     private val FOCUS_MODE_LAST_DURATION = "FOCUS_MODE_LAST_DURATION"
     private val FOCUS_MODE_LOCK_NOTIFICATIONS = "FOCUS_MODE_LOCK_NOTIFICATIONS"
+    private val FOCUS_MODE_HIDE_STATUS_BAR = "FOCUS_MODE_HIDE_STATUS_BAR"
     private val DOUBLE_TAP_ACTION = "DOUBLE_TAP_ACTION"
     private val SHOW_WEATHER_ON_HOME = "SHOW_WEATHER_ON_HOME"
     private val WEATHER_UNITS = "WEATHER_UNITS"
@@ -295,6 +296,11 @@ class Prefs(context: Context) {
     var focusModeLockNotifications: Boolean
         get() = prefs.getBoolean(FOCUS_MODE_LOCK_NOTIFICATIONS, false)
         set(value) = prefs.edit { putBoolean(FOCUS_MODE_LOCK_NOTIFICATIONS, value).apply() }
+
+    /** When true (default), focus mode hides the status bar like before. When false, status bar follows the global setting. */
+    var focusModeHideStatusBar: Boolean
+        get() = prefs.getBoolean(FOCUS_MODE_HIDE_STATUS_BAR, true)
+        set(value) = prefs.edit { putBoolean(FOCUS_MODE_HIDE_STATUS_BAR, value).apply() }
 
     var doubleTapAction: String
         get() = prefs.getString(DOUBLE_TAP_ACTION, Constants.DoubleTapAction.LOCK).toString()
