@@ -143,6 +143,9 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         isResumed = true
         viewModel.isPrivateSpaceToggling = false
+        if (viewModel.appList.value.isNullOrEmpty()) {
+            viewModel.getAppList()
+        }
     }
 
     override fun onStop() {
@@ -348,15 +351,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var isRecreating = false
+
     private fun checkTheme() {
+        if (isRecreating) return
         timerJob?.cancel()
         timerJob = lifecycleScope.launch {
-            delay(200)
-            if ((prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES && getColorFromAttr(R.attr.primaryColor) != getColor(R.color.white))
-                || (prefs.appTheme == AppCompatDelegate.MODE_NIGHT_NO && getColorFromAttr(R.attr.primaryColor) != getColor(R.color.black))
-            ) {
-                cacheDir.deleteRecursively()
-                recreate()
+            delay(500)
+            if (!isResumed) return@launch
+            
+            val isDark = isDarkThemeOn()
+            val themeMode = prefs.appTheme
+            
+            val mismatch = when (themeMode) {
+                AppCompatDelegate.MODE_NIGHT_YES -> !isDark
+                AppCompatDelegate.MODE_NIGHT_NO -> isDark
+                else -> false
+            }
+
+            if (mismatch) {
+                isRecreating = true
+                AppCompatDelegate.setDefaultNightMode(themeMode)
+            } else {
+                // Check if attributes are correctly applied
+                val primaryColor = try { getColorFromAttr(R.attr.primaryColor) } catch (_: Exception) { 0 }
+                val expected = if (isDark) getColor(R.color.white) else getColor(R.color.black)
+                
+                if (primaryColor != 0 && primaryColor != expected) {
+                    isRecreating = true
+                    recreate()
+                }
             }
         }
     }

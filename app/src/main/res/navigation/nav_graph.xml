@@ -45,7 +45,7 @@
         android:id="@+id/settingsFragment"
         android:name="app.sukun.ui.SettingsFragment"
         android:label="SettingsFragment"
-        android:layout="@layout/fragment_settings">
+        tools:layout="@layout/fragment_settings">
         <action
             android:id="@+id/action_settingsFragment_to_appListFragment"
             app:destination="@id/appListFragment"
@@ -73,12 +73,12 @@
         android:id="@+id/prayerAnalyticsFragment"
         android:name="app.sukun.ui.PrayerAnalyticsFragment"
         android:label="PrayerAnalyticsFragment"
-        android:layout="@layout/fragment_prayer_analytics" />
+        tools:layout="@layout/fragment_prayer_analytics" />
 
     <fragment
         android:id="@+id/remindersFragment"
         android:name="app.sukun.ui.RemindersFragment"
         android:label="RemindersFragment"
-        android:layout="@layout/fragment_reminders" />
+        tools:layout="@layout/fragment_reminders" />
 
 </navigation>

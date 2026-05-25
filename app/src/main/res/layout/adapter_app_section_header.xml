@@ -8,4 +8,4 @@
     android:paddingHorizontal="20dp"
     android:paddingTop="18dp"
     android:paddingBottom="8dp"
-    android:textColor="@color/white" />
+    android:textColor="?attr/primaryColor" />

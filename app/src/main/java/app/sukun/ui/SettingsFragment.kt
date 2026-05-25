@@ -114,51 +114,57 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        prefs = Prefs(requireContext())
-        viewModel = activity?.run {
-            ViewModelProvider(this)[MainViewModel::class.java]
-        } ?: throw Exception("Invalid Activity")
-        viewModel.isSukunDefault()
+        try {
+            prefs = Prefs(requireContext())
+            viewModel = activity?.run {
+                ViewModelProvider(this)[MainViewModel::class.java]
+            } ?: throw Exception("Invalid Activity")
+            viewModel.isSukunDefault()
 
-        deviceManager = requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        componentName = ComponentName(requireContext(), DeviceAdmin::class.java)
-        checkAdminPermission()
+            deviceManager = requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            componentName = ComponentName(requireContext(), DeviceAdmin::class.java)
+            checkAdminPermission()
 
-        // Migrate: users who had azan disabled before the 4-way selector existed
-        if (!prefs.azanEnabled && prefs.azanSound != Constants.AzanSound.OFF) {
-            prefs.azanSound = Constants.AzanSound.OFF
+            // Migrate: users who had azan disabled before the 4-way selector existed
+            if (!prefs.azanEnabled && prefs.azanSound != Constants.AzanSound.OFF) {
+                prefs.azanSound = Constants.AzanSound.OFF
+            }
+            // Migrate: users who had lockModeOn=false but doubleTapAction=lock (the old default)
+            if (!prefs.lockModeOn && prefs.doubleTapAction == Constants.DoubleTapAction.LOCK) {
+                prefs.doubleTapAction = Constants.DoubleTapAction.OFF
+            }
+
+            binding.homeAppsNum.text = prefs.homeAppsNum.toString()
+            populateKeyboardText()
+            populateAppDrawerFastScroller()
+            populateScreenTimeOnOff()
+            populateHomeButtonRecents()
+            populateWallpaperText()
+            populateAppThemeText()
+            populateTextSize()
+            populateAlignment()
+            populateHomeAppIcons()
+            populateFocusMode()
+            populateFocusModeNotificationsLock()
+            populateWeatherSettings()
+            populateDailyNotesSettings()
+            populatePremiumStatus()
+            populatePrayerSettings()
+            populateHourlyChime()
+            populateStatusBar()
+            populateDateTime()
+            populateSwipeApps()
+            populateSwipeDownAction()
+            populateDoubleTapAction()
+            populateActionHints()
+            initClickListeners()
+            initObservers()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            try {
+                findNavController().popBackStack()
+            } catch (_: Exception) {}
         }
-        // Migrate: users who had lockModeOn=false but doubleTapAction=lock (the old default)
-        if (!prefs.lockModeOn && prefs.doubleTapAction == Constants.DoubleTapAction.LOCK) {
-            prefs.doubleTapAction = Constants.DoubleTapAction.OFF
-        }
-
-        binding.homeAppsNum.text = prefs.homeAppsNum.toString()
-        populateKeyboardText()
-        populateAppDrawerFastScroller()
-        populateScreenTimeOnOff()
-        populateHomeButtonRecents()
-        populateWallpaperText()
-        populateAppThemeText()
-        populateTextSize()
-        populateAlignment()
-        populateHomeAppIcons()
-        populateFocusMode()
-        populateFocusModeNotificationsLock()
-        populateWeatherSettings()
-        populateDailyNotesSettings()
-        populatePremiumStatus()
-        populatePrayerSettings()
-        populateHourlyChime()
-        populateStatusBar()
-        populateDateTime()
-        populateSwipeApps()
-        populateSwipeDownAction()
-        populateDoubleTapAction()
-        populateActionHints()
-        initClickListeners()
-        initObservers()
-
     }
 
     override fun onClick(view: View) {
@@ -456,8 +462,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun initObservers() {
-        if (prefs.firstSettingsOpen) {
-            viewModel.showDialog.postValue(Constants.Dialog.ABOUT)
+        val showWelcomeDialog = prefs.firstSettingsOpen
+        if (showWelcomeDialog) {
             prefs.firstSettingsOpen = false
         }
         viewModel.isSukunDefault.observe(viewLifecycleOwner) {
@@ -474,6 +480,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
         viewModel.updateSwipeApps.observe(viewLifecycleOwner) {
             populateSwipeApps()
+        }
+        if (showWelcomeDialog) {
+            view?.post {
+                if (isAdded) {
+                    viewModel.showDialog.postValue(Constants.Dialog.ABOUT)
+                }
+            }
         }
     }
 
@@ -1278,7 +1291,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
         prefs.textSizeScale = pendingTextSizeScale
         pendingTextSizeScale = -1f
-        requireActivity().recreate()
+        if (isAdded) {
+            requireActivity().recreate()
+        }
     }
 
     private fun toggleKeyboardText() {
@@ -1292,19 +1307,19 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun updateTheme(appTheme: Int) {
-        if (AppCompatDelegate.getDefaultNightMode() == appTheme) return
+        if (prefs.appTheme == appTheme) return
         prefs.appTheme = appTheme
         populateAppThemeText(appTheme)
-        setAppTheme(appTheme)
+        if (prefs.dailyWallpaper) {
+            setPlainWallpaper(appTheme)
+            viewModel.setWallpaperWorker()
+        }
+        AppCompatDelegate.setDefaultNightMode(appTheme)
     }
 
     private fun setAppTheme(theme: Int) {
-        if (AppCompatDelegate.getDefaultNightMode() == theme) return
-        if (prefs.dailyWallpaper) {
-            setPlainWallpaper(theme)
-            viewModel.setWallpaperWorker()
-        }
-        requireActivity().recreate()
+        // This method is now redundant as logic moved to updateTheme
+        AppCompatDelegate.setDefaultNightMode(theme)
     }
 
     private fun setPlainWallpaper(appTheme: Int) {
@@ -1492,14 +1507,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     override fun onResume() {
         super.onResume()
         viewModel.isSukunDefault()
-        if (prefs.isFocusModeActive()) {
-            populateFocusMode()
-            if (findNavController().currentDestination?.id == R.id.settingsFragment) {
-                findNavController().popBackStack(R.id.mainFragment, false)
-                requireContext().showToast(R.string.focus_mode_blocked)
-            }
-            return
-        }
         populateFocusMode()
         populateWeatherSettings()
         refreshWeatherIfConfigured()
@@ -1547,7 +1554,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     override fun onDestroy() {
-        viewModel.checkForMessages.call()
+        if (::viewModel.isInitialized) {
+            viewModel.checkForMessages.call()
+        }
         super.onDestroy()
     }
 }

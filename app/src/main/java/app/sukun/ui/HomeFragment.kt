@@ -34,6 +34,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import app.sukun.MainViewModel
 import app.sukun.R
 import app.sukun.data.AppModel
@@ -220,15 +221,6 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 prefs.screenTimeAppClassName = ""
                 prefs.screenTimeAppUser = ""
             }
-
-            R.id.setDefaultLauncher -> {
-                prefs.hideSetDefaultLauncher = true
-                binding.setDefaultLauncher.visibility = View.GONE
-                if (viewModel.isSukunDefault.value != true) {
-                    requireContext().showToast(R.string.set_as_default_launcher)
-                    findNavController().navigate(R.id.action_mainFragment_to_settingsFragment)
-                }
-            }
         }
         return true
     }
@@ -281,7 +273,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private fun initSwipeTouchListener() {
         val context = requireContext()
-        binding.mainLayout.setOnTouchListener(getSwipeGestureListener(context))
+        val swipeListener = getSwipeGestureListener(context)
+        binding.mainLayout.setOnTouchListener(swipeListener)
+        // homeAppsLayout is match_parent and sits above the wallpaper; empty-area long-presses land here.
+        binding.homeAppsLayout.setOnTouchListener(swipeListener)
         binding.homeApp1.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp1))
         binding.homeApp2.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp2))
         binding.homeApp3.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp3))
@@ -303,8 +298,11 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.date.setOnLongClickListener(this)
         binding.ringClock.setOnLongClickListener(this)
         binding.ringDate.setOnLongClickListener(this)
-        binding.setDefaultLauncher.setOnClickListener(this)
-        binding.setDefaultLauncher.setOnLongClickListener(this)
+        binding.setDefaultLauncher.setOnClickListener { viewModel.resetLauncherLiveData.call() }
+        binding.setDefaultLauncher.setOnLongClickListener {
+            openHomeSettings()
+            true
+        }
         binding.weatherText?.setOnClickListener { openGoogleWeather() }
         binding.prayerText?.setOnLongClickListener { promptMarkPrayerDone(); true }
         binding.tvScreenTime?.setOnClickListener(this)
@@ -1049,22 +1047,31 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
         viewModel.getAppList(includeHiddenApps)
-        try {
-            findNavController().navigate(
-                R.id.action_mainFragment_to_appListFragment,
-                bundleOf(
-                    Constants.Key.FLAG to flag,
-                    Constants.Key.RENAME to rename
-                )
-            )
+        val navController = try {
+            findNavController()
         } catch (e: Exception) {
-            findNavController().navigate(
-                R.id.appListFragment,
-                bundleOf(
-                    Constants.Key.FLAG to flag,
-                    Constants.Key.RENAME to rename
+            null
+        } ?: return
+
+        try {
+            if (navController.currentDestination?.id == R.id.mainFragment) {
+                navController.navigate(
+                    R.id.action_mainFragment_to_appListFragment,
+                    bundleOf(
+                        Constants.Key.FLAG to flag,
+                        Constants.Key.RENAME to rename
+                    )
                 )
-            )
+            } else {
+                navController.navigate(
+                    R.id.appListFragment,
+                    bundleOf(
+                        Constants.Key.FLAG to flag,
+                        Constants.Key.RENAME to rename
+                    )
+                )
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
@@ -1139,7 +1146,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             setPlainWallpaperByTheme(requireContext(), changedAppTheme)
             viewModel.setWallpaperWorker()
         }
-        requireActivity().recreate()
+        AppCompatDelegate.setDefaultNightMode(changedAppTheme)
     }
 
     private fun openScreenTimeDigitalWellbeing() {
@@ -1273,6 +1280,36 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         viewModel.refreshHome(false)
     }
 
+    private fun openHomeSettings() {
+        if (!isAdded) return
+        val navController = try {
+            findNavController()
+        } catch (e: Exception) {
+            null
+        } ?: return
+
+        if (navController.currentDestination?.id == R.id.settingsFragment) return
+
+        val options = navOptions {
+            launchSingleTop = true
+        }
+        try {
+            when (navController.currentDestination?.id) {
+                R.id.mainFragment ->
+                    navController.navigate(R.id.action_mainFragment_to_settingsFragment, null, options)
+
+                R.id.appListFragment ->
+                    navController.navigate(R.id.action_appListFragment_to_settingsFragment2, null, options)
+
+                else ->
+                    navController.navigate(R.id.settingsFragment, null, options)
+            }
+            viewModel.firstOpen(false)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun textOnClick(view: View) = onClick(view)
 
     private fun textOnLongClick(view: View) = onLongClick(view)
@@ -1308,16 +1345,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
             override fun onLongClick() {
                 super.onLongClick()
-                if (syncFocusModeState()) {
-                    requireContext().showToast(R.string.focus_mode_blocked)
-                    return
-                }
-                try {
-                    findNavController().navigate(R.id.action_mainFragment_to_settingsFragment)
-                    viewModel.firstOpen(false)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                openHomeSettings()
             }
 
             override fun onDoubleClick() {

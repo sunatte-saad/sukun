@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.os.Build
+import android.os.SystemClock
 import android.os.UserHandle
 import android.os.UserManager
 import androidx.lifecycle.AndroidViewModel
@@ -45,12 +46,24 @@ import app.sukun.helper.setWallpaperFromAsset
 import app.sukun.helper.setPlainWallpaper
 import app.sukun.helper.showToast
 import app.sukun.helper.usageStats.EventLogWrapper
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        private const val APP_LIST_LOAD_MAX_RETRIES = 4
+        private const val APP_LIST_LOAD_RETRY_DELAY_MS = 500L
+        private const val APP_LIST_BOOT_RETRY_WINDOW_MS = 2 * 60 * 1000L
+    }
+
+    private fun shouldRetryEmptyAppList(): Boolean =
+        SystemClock.elapsedRealtime() < APP_LIST_BOOT_RETRY_WINDOW_MS
+
+    private var appListLoadGeneration = 0
+    private var hiddenAppsLoadGeneration = 0
     private val appContext by lazy { application.applicationContext }
     private val prefs = Prefs(appContext)
 
@@ -407,8 +420,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getAppList(includeHiddenApps: Boolean = false) {
+        val generation = ++appListLoadGeneration
         viewModelScope.launch {
-            val apps = getAppsList(appContext, prefs, includeRegularApps = true, includeHiddenApps)
+            var apps = getAppsList(appContext, prefs, includeRegularApps = true, includeHiddenApps)
+            var attempt = 0
+            while (apps.isEmpty() && shouldRetryEmptyAppList() && attempt < APP_LIST_LOAD_MAX_RETRIES) {
+                delay(APP_LIST_LOAD_RETRY_DELAY_MS * (attempt + 1))
+                if (generation != appListLoadGeneration) return@launch
+                apps = getAppsList(appContext, prefs, includeRegularApps = true, includeHiddenApps)
+                attempt++
+            }
+            if (generation != appListLoadGeneration) return@launch
             appList.value = apps
             if (!includeHiddenApps) {
                 recentAppPackages.value = getRecentAppPackages(apps)
@@ -418,9 +440,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getHiddenApps() {
+        val generation = ++hiddenAppsLoadGeneration
         viewModelScope.launch {
-            hiddenApps.value =
+            var apps =
                 getAppsList(appContext, prefs, includeRegularApps = false, includeHiddenApps = true)
+            var attempt = 0
+            while (apps.isEmpty() && shouldRetryEmptyAppList() && attempt < APP_LIST_LOAD_MAX_RETRIES) {
+                delay(APP_LIST_LOAD_RETRY_DELAY_MS * (attempt + 1))
+                if (generation != hiddenAppsLoadGeneration) return@launch
+                apps =
+                    getAppsList(appContext, prefs, includeRegularApps = false, includeHiddenApps = true)
+                attempt++
+            }
+            if (generation != hiddenAppsLoadGeneration) return@launch
+            hiddenApps.value = apps
         }
     }
 

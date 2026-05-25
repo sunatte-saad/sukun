@@ -89,8 +89,6 @@ fun Context.isDefaultLauncher(): Boolean {
 
 fun Context.resetLauncherViaFakeActivity() {
     resetDefaultLauncher()
-    if (getDefaultLauncherPackage(this).contains("."))
-        startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
 }
 
 fun Context.getDefaultLauncherComponentName(): ComponentName? {

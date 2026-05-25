@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
-    android:background="#B3000000">
+    android:background="?attr/dialogShadeColor">
 
     <ScrollView
         android:id="@+id/scrollView"
@@ -527,7 +527,8 @@
                 </LinearLayout>
 
                 <FrameLayout
-                        android:id="@+id/premiumRow"
+                    android:id="@+id/premiumRow"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:animateLayoutChanges="true">
@@ -1497,6 +1498,33 @@
 
                     <TextView
                         android:id="@+id/focusModeNotificationsLock"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|bottom"
+                        android:layout_marginEnd="4dp"
+                        android:padding="8dp"
+                        android:text="@string/off" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="12dp"
+                    android:animateLayoutChanges="true">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:paddingVertical="8dp"
+                        android:text="@string/focus_mode_hide_status_bar"
+                        android:textColor="?attr/primaryColor" />
+
+                    <TextView
+                        android:id="@+id/focusModeHideStatusBar"
                         style="@style/TextSmallBold"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

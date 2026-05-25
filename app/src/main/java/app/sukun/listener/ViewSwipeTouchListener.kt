@@ -1,28 +1,27 @@
 package app.sukun.listener
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnTouchListener
-import app.sukun.data.Constants
 import kotlin.math.abs
 
 internal open class ViewSwipeTouchListener(c: Context?, v: View) : OnTouchListener {
-    private var longPressOn = false
-    private var pendingLongPress: Runnable? = null
+    private var suppressClickUntilUptimeMs = 0L
     private val gestureDetector: GestureDetector
 
     override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
         when (motionEvent.action) {
             MotionEvent.ACTION_DOWN -> view.isPressed = true
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                view.isPressed = false
-                clearPendingLongPress(view)
-            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> view.isPressed = false
         }
-        return gestureDetector.onTouchEvent(motionEvent)
+        gestureDetector.onTouchEvent(motionEvent)
+        return true
     }
 
     private inner class GestureListener(private val view: View) : SimpleOnGestureListener() {
@@ -34,6 +33,9 @@ internal open class ViewSwipeTouchListener(c: Context?, v: View) : OnTouchListen
         }
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
+            if (SystemClock.uptimeMillis() < suppressClickUntilUptimeMs) {
+                return true
+            }
             onClick(view)
             return super.onSingleTapUp(e)
         }
@@ -44,13 +46,8 @@ internal open class ViewSwipeTouchListener(c: Context?, v: View) : OnTouchListen
         }
 
         override fun onLongPress(e: MotionEvent) {
-            longPressOn = true
-            pendingLongPress?.let(view::removeCallbacks)
-            pendingLongPress = Runnable {
-                pendingLongPress = null
-                if (longPressOn) onLongClick(view)
-            }
-            view.postDelayed(pendingLongPress, Constants.LONG_PRESS_DELAY_MS)
+            suppressClickUntilUptimeMs = SystemClock.uptimeMillis() + SUPPRESS_CLICK_AFTER_LONG_PRESS_MS
+            onLongClick(view)
             super.onLongPress(e)
         }
 
@@ -88,12 +85,10 @@ internal open class ViewSwipeTouchListener(c: Context?, v: View) : OnTouchListen
     open fun onClick(view: View) {}
 
     init {
-        gestureDetector = GestureDetector(c, GestureListener(v))
+        gestureDetector = GestureDetector(c, GestureListener(v), Handler(Looper.getMainLooper()))
     }
 
-    private fun clearPendingLongPress(view: View) {
-        longPressOn = false
-        pendingLongPress?.let(view::removeCallbacks)
-        pendingLongPress = null
+    companion object {
+        private const val SUPPRESS_CLICK_AFTER_LONG_PRESS_MS = 800L
     }
 }

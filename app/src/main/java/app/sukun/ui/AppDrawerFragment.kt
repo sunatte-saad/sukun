@@ -23,6 +23,7 @@ import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.databinding.FragmentAppDrawerBinding
 import app.sukun.helper.deletePinnedShortcut
+import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hideKeyboard
 import app.sukun.helper.isEinkDisplay
 import app.sukun.helper.isPrivateSpaceProfile
@@ -82,9 +83,9 @@ class AppDrawerFragment : Fragment() {
     }
 
     private fun initViews() {
-        binding.root.setBackgroundColor(Color.argb(179, 0, 0, 0))
-        binding.appRename.setTextColor(Color.WHITE)
-        binding.appRename.setShadowLayer(4f, 0f, 2f, Color.BLACK)
+        binding.root.setBackgroundColor(requireContext().getColorFromAttr(R.attr.dialogShadeColor))
+        binding.appRename.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
+        binding.appRename.setShadowLayer(4f, 0f, 2f, requireContext().getColorFromAttr(R.attr.primaryTextShadowColor))
         if (flag == Constants.FLAG_HIDDEN_APPS)
             binding.search.queryHint = getString(R.string.hidden_apps)
         else if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_CALENDAR_APP)
@@ -93,9 +94,9 @@ class AppDrawerFragment : Fragment() {
             val searchTextView = binding.search.findViewById<TextView>(R.id.search_src_text)
             if (searchTextView != null) {
                 searchTextView.gravity = prefs.appLabelAlignment
-                searchTextView.setTextColor(Color.WHITE)
-                searchTextView.setHintTextColor(Color.argb(204, 255, 255, 255))
-                searchTextView.setShadowLayer(4f, 0f, 2f, Color.BLACK)
+                searchTextView.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
+                searchTextView.setHintTextColor(requireContext().getColorFromAttr(R.attr.primaryColorTrans50))
+                searchTextView.setShadowLayer(4f, 0f, 2f, requireContext().getColorFromAttr(R.attr.primaryTextShadowColor))
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -387,6 +388,15 @@ class AppDrawerFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         binding.search.showKeyboard(prefs.autoShowKeyboard)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (flag == Constants.FLAG_HIDDEN_APPS) {
+            viewModel.getHiddenApps()
+        } else {
+            viewModel.getAppList()
+        }
     }
 
     override fun onStop() {

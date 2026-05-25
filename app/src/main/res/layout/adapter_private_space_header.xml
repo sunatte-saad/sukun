@@ -16,7 +16,7 @@
         android:paddingHorizontal="20dp"
         android:paddingVertical="@dimen/app_padding_vertical"
         android:text="@string/private_space"
-        android:textColor="@color/white" />
+        android:textColor="?attr/primaryColor" />
 
 </LinearLayout>
 
