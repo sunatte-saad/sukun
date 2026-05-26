@@ -168,6 +168,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     override fun onClick(view: View) {
+        binding.clockStyleSelectLayout?.visibility = View.GONE
         binding.appsNumSelectLayout.visibility = View.GONE
         binding.dateTimeSelectLayout.visibility = View.GONE
         binding.appThemeSelectLayout.visibility = View.GONE
@@ -178,7 +179,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.azanSoundSelectLayout?.visibility = View.GONE
         binding.focusModeSelectLayout?.visibility = View.GONE
         binding.doubleTapActionSelectLayout.visibility = View.GONE
-        if (view.id != R.id.textSizeMinus && view.id != R.id.textSizePlus) {
+        if (view.id != R.id.textSizeSmall && view.id != R.id.textSizeMedium && view.id != R.id.textSizeLarge) {
             if (binding.textSizesLayout.isVisible) {
                 binding.textSizesLayout.visibility = View.GONE
                 applyTextSizeScale()
@@ -249,6 +250,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.weatherUnits -> binding.weatherUnitsSelectLayout.visibility = View.VISIBLE
             R.id.weatherUnitCelsius -> updateWeatherUnits(Constants.WeatherUnit.CELSIUS)
             R.id.weatherUnitFahrenheit -> updateWeatherUnits(Constants.WeatherUnit.FAHRENHEIT)
+            R.id.prayerSettingsHeader -> {
+                val isVisible = binding.prayerSubMenuLayout?.visibility == View.VISIBLE
+                binding.prayerSubMenuLayout?.visibility = if (isVisible) View.GONE else View.VISIBLE
+                binding.prayerSettingsToggle?.text = getString(if (isVisible) R.string.manage else R.string.close)
+            }
             R.id.prayerOnOff -> togglePrayer()
             R.id.prayerSource -> binding.prayerSourceSelectLayout?.visibility = View.VISIBLE
             R.id.prayerSourceManual -> updatePrayerSource(Constants.PrayerSource.MANUAL)
@@ -291,7 +297,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.dateTimeOn -> toggleDateTime(Constants.DateTime.ON)
             R.id.dateTimeOff -> toggleDateTime(Constants.DateTime.OFF)
             R.id.dateOnly -> toggleDateTime(Constants.DateTime.DATE_ONLY)
-            R.id.clockStyle -> showClockStylePicker()
+            R.id.clockStyle -> binding.clockStyleSelectLayout?.visibility = View.VISIBLE
+            R.id.clockStyleStandard -> selectClockStyle(Constants.ClockStyle.STANDARD)
+            R.id.clockStyleDayRing -> selectClockStyle(Constants.ClockStyle.DAY_RING)
             R.id.dayStartHour -> showDayHourEditor(isStartHour = true)
             R.id.dayEndHour -> showDayHourEditor(isStartHour = false)
             R.id.appThemeText -> binding.appThemeSelectLayout.visibility = View.VISIBLE
@@ -316,8 +324,18 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.maxApps7 -> updateHomeAppsNum(7)
             R.id.maxApps8 -> updateHomeAppsNum(8)
 
-            R.id.textSizeMinus -> adjustTextSizePreview(-0.1f)
-            R.id.textSizePlus -> adjustTextSizePreview(0.1f)
+            R.id.textSizeSmall -> {
+                pendingTextSizeScale = 0.9f
+                applyTextSizeScale()
+            }
+            R.id.textSizeMedium -> {
+                pendingTextSizeScale = 1.0f
+                applyTextSizeScale()
+            }
+            R.id.textSizeLarge -> {
+                pendingTextSizeScale = 1.1f
+                applyTextSizeScale()
+            }
 
             R.id.swipeLeftApp -> showAppListIfEnabled(Constants.FLAG_SET_SWIPE_LEFT_APP)
             R.id.swipeRightApp -> showAppListIfEnabled(Constants.FLAG_SET_SWIPE_RIGHT_APP)
@@ -388,6 +406,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.weatherUnits.setOnClickListener(this)
         binding.weatherUnitCelsius.setOnClickListener(this)
         binding.weatherUnitFahrenheit.setOnClickListener(this)
+        binding.prayerSettingsHeader?.setOnClickListener(this)
         binding.prayerOnOff?.setOnClickListener(this)
         binding.prayerSource?.setOnClickListener(this)
         binding.prayerSourceManual?.setOnClickListener(this)
@@ -420,6 +439,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.dateTimeOff.setOnClickListener(this)
         binding.dateOnly.setOnClickListener(this)
         binding.clockStyle.setOnClickListener(this)
+        binding.clockStyleStandard?.setOnClickListener(this)
+        binding.clockStyleDayRing?.setOnClickListener(this)
         binding.dayStartHour.setOnClickListener(this)
         binding.dayEndHour.setOnClickListener(this)
         binding.swipeLeftApp.setOnClickListener(this)
@@ -450,8 +471,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.maxApps7.setOnClickListener(this)
         binding.maxApps8.setOnClickListener(this)
 
-        binding.textSizeMinus.setOnClickListener(this)
-        binding.textSizePlus.setOnClickListener(this)
+        binding.textSizeSmall?.setOnClickListener(this)
+        binding.textSizeMedium?.setOnClickListener(this)
+        binding.textSizeLarge?.setOnClickListener(this)
 
         binding.dailyWallpaper.setOnLongClickListener(this)
         binding.alignment.setOnLongClickListener(this)
@@ -1082,22 +1104,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.dayEndHourRow.isVisible = showDayRingHours
     }
 
-    private fun showClockStylePicker() {
-        val items = arrayOf(
-            getString(R.string.clock_style_standard),
-            getString(R.string.clock_style_day_ring)
-        )
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.clock_style)
-            .setItems(items) { _, which ->
-                val selectedStyle = if (which == 1) Constants.ClockStyle.DAY_RING else Constants.ClockStyle.STANDARD
-                if (prefs.clockStyle == selectedStyle) return@setItems
-                prefs.clockStyle = selectedStyle
-                populateDateTime()
-                viewModel.toggleDateTime()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+    private fun selectClockStyle(selectedStyle: String) {
+        binding.clockStyleSelectLayout?.visibility = View.GONE
+        if (prefs.clockStyle == selectedStyle) return
+        prefs.clockStyle = selectedStyle
+        populateDateTime()
+        viewModel.toggleDateTime()
     }
 
     private fun showDayHourEditor(isStartHour: Boolean) {
@@ -1279,8 +1291,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         val clamped = newScale.coerceIn(0.5f, maxScale)
         if (clamped == current) return
         pendingTextSizeScale = clamped
-        binding.textSizeValue.text = getTextSizeLabel(clamped)
-        binding.textSizeCurrent.text = getTextSizeLabel(clamped)
+        binding.textSizeValue.text = getTextSizeLabelWithScale(clamped)
     }
 
     private fun applyTextSizeScale() {
@@ -1351,8 +1362,20 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateTextSize() {
-        binding.textSizeValue.text = getTextSizeLabel(prefs.textSizeScale)
-        binding.textSizeCurrent.text = getTextSizeLabel(prefs.textSizeScale)
+        binding.textSizeValue.text = getTextSizeLabelWithScale(prefs.textSizeScale)
+        // Highlight selected option when the selector is visible
+        val scale = prefs.textSizeScale
+        val selectedColor = requireContext().getColorFromAttr(R.attr.primaryColor)
+        val defaultColor = requireContext().getColorFromAttr(R.attr.primaryColorTrans50)
+        binding.textSizeSmall?.setTextColor(if (scale <= 0.8f) selectedColor else defaultColor)
+        binding.textSizeMedium?.setTextColor(if (scale > 0.8f && scale <= 1.2f) selectedColor else defaultColor)
+        binding.textSizeLarge?.setTextColor(if (scale > 1.2f) selectedColor else defaultColor)
+    }
+
+    private fun getTextSizeLabelWithScale(scale: Float): String {
+        val label = getTextSizeLabel(scale)
+        val formattedScale = String.format("%.1fx", scale)
+        return "$label ($formattedScale)"
     }
 
     private fun populateScreenTimeOnOff() {

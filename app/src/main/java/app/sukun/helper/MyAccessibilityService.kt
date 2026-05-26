@@ -69,12 +69,15 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     private fun updateNotificationShadeState(packageName: String, eventType: Int) {
-        if (!prefs.isFocusModeActive() || !prefs.canOpenNotificationsInFocusMode()) {
+        if (!prefs.isFocusModeActive()) {
             notificationShadeActive = false
             return
         }
         when {
             packageName == SYSTEM_UI_PACKAGE && eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                // Track whether the notification shade (system UI) is visible.
+                // We still need to detect this even when notifications are locked, so
+                // do not early-return based on the `canOpenNotificationsInFocusMode` pref.
                 notificationShadeActive = !keyguardManager.isKeyguardLocked
             }
 

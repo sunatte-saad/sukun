@@ -267,6 +267,47 @@
                                 android:padding="8dp"
                                 android:text="@string/clock_style_standard" />
                         </LinearLayout>
+
+                        <!-- clock style layout-->
+                        <LinearLayout
+                            android:id="@+id/clockStyleSelectLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:animateLayoutChanges="true"
+                            android:background="@drawable/rounded_primary_gradient"
+                            android:elevation="8dp"
+                            android:orientation="horizontal"
+                            android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                            android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="2dp"
+                            android:visibility="gone"
+                            tools:ignore="UnusedAttribute">
+
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/clockStyleStandard"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/clock_style_standard" />
+
+                            <TextView
+                                android:id="@+id/clockStyleDayRing"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/clock_style_day_ring" />
+                        </LinearLayout>
                     </FrameLayout>
 
                     <FrameLayout
@@ -738,6 +779,7 @@
                 </LinearLayout>
 
                 <FrameLayout
+                    android:id="@+id/prayerSettingsHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
@@ -753,15 +795,49 @@
                         android:textColor="?attr/primaryColor" />
 
                     <TextView
-                        android:id="@+id/prayerOnOff"
+                        android:id="@+id/prayerSettingsToggle"
                         style="@style/TextSmallBold"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="end|bottom"
                         android:layout_marginEnd="4dp"
                         android:padding="8dp"
-                        android:text="@string/off" />
+                        android:text="@string/manage" />
                 </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/prayerSubMenuLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:animateLayoutChanges="true">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/prayer_times"
+                            android:textColor="?attr/primaryColor" />
+
+                        <TextView
+                            android:id="@+id/prayerOnOff"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|bottom"
+                            android:layout_marginEnd="4dp"
+                            android:padding="8dp"
+                            android:text="@string/off" />
+                    </FrameLayout>
 
                 <LinearLayout
                     android:id="@+id/prayerOptionsLayout"
@@ -1083,6 +1159,7 @@
                             android:text="@string/prayer_analytics"
                             android:textColor="?attr/primaryColor" />
                     </FrameLayout>
+                </LinearLayout>
 
                     <FrameLayout
                         android:layout_width="match_parent"
@@ -1776,43 +1853,55 @@
                         android:animateLayoutChanges="true"
                         android:background="@drawable/rounded_primary_gradient"
                         android:elevation="8dp"
-                        android:gravity="center"
-                        android:orientation="horizontal"
+                        android:orientation="vertical"
+                        android:paddingVertical="4dp"
                         android:outlineAmbientShadowColor="@color/colorPrimaryDark"
                         android:outlineSpotShadowColor="@color/colorPrimaryDark"
                         android:visibility="gone"
-                        tools:ignore="UnusedAttribute"
-                        tools:visibility="gone">
+                        tools:ignore="UnusedAttribute">
 
                         <TextView
-                            android:id="@+id/textSizeMinus"
-                            style="@style/TextSmallBold"
-                            android:layout_width="0dp"
+                            android:id="@+id/textSizeSmall"
+                            style="@style/TextSmall"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:paddingVertical="8dp"
-                            android:text="\u2212" />
+                            android:gravity="center_vertical"
+                            android:paddingVertical="12dp"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:text="@string/small" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/dividerColor" />
 
                         <TextView
-                            android:id="@+id/textSizeCurrent"
-                            style="@style/TextSmallBold"
-                            android:layout_width="0dp"
+                            android:id="@+id/textSizeMedium"
+                            style="@style/TextSmall"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:paddingVertical="8dp"
-                            tools:text="1.0" />
+                            android:gravity="center_vertical"
+                            android:paddingVertical="12dp"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:text="@string/medium" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/dividerColor" />
 
                         <TextView
-                            android:id="@+id/textSizePlus"
-                            style="@style/TextSmallBold"
-                            android:layout_width="0dp"
+                            android:id="@+id/textSizeLarge"
+                            style="@style/TextSmall"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:paddingVertical="8dp"
-                            android:text="+" />
+                            android:gravity="center_vertical"
+                            android:paddingVertical="12dp"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:text="@string/large" />
 
                     </LinearLayout>
 

@@ -150,7 +150,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         isResumed = false
-        backToHomeScreen()
+        if (!isRecreating && !isChangingConfigurations) {
+            backToHomeScreen()
+        }
         super.onStop()
     }
 
