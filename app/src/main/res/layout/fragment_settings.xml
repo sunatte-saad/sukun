@@ -1891,7 +1891,7 @@
                         <View
                             android:layout_width="1dp"
                             android:layout_height="match_parent"
-                            android:background="?attr/dividerColor" />
+                            android:background="@color/whiteInverseTrans25" />
 
                         <TextView
                             android:id="@+id/textSizeMedium"
@@ -1906,7 +1906,7 @@
                         <View
                             android:layout_width="1dp"
                             android:layout_height="match_parent"
-                            android:background="?attr/dividerColor" />
+                            android:background="@color/whiteInverseTrans25" />
 
                         <TextView
                             android:id="@+id/textSizeLarge"
