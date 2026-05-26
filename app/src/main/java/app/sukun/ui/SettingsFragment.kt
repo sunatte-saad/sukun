@@ -116,6 +116,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         super.onViewCreated(view, savedInstanceState)
         try {
             prefs = Prefs(requireContext())
+            if (prefs.isFocusModeActive()) {
+                requireContext().showToast(R.string.focus_mode_blocked)
+                findNavController().popBackStack(R.id.mainFragment, false)
+                return
+            }
             viewModel = activity?.run {
                 ViewModelProvider(this)[MainViewModel::class.java]
             } ?: throw Exception("Invalid Activity")
@@ -1538,6 +1543,14 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     override fun onResume() {
         super.onResume()
+        if (prefs.isFocusModeActive()) {
+            requireContext().showToast(R.string.focus_mode_blocked)
+            try {
+                findNavController().popBackStack(R.id.mainFragment, false)
+            } catch (_: Exception) {
+            }
+            return
+        }
         viewModel.isSukunDefault()
         populateFocusMode()
         populateWeatherSettings()

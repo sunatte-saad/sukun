@@ -553,45 +553,49 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private fun positionOverlayText(horizontalGravity: Int = prefs.homeAlignment) {
         safeBinding?.mainLayout?.post {
             val binding = safeBinding ?: return@post
-            val spacing = 12.dpToPx()
-            val weatherTopMargin = getDateTimeBottom()
-                ?.plus(spacing)
-                ?: 56.dpToPx()
-            updateOverlayLayout(binding.weatherText, horizontalGravity, weatherTopMargin)
+            try {
+                val spacing = 12.dpToPx()
+                val weatherTopMargin = getDateTimeBottom()
+                    ?.plus(spacing)
+                    ?: 56.dpToPx()
+                updateOverlayLayout(binding.weatherText, horizontalGravity, weatherTopMargin)
 
-            val prayerTopMargin = if (binding.weatherText?.isVisible == true) {
-                val weatherHeight = binding.weatherText?.height ?: 0
-                weatherTopMargin + weatherHeight + spacing
-            } else {
-                weatherTopMargin
-            }
-            updateOverlayLayout(binding.prayerText, horizontalGravity, prayerTopMargin)
+                val prayerTopMargin = if (binding.weatherText?.isVisible == true) {
+                    val weatherHeight = binding.weatherText?.height ?: 0
+                    weatherTopMargin + weatherHeight + spacing
+                } else {
+                    weatherTopMargin
+                }
+                updateOverlayLayout(binding.prayerText, horizontalGravity, prayerTopMargin)
 
-            val focusTopMargin = if (binding.prayerText?.isVisible == true) {
-                val prayerHeight = binding.prayerText?.height ?: 0
-                prayerTopMargin + prayerHeight + spacing
-            } else if (binding.weatherText?.isVisible == true) {
-                val weatherHeight = binding.weatherText?.height ?: 0
-                weatherTopMargin + weatherHeight + spacing
-            } else {
-                weatherTopMargin
-            }
-            updateOverlayLayout(binding.focusModeStatus, horizontalGravity, focusTopMargin)
+                val focusTopMargin = if (binding.prayerText?.isVisible == true) {
+                    val prayerHeight = binding.prayerText?.height ?: 0
+                    prayerTopMargin + prayerHeight + spacing
+                } else if (binding.weatherText?.isVisible == true) {
+                    val weatherHeight = binding.weatherText?.height ?: 0
+                    weatherTopMargin + weatherHeight + spacing
+                } else {
+                    weatherTopMargin
+                }
+                updateOverlayLayout(binding.focusModeStatus, horizontalGravity, focusTopMargin)
 
-            val overlayBottom = when {
-                binding.focusModeStatus.isVisible -> focusTopMargin + binding.focusModeStatus.height
-                binding.prayerText.isVisible -> prayerTopMargin + binding.prayerText.height
-                binding.weatherText.isVisible -> weatherTopMargin + binding.weatherText.height
-                else -> getDateTimeBottom() ?: 0
+                val overlayBottom = when {
+                    binding.focusModeStatus.isVisible -> focusTopMargin + binding.focusModeStatus.height
+                    binding.prayerText.isVisible -> prayerTopMargin + binding.prayerText.height
+                    binding.weatherText.isVisible -> weatherTopMargin + binding.weatherText.height
+                    else -> getDateTimeBottom() ?: 0
+                }
+                val screenTimeBottom = if (binding.tvScreenTime?.isVisible == true) {
+                    binding.tvScreenTime.top + binding.tvScreenTime.height
+                } else {
+                    0
+                }
+                val topOverlayBottom = max(overlayBottom, screenTimeBottom)
+                val notesTopMargin = max(topOverlayBottom + spacing, 56.dpToPx())
+                updateDailyNotesLayout(notesTopMargin, topOverlayBottom + spacing)
+            } catch (_: Throwable) {
+                // View was likely destroyed while this runnable executed; safely ignore
             }
-            val screenTimeBottom = if (binding.tvScreenTime?.isVisible == true) {
-                binding.tvScreenTime.top + binding.tvScreenTime.height
-            } else {
-                0
-            }
-            val topOverlayBottom = max(overlayBottom, screenTimeBottom)
-            val notesTopMargin = max(topOverlayBottom + spacing, 56.dpToPx())
-            updateDailyNotesLayout(notesTopMargin, topOverlayBottom + spacing)
         }
     }
 
@@ -1286,6 +1290,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private fun openHomeSettings() {
         if (!isAdded) return
+        if (syncFocusModeState()) {
+            requireContext().showToast(R.string.focus_mode_blocked)
+            return
+        }
         val navController = try {
             findNavController()
         } catch (e: Exception) {
