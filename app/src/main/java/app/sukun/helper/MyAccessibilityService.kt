@@ -62,6 +62,7 @@ class MyAccessibilityService : AccessibilityService() {
         if (notificationShadeActive
             && packageName != BuildConfig.APPLICATION_ID
             && packageName != ANDROID_PACKAGE
+            && packageName != SYSTEM_UI_PACKAGE
         ) {
             return true
         }
@@ -74,7 +75,11 @@ class MyAccessibilityService : AccessibilityService() {
             return
         }
         when {
-            packageName == SYSTEM_UI_PACKAGE && eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+            packageName == SYSTEM_UI_PACKAGE && (
+                eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+                    eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
+                    eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+                ) -> {
                 // Track whether the notification shade (system UI) is visible.
                 // We still need to detect this even when notifications are locked, so
                 // do not early-return based on the `canOpenNotificationsInFocusMode` pref.
