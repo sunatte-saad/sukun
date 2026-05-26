@@ -1285,6 +1285,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun applyTextSizeScale() {
+        binding.textSizesLayout.visibility = View.GONE
         if (pendingTextSizeScale < 0 || prefs.textSizeScale == pendingTextSizeScale) {
             pendingTextSizeScale = -1f
             return
@@ -1343,7 +1344,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateTextSize() {
-        binding.textSizeValue.text = getTextSizeLabelWithScale(prefs.textSizeScale)
+        binding.textSizeValue.text = getTextSizeLabel(prefs.textSizeScale)
         // Highlight selected option when the selector is visible
         val scale = prefs.textSizeScale
         val selectedColor = requireContext().getColorFromAttr(R.attr.primaryColor)

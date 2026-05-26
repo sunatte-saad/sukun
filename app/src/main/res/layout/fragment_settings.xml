@@ -1862,7 +1862,7 @@
                             tools:text="1.0" />
                     </LinearLayout>
 
-                    <!-- Text size +/- controls -->
+                    <!-- Text size options -->
                     <LinearLayout
                         android:id="@+id/textSizesLayout"
                         android:layout_width="match_parent"
@@ -1871,7 +1871,6 @@
                         android:animateLayoutChanges="true"
                         android:background="@drawable/rounded_primary_gradient"
                         android:elevation="8dp"
-                        android:gravity="center"
                         android:orientation="horizontal"
                         android:outlineAmbientShadowColor="@color/colorPrimaryDark"
                         android:outlineSpotShadowColor="@color/colorPrimaryDark"
@@ -1880,37 +1879,44 @@
                         tools:visibility="gone">
 
                         <TextView
-                            android:id="@+id/textSizeMinus"
+                            android:id="@+id/textSizeSmall"
                             style="@style/TextSmallBold"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:gravity="center"
                             android:paddingVertical="8dp"
-                            android:text="\u2212"
-                            android:textColor="?attr/primaryColor" />
+                            android:text="@string/small" />
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="match_parent"
+                            android:background="?attr/dividerColor" />
 
                         <TextView
-                            android:id="@+id/textSizeCurrent"
+                            android:id="@+id/textSizeMedium"
                             style="@style/TextSmallBold"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:gravity="center"
                             android:paddingVertical="8dp"
-                            android:textColor="?attr/primaryColor"
-                            tools:text="1.0" />
+                            android:text="@string/medium" />
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="match_parent"
+                            android:background="?attr/dividerColor" />
 
                         <TextView
-                            android:id="@+id/textSizePlus"
+                            android:id="@+id/textSizeLarge"
                             style="@style/TextSmallBold"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:gravity="center"
                             android:paddingVertical="8dp"
-                            android:text="+"
-                            android:textColor="?attr/primaryColor" />
+                            android:text="@string/large" />
 
                     </LinearLayout>
 
