@@ -140,8 +140,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             }
 
             binding.homeAppsNum.text = prefs.homeAppsNum.toString()
-            populateKeyboardText()
-            populateAppDrawerFastScroller()
             populateScreenTimeOnOff()
             populateWallpaperText()
             populateAppThemeText()
@@ -224,8 +222,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                     viewModel.resetLauncherLiveData.call()
                 }
             }
-            R.id.autoShowKeyboard -> toggleKeyboardText()
-            R.id.appDrawerFastScroller -> toggleAppDrawerFastScroller()
             R.id.homeAppsNum -> binding.appsNumSelectLayout.visibility = View.VISIBLE
             R.id.dailyWallpaperUrl -> requireContext().openUrl(prefs.dailyWallpaperUrl)
             R.id.dailyWallpaper -> toggleDailyWallpaperUpdate()
@@ -376,8 +372,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.scrollLayout.setOnClickListener(this)
         binding.appInfo.setOnClickListener(this)
         binding.setLauncher.setOnClickListener(this)
-        binding.autoShowKeyboard.setOnClickListener(this)
-        binding.appDrawerFastScroller.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.remindersManage?.setOnClickListener(this)
         binding.prayerAnalytics?.setOnClickListener(this)
@@ -1310,15 +1304,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
     }
 
-    private fun toggleKeyboardText() {
-        if (prefs.autoShowKeyboard && prefs.keyboardMessageShown.not()) {
-            viewModel.showDialog.postValue(Constants.Dialog.KEYBOARD)
-            prefs.keyboardMessageShown = true
-        } else {
-            prefs.autoShowKeyboard = !prefs.autoShowKeyboard
-            populateKeyboardText()
-        }
-    }
 
     private fun updateTheme(appTheme: Int) {
         if (prefs.appTheme == appTheme) return
@@ -1381,21 +1366,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         } else binding.screenTimeLayout.visibility = View.GONE
     }
 
-    private fun populateKeyboardText() {
-        if (prefs.autoShowKeyboard) binding.autoShowKeyboard.text = getString(R.string.on)
-        else binding.autoShowKeyboard.text = getString(R.string.off)
-    }
-
-    private fun toggleAppDrawerFastScroller() {
-        prefs.appDrawerFastScroller = !prefs.appDrawerFastScroller
-        populateAppDrawerFastScroller()
-    }
-
-    private fun populateAppDrawerFastScroller() {
-        binding.appDrawerFastScroller.text = getString(
-            if (prefs.appDrawerFastScroller) R.string.on else R.string.off
-        )
-    }
 
     private fun populateWallpaperText() {
         if (prefs.dailyWallpaper) binding.dailyWallpaper.text = getString(R.string.on)

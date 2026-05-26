@@ -192,7 +192,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(LOCK_MODE, value).apply() }
 
     var autoShowKeyboard: Boolean
-        get() = prefs.getBoolean(AUTO_SHOW_KEYBOARD, true)
+        get() = true
         set(value) = prefs.edit { putBoolean(AUTO_SHOW_KEYBOARD, value).apply() }
 
     var keyboardMessageShown: Boolean
@@ -268,7 +268,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(HIDE_SET_DEFAULT_LAUNCHER, value).apply() }
 
     var appDrawerFastScroller: Boolean
-        get() = prefs.getBoolean(APP_DRAWER_FAST_SCROLLER, true)
+        get() = true
         set(value) = prefs.edit { putBoolean(APP_DRAWER_FAST_SCROLLER, value).apply() }
 
     var screenTimeLastUpdated: Long
