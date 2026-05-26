@@ -138,7 +138,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             populateKeyboardText()
             populateAppDrawerFastScroller()
             populateScreenTimeOnOff()
-            populateHomeButtonRecents()
             populateWallpaperText()
             populateAppThemeText()
             populateTextSize()
@@ -220,7 +219,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                     viewModel.resetLauncherLiveData.call()
                 }
             }
-            R.id.homeButtonRecents -> toggleHomeButtonRecents()
             R.id.autoShowKeyboard -> toggleKeyboardText()
             R.id.appDrawerFastScroller -> toggleAppDrawerFastScroller()
             R.id.homeAppsNum -> binding.appsNumSelectLayout.visibility = View.VISIBLE
@@ -320,9 +318,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.maxApps3 -> updateHomeAppsNum(3)
             R.id.maxApps4 -> updateHomeAppsNum(4)
             R.id.maxApps5 -> updateHomeAppsNum(5)
-            R.id.maxApps6 -> updateHomeAppsNum(6)
-            R.id.maxApps7 -> updateHomeAppsNum(7)
-            R.id.maxApps8 -> updateHomeAppsNum(8)
 
             R.id.textSizeSmall -> {
                 pendingTextSizeScale = 0.9f
@@ -378,7 +373,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.setLauncher.setOnClickListener(this)
         binding.autoShowKeyboard.setOnClickListener(this)
         binding.appDrawerFastScroller.setOnClickListener(this)
-        binding.homeButtonRecents.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.remindersManage?.setOnClickListener(this)
         binding.prayerAnalytics?.setOnClickListener(this)
@@ -467,9 +461,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.maxApps3.setOnClickListener(this)
         binding.maxApps4.setOnClickListener(this)
         binding.maxApps5.setOnClickListener(this)
-        binding.maxApps6.setOnClickListener(this)
-        binding.maxApps7.setOnClickListener(this)
-        binding.maxApps8.setOnClickListener(this)
 
         binding.textSizeSmall?.setOnClickListener(this)
         binding.textSizeMedium?.setOnClickListener(this)
@@ -1425,22 +1416,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.alignmentBottom?.text = if (prefs.homeBottomAlignment)
             getString(R.string.bottom_on)
         else getString(R.string.bottom_off)
-    }
-
-    private fun toggleHomeButtonRecents() {
-        if (!prefs.homeButtonShowRecents && !isAccessServiceEnabled(requireContext())) {
-            toggleAccessibilityVisibility(true)
-            return
-        }
-        prefs.homeButtonShowRecents = !prefs.homeButtonShowRecents
-        populateHomeButtonRecents()
-    }
-
-    private fun populateHomeButtonRecents() {
-        binding.homeButtonRecents.text = getString(
-            if (prefs.homeButtonShowRecents && isAccessServiceEnabled(requireContext())) R.string.on
-            else R.string.off
-        )
     }
 
     private fun populateSwipeDownAction() {

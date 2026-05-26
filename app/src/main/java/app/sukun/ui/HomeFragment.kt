@@ -749,7 +749,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             populateScreenTime()
 
-        val homeAppsNum = prefs.homeAppsNum
+        val homeAppsNum = prefs.homeAppsNum.coerceAtMost(5)
         if (homeAppsNum == 0) return
 
         binding.homeApp1.visibility = View.VISIBLE
