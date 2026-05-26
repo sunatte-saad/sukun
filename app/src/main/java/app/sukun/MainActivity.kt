@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun attachBaseContext(context: Context) {
         val newConfig = Configuration(context.resources.configuration)
-        newConfig.fontScale = Prefs(context).textSizeScale
+        newConfig.fontScale = Prefs(context).textSizeScale.coerceIn(0.5f, 2.0f)
         applyOverrideConfiguration(newConfig)
         super.attachBaseContext(context)
     }

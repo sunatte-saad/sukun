@@ -1279,9 +1279,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         val clamped = newScale.coerceIn(0.5f, maxScale)
         if (clamped == current) return
         pendingTextSizeScale = clamped
-        val formatted = String.format("%.1f", clamped)
-        binding.textSizeValue.text = formatted
-        binding.textSizeCurrent.text = formatted
+        binding.textSizeValue.text = getTextSizeLabel(clamped)
+        binding.textSizeCurrent.text = getTextSizeLabel(clamped)
     }
 
     private fun applyTextSizeScale() {
@@ -1293,6 +1292,14 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         pendingTextSizeScale = -1f
         if (isAdded) {
             requireActivity().recreate()
+        }
+    }
+
+    private fun getTextSizeLabel(scale: Float): String {
+        return when {
+            scale <= 0.8f -> getString(R.string.small)
+            scale <= 1.2f -> getString(R.string.medium)
+            else -> getString(R.string.large)
         }
     }
 
@@ -1315,6 +1322,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             viewModel.setWallpaperWorker()
         }
         AppCompatDelegate.setDefaultNightMode(appTheme)
+        if (isAdded) {
+            requireActivity().recreate()
+        }
     }
 
     private fun setAppTheme(theme: Int) {
@@ -1341,9 +1351,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateTextSize() {
-        val formatted = String.format("%.1f", prefs.textSizeScale)
-        binding.textSizeValue.text = formatted
-        binding.textSizeCurrent.text = formatted
+        binding.textSizeValue.text = getTextSizeLabel(prefs.textSizeScale)
+        binding.textSizeCurrent.text = getTextSizeLabel(prefs.textSizeScale)
     }
 
     private fun populateScreenTimeOnOff() {

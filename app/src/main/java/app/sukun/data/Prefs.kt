@@ -260,8 +260,8 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putInt(APP_THEME, value).apply() }
 
     var textSizeScale: Float
-        get() = prefs.getFloat(TEXT_SIZE_SCALE, 1.0f)
-        set(value) = prefs.edit { putFloat(TEXT_SIZE_SCALE, value).apply() }
+        get() = prefs.getFloat(TEXT_SIZE_SCALE, 1.0f).coerceIn(0.5f, 2.0f)
+        set(value) = prefs.edit { putFloat(TEXT_SIZE_SCALE, value.coerceIn(0.5f, 2.0f)).apply() }
 
     var hideSetDefaultLauncher: Boolean
         get() = prefs.getBoolean(HIDE_SET_DEFAULT_LAUNCHER, false)

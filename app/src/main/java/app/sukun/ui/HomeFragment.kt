@@ -86,6 +86,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+    private val safeBinding get() = _binding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
@@ -376,6 +377,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         else stopDateTimeTicker()
         positionOverlayText()
         binding.dateTimeLayout.doOnLayout {
+            if (safeBinding == null) return@doOnLayout
             positionOverlayText()
         }
     }
@@ -549,7 +551,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun positionOverlayText(horizontalGravity: Int = prefs.homeAlignment) {
-        binding.mainLayout.post {
+        safeBinding?.mainLayout?.post {
+            val binding = safeBinding ?: return@post
             val spacing = 12.dpToPx()
             val weatherTopMargin = getDateTimeBottom()
                 ?.plus(spacing)
@@ -593,6 +596,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun getDateTimeBottom(): Int? {
+        val binding = safeBinding ?: return null
         if (!binding.dateTimeLayout.isVisible) return null
         val layoutBottom = binding.dateTimeLayout.top + binding.dateTimeLayout.height
         val visibleClockBottom = when {
