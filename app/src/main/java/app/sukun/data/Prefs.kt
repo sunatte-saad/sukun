@@ -357,7 +357,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(SHOW_PRAYER_ON_HOME, value).apply() }
 
     var isProUser: Boolean
-        get() = prefs.getBoolean(PRO_USER, true)
+        get() = prefs.getBoolean(PRO_USER, false)
         set(value) = prefs.edit { putBoolean(PRO_USER, value).apply() }
 
     var proPurchaseToken: String

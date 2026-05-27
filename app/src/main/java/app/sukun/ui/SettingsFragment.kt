@@ -33,6 +33,8 @@ import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.databinding.FragmentSettingsBinding
 import app.sukun.helper.HourlyChimeScheduler
+import app.sukun.premium.PremiumFeature
+import app.sukun.premium.PremiumManager
 import app.sukun.helper.PrayerReminderScheduler
 import app.sukun.helper.animateAlpha
 import app.sukun.helper.appUsagePermissionGranted
@@ -554,15 +556,15 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populatePremiumStatus() {
-        binding.premiumRow.isVisible = !prefs.isProUser
-        if (!prefs.isProUser) {
+        binding.premiumRow.isVisible = !PremiumManager.isPremiumUser(requireContext())
+        if (!PremiumManager.isPremiumUser(requireContext())) {
             binding.goPremium.text = getString(R.string.upgrade_to_premium)
             binding.goPremium.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
         }
     }
 
     private fun showUpgradeDialog() {
-        if (prefs.isProUser) {
+        if (PremiumManager.isPremiumUser(requireContext())) {
             requireContext().showToast(R.string.premium_already_active)
             return
         }
@@ -570,7 +572,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             .setTitle(R.string.go_premium)
             .setMessage(R.string.premium_feature_requires_upgrade)
             .setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
-                prefs.unlockPremium()
+                PremiumManager.unlockPremium(requireContext())
                 populatePremiumStatus()
                 requireContext().showToast(R.string.premium_enabled)
             }
@@ -603,8 +605,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             .show()
     }
 
-    private fun canUsePremiumFeature(): Boolean {
-        if (prefs.isProUser) return true
+    private fun canUsePremiumFeature(feature: PremiumFeature): Boolean {
+        if (PremiumManager.hasAccess(requireContext(), feature)) return true
         requireContext().showToast(R.string.premium_feature_requires_upgrade)
         return false
     }
@@ -689,7 +691,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun toggleWeather() {
-        if (!prefs.showWeatherOnHome && !canUsePremiumFeature()) return
+        if (!prefs.showWeatherOnHome && !canUsePremiumFeature(PremiumFeature.WEATHER)) return
         prefs.showWeatherOnHome = !prefs.showWeatherOnHome
         populateWeatherSettings()
         if (prefs.showWeatherOnHome) {
@@ -876,7 +878,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun togglePrayer() {
-        if (!prefs.showPrayerOnHome && !canUsePremiumFeature()) return
+        if (!prefs.showPrayerOnHome && !canUsePremiumFeature(PremiumFeature.PRAYER)) return
         prefs.showPrayerOnHome = !prefs.showPrayerOnHome
         populatePrayerSettings()
         if (prefs.showPrayerOnHome) {
@@ -1236,7 +1238,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun toggleDailyWallpaperUpdate() {
-        if (!prefs.dailyWallpaper && !canUsePremiumFeature()) return
+        if (!prefs.dailyWallpaper && !canUsePremiumFeature(PremiumFeature.DAILY_WALLPAPER)) return
         if (prefs.dailyWallpaper.not() && prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES && viewModel.isSukunDefault.value == false) {
             requireContext().showToast(R.string.set_as_default_launcher_first)
             return
@@ -1257,7 +1259,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun changeWallpaperNow() {
-        if (!canUsePremiumFeature()) return
+        if (!canUsePremiumFeature(PremiumFeature.DAILY_WALLPAPER)) return
         prefs.dailyWallpaper = true
         populateWallpaperText()
         setPlainWallpaper(requireContext(), android.R.color.black)
