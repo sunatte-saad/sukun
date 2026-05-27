@@ -1299,8 +1299,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun getTextSizeLabel(scale: Float): String {
         return when {
-            scale <= 0.8f -> getString(R.string.small)
-            scale <= 1.2f -> getString(R.string.medium)
+            scale <= 0.95f -> getString(R.string.small)
+            scale <= 1.05f -> getString(R.string.medium)
             else -> getString(R.string.large)
         }
     }
@@ -1349,9 +1349,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         val scale = prefs.textSizeScale
         val selectedColor = requireContext().getColorFromAttr(R.attr.primaryColor)
         val defaultColor = requireContext().getColorFromAttr(R.attr.primaryColorTrans50)
-        binding.textSizeSmall?.setTextColor(if (scale <= 0.8f) selectedColor else defaultColor)
-        binding.textSizeMedium?.setTextColor(if (scale > 0.8f && scale <= 1.2f) selectedColor else defaultColor)
-        binding.textSizeLarge?.setTextColor(if (scale > 1.2f) selectedColor else defaultColor)
+        binding.textSizeSmall?.setTextColor(if (scale <= 0.95f) selectedColor else defaultColor)
+        binding.textSizeMedium?.setTextColor(if (scale > 0.95f && scale <= 1.05f) selectedColor else defaultColor)
+        binding.textSizeLarge?.setTextColor(if (scale > 1.05f) selectedColor else defaultColor)
     }
 
     private fun getTextSizeLabelWithScale(scale: Float): String {
