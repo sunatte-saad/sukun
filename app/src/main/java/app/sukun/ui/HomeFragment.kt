@@ -135,6 +135,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             R.id.date -> openCalendarApp()
             R.id.ringClock -> openClockApp()
             R.id.ringDate -> openCalendarApp()
+            R.id.prayerText -> promptMarkPrayerDone()
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
             R.id.tvScreenTime -> openScreenTimeDigitalWellbeing()
             R.id.dailyNotesCard -> showDailyNotesEditor()
@@ -278,6 +279,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.mainLayout.setOnTouchListener(swipeListener)
         // homeAppsLayout is match_parent and sits above the wallpaper; empty-area long-presses land here.
         binding.homeAppsLayout.setOnTouchListener(swipeListener)
+        binding.clock.setOnTouchListener(getViewSwipeTouchListener(context, binding.clock))
+        binding.date.setOnTouchListener(getViewSwipeTouchListener(context, binding.date))
+        binding.ringClock.setOnTouchListener(getViewSwipeTouchListener(context, binding.ringClock))
+        binding.ringDate.setOnTouchListener(getViewSwipeTouchListener(context, binding.ringDate))
+        binding.prayerText?.let { prayerText ->
+            prayerText.setOnTouchListener(getViewSwipeTouchListener(context, prayerText))
+        }
+        binding.dailyNotesCard.setOnTouchListener(getViewSwipeTouchListener(context, binding.dailyNotesCard))
         binding.homeApp1.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp1))
         binding.homeApp2.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp2))
         binding.homeApp3.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp3))
@@ -305,6 +314,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             true
         }
         binding.weatherText?.setOnClickListener { openGoogleWeather() }
+        binding.prayerText?.setOnClickListener(this)
         binding.prayerText?.setOnLongClickListener { promptMarkPrayerDone(); true }
         binding.tvScreenTime?.setOnClickListener(this)
         binding.tvScreenTime?.setOnLongClickListener(this)
@@ -475,6 +485,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val showNotes = prefs.showDailyNotesOnHome
         binding.dailyNotesCard.isVisible = showNotes
         if (showNotes) {
+            // Keep notes card above full-screen app list container so touches are not intercepted.
+            binding.dailyNotesCard.bringToFront()
             val isEmpty = formattedNotes.isBlank()
             binding.dailyNotesText.text = if (isEmpty) {
                 getString(R.string.daily_notes_empty_hint)
