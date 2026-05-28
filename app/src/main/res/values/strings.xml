@@ -122,6 +122,8 @@
     <string name="prayer_mark_done">Prayed ✓</string>
     <string name="prayer_mark_confirm">Mark %1$s as prayed?</string>
     <string name="prayer_marked_prayed">Marked as prayed</string>
+    <string name="prayer_mark_missed">Missed ✗</string>
+    <string name="prayer_marked_missed">Marked as missed</string>
     <string name="prayer_analytics">Prayer Analytics</string>
     <string name="prayer_today">Today</string>
     <string name="prayer_this_month">This Month  %1$s</string>
@@ -172,6 +174,7 @@
     <string name="small">Small</string>
     <string name="medium">Medium</string>
     <string name="large">Large</string>
+    <string name="xlarge">X-Large</string>
     <string name="welcome_to_sukun_settings">Welcome to the settings!
         \n\nRemember, if you have any questions, our About page has the answer.</string>
     <string name="rate_us_message">Hi, you won\'t see this message again.

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
-    android:background="?attr/dialogShadeColor">
+    android:background="#B3000000">
 
     <ScrollView
         android:id="@+id/scrollView"
@@ -1958,6 +1958,21 @@
                             android:gravity="center"
                             android:paddingVertical="8dp"
                             android:text="@string/large" />
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="match_parent"
+                            android:background="@color/whiteInverseTrans25" />
+
+                        <TextView
+                            android:id="@+id/textSizeXLarge"
+                            style="@style/TextSmallBold"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:paddingVertical="8dp"
+                            android:text="@string/xlarge" />
 
                     </LinearLayout>
 

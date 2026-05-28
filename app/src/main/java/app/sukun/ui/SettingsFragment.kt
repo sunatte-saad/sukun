@@ -181,7 +181,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.azanSoundSelectLayout?.visibility = View.GONE
         binding.focusModeSelectLayout?.visibility = View.GONE
         binding.doubleTapActionSelectLayout.visibility = View.GONE
-        if (view.id != R.id.textSizeSmall && view.id != R.id.textSizeMedium && view.id != R.id.textSizeLarge) {
+        if (view.id != R.id.textSizeSmall && view.id != R.id.textSizeMedium && view.id != R.id.textSizeLarge
+            && view.id != R.id.textSizeXLarge
+        ) {
             if (binding.textSizesLayout.isVisible) {
                 binding.textSizesLayout.visibility = View.GONE
                 applyTextSizeScale()
@@ -332,6 +334,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 pendingTextSizeScale = 1.1f
                 applyTextSizeScale()
             }
+            R.id.textSizeXLarge -> {
+                pendingTextSizeScale = 1.5f
+                applyTextSizeScale()
+            }
 
             R.id.swipeLeftApp -> showAppListIfEnabled(Constants.FLAG_SET_SWIPE_LEFT_APP)
             R.id.swipeRightApp -> showAppListIfEnabled(Constants.FLAG_SET_SWIPE_RIGHT_APP)
@@ -464,6 +470,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.textSizeSmall?.setOnClickListener(this)
         binding.textSizeMedium?.setOnClickListener(this)
         binding.textSizeLarge?.setOnClickListener(this)
+        binding.textSizeXLarge?.setOnClickListener(this)
 
         binding.dailyWallpaper.setOnLongClickListener(this)
         binding.alignment.setOnLongClickListener(this)
@@ -1301,7 +1308,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         return when {
             scale <= 0.95f -> getString(R.string.small)
             scale <= 1.05f -> getString(R.string.medium)
-            else -> getString(R.string.large)
+            scale < 1.3f -> getString(R.string.large)
+            else -> getString(R.string.xlarge)
         }
     }
 
@@ -1351,7 +1359,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         val defaultColor = requireContext().getColorFromAttr(R.attr.primaryColorTrans50)
         binding.textSizeSmall?.setTextColor(if (scale <= 0.95f) selectedColor else defaultColor)
         binding.textSizeMedium?.setTextColor(if (scale > 0.95f && scale <= 1.05f) selectedColor else defaultColor)
-        binding.textSizeLarge?.setTextColor(if (scale > 1.05f) selectedColor else defaultColor)
+        binding.textSizeLarge?.setTextColor(if (scale > 1.05f && scale < 1.3f) selectedColor else defaultColor)
+        binding.textSizeXLarge?.setTextColor(if (scale >= 1.3f) selectedColor else defaultColor)
     }
 
     private fun getTextSizeLabelWithScale(scale: Float): String {

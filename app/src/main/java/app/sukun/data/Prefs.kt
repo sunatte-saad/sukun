@@ -928,6 +928,23 @@ class Prefs(context: Context) {
         prayerLogsJson = arr.toString()
     }
 
+    fun unmarkPrayer(prayerKey: String) {
+        val dateKey = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val logs = getPrayerLogs().toMutableList()
+        logs.removeAll { it.prayerKey == prayerKey && it.dateKey == dateKey }
+        val cutoff = System.currentTimeMillis() - 2L * 365 * 24 * 60 * 60 * 1000
+        val trimmed = logs.filter { it.timestamp > cutoff }
+        val arr = JSONArray()
+        trimmed.forEach { log ->
+            arr.put(JSONObject().apply {
+                put("p", log.prayerKey)
+                put("d", log.dateKey)
+                put("t", log.timestamp)
+            })
+        }
+        prayerLogsJson = arr.toString()
+    }
+
     fun getPrayerLogs(): List<PrayerLog> {
         return try {
             val arr = JSONArray(prayerLogsJson)

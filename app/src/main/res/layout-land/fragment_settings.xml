@@ -1820,6 +1820,22 @@
                             android:paddingEnd="12dp"
                             android:text="@string/large" />
 
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/whiteInverseTrans25" />
+
+                        <TextView
+                            android:id="@+id/textSizeXLarge"
+                            style="@style/TextSmall"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="12dp"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:text="@string/xlarge" />
+
                     </LinearLayout>
 
                 </FrameLayout>

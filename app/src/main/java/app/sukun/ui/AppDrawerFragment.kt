@@ -83,7 +83,6 @@ class AppDrawerFragment : Fragment() {
     }
 
     private fun initViews() {
-        binding.root.setBackgroundColor(requireContext().getColorFromAttr(R.attr.dialogShadeColor))
         binding.appRename.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
         binding.appRename.setShadowLayer(4f, 0f, 2f, requireContext().getColorFromAttr(R.attr.primaryTextShadowColor))
         if (flag == Constants.FLAG_HIDDEN_APPS)

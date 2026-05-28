@@ -135,7 +135,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             R.id.date -> openCalendarApp()
             R.id.ringClock -> openClockApp()
             R.id.ringDate -> openCalendarApp()
-            R.id.prayerText -> promptMarkPrayerDone()
+            R.id.prayerText -> { /* mark on long-press only */ }
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
             R.id.tvScreenTime -> openScreenTimeDigitalWellbeing()
             R.id.dailyNotesCard -> showDailyNotesEditor()
@@ -216,6 +216,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 prefs.calendarAppClassName = ""
                 prefs.calendarAppUser = ""
             }
+
+            R.id.prayerText -> promptMarkPrayerDone()
 
             R.id.tvScreenTime -> {
                 showAppList(Constants.FLAG_SET_SCREEN_TIME_APP)
@@ -314,8 +316,6 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             true
         }
         binding.weatherText?.setOnClickListener { openGoogleWeather() }
-        binding.prayerText?.setOnClickListener(this)
-        binding.prayerText?.setOnLongClickListener { promptMarkPrayerDone(); true }
         binding.tvScreenTime?.setOnClickListener(this)
         binding.tvScreenTime?.setOnLongClickListener(this)
         binding.dailyNotesCard.setOnClickListener(this)
@@ -396,18 +396,19 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (!binding.dateTimeLayout.isVisible) return
         val defaultDateFormat = SimpleDateFormat("EEE, d MMM", Locale.getDefault())
         var defaultDateText = defaultDateFormat.format(Date())
+        var ringDateText = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
 
-        if (!prefs.showStatusBar && prefs.clockStyle != Constants.ClockStyle.DAY_RING) {
+        if (!prefs.showStatusBar) {
             val battery = (requireContext().getSystemService(Context.BATTERY_SERVICE) as BatteryManager)
                 .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             if (battery > 0) {
                 defaultDateText = getString(R.string.day_battery, defaultDateText, battery)
+                ringDateText = getString(R.string.day_battery, ringDateText, battery)
             }
         }
 
         binding.date?.text = defaultDateText.replace(".,", ",")
-        binding.ringDate.text = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
-            .replace(".,", ",")
+        binding.ringDate.text = ringDateText.replace(".,", ",")
         updateDayProgressClock()
     }
 
@@ -463,6 +464,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
         binding.prayerText?.text = prayerState.toOverlayText(requireContext())
         binding.prayerText?.visibility = View.VISIBLE
+        binding.prayerText?.bringToFront()
         positionOverlayText()
         startPrayerTicker()
     }
@@ -471,12 +473,21 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val state = currentPrayerState ?: return
         val prayerName = app.sukun.helper.getPrayerName(requireContext(), state.prayerKey)
         AlertDialog.Builder(requireContext())
-            .setMessage(getString(R.string.prayer_mark_confirm, prayerName))
-            .setPositiveButton(R.string.prayer_mark_done) { _, _ ->
-                prefs.logPrayer(state.prayerKey)
-                requireContext().showToast(R.string.prayer_marked_prayed)
+            .setTitle(prayerName)
+            .setItems(
+                arrayOf(
+                    getString(R.string.prayer_mark_done),
+                    getString(R.string.prayer_mark_missed)
+                )
+            ) { _, which ->
+                if (which == 0) {
+                    prefs.logPrayer(state.prayerKey)
+                    requireContext().showToast(R.string.prayer_marked_prayed)
+                } else {
+                    prefs.unmarkPrayer(state.prayerKey)
+                    requireContext().showToast(R.string.prayer_marked_missed)
+                }
             }
-            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -717,6 +728,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 }
                 binding.prayerText?.text = prayerState.toOverlayText(requireContext())
                 binding.prayerText?.isVisible = true
+                binding.prayerText?.bringToFront()
                 positionOverlayText()
                 delay(1000)
             }
