@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -20,6 +21,7 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -379,6 +381,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.homeApp7.gravity = horizontalGravity
         binding.homeApp8.gravity = horizontalGravity
         positionOverlayText(horizontalGravity)
+        adjustHomeAppsLayoutForTextScale()
     }
 
     private fun populateDateTime() {
@@ -675,7 +678,65 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             binding.homeAppsLayout.paddingLeft,
             max(max(defaultHomeAppsPaddingTop, notesBottom), homeAppsMinTop),
             binding.homeAppsLayout.paddingRight,
+            homeAppsBottomPadding(),
+        )
+        adjustHomeAppsLayoutForTextScale()
+    }
+
+    private fun homeAppTextViews(): List<TextView> = listOf(
+        binding.homeApp1,
+        binding.homeApp2,
+        binding.homeApp3,
+        binding.homeApp4,
+        binding.homeApp5,
+        binding.homeApp6,
+        binding.homeApp7,
+        binding.homeApp8,
+    )
+
+    private fun homeAppsBottomPadding(): Int {
+        return if (prefs.textSizeScale >= 1.15f) {
+            minOf(defaultHomeAppsPaddingBottom, 20.dpToPx())
+        } else {
             defaultHomeAppsPaddingBottom
+        }
+    }
+
+    private fun adjustHomeAppsLayoutForTextScale() {
+        if (_binding == null) return
+        val scale = prefs.textSizeScale
+        val useCompactLayout = scale >= 1.15f
+        val defaultItemPadding = resources.getDimensionPixelSize(R.dimen.home_app_padding_vertical)
+        val itemPadding = when {
+            !useCompactLayout -> defaultItemPadding
+            scale >= 1.2f -> 2.dpToPx()
+            else -> 4.dpToPx()
+        }
+        val horizontalGravity = prefs.homeAlignment
+        homeAppTextViews().forEach { textView ->
+            textView.maxLines = 1
+            textView.ellipsize = TextUtils.TruncateAt.END
+            textView.gravity = if (useCompactLayout) {
+                horizontalGravity or Gravity.CENTER_VERTICAL
+            } else {
+                horizontalGravity
+            }
+            textView.setPadding(textView.paddingLeft, itemPadding, textView.paddingRight, itemPadding)
+            val lp = textView.layoutParams as? LinearLayout.LayoutParams ?: return@forEach
+            if (useCompactLayout && textView.isVisible) {
+                lp.height = 0
+                lp.weight = 1f
+            } else {
+                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                lp.weight = 0f
+            }
+            textView.layoutParams = lp
+        }
+        binding.homeAppsLayout.setPadding(
+            binding.homeAppsLayout.paddingLeft,
+            binding.homeAppsLayout.paddingTop,
+            binding.homeAppsLayout.paddingRight,
+            homeAppsBottomPadding(),
         )
     }
 
@@ -787,42 +848,60 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             populateScreenTime()
 
         val homeAppsNum = prefs.homeAppsNum.coerceAtMost(5)
-        if (homeAppsNum == 0) return
+        if (homeAppsNum == 0) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp1.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp1, prefs.appName1, prefs.appPackage1, prefs.appActivityClassName1, prefs.appUser1, prefs.isShortcut1, prefs.shortcutId1)) {
             prefs.appName1 = ""
             prefs.appPackage1 = ""
         }
-        if (homeAppsNum == 1) return
+        if (homeAppsNum == 1) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp2.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp2, prefs.appName2, prefs.appPackage2, prefs.appActivityClassName2, prefs.appUser2, prefs.isShortcut2, prefs.shortcutId2)) {
             prefs.appName2 = ""
             prefs.appPackage2 = ""
         }
-        if (homeAppsNum == 2) return
+        if (homeAppsNum == 2) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp3.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp3, prefs.appName3, prefs.appPackage3, prefs.appActivityClassName3, prefs.appUser3, prefs.isShortcut3, prefs.shortcutId3)) {
             prefs.appName3 = ""
             prefs.appPackage3 = ""
         }
-        if (homeAppsNum == 3) return
+        if (homeAppsNum == 3) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp4.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp4, prefs.appName4, prefs.appPackage4, prefs.appActivityClassName4, prefs.appUser4, prefs.isShortcut4, prefs.shortcutId4)) {
             prefs.appName4 = ""
             prefs.appPackage4 = ""
         }
-        if (homeAppsNum == 4) return
+        if (homeAppsNum == 4) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp5.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp5, prefs.appName5, prefs.appPackage5, prefs.appActivityClassName5, prefs.appUser5, prefs.isShortcut5, prefs.shortcutId5)) {
             prefs.appName5 = ""
             prefs.appPackage5 = ""
         }
-        if (homeAppsNum == 5) return
+        if (homeAppsNum == 5) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp6.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp6, prefs.appName6, prefs.appPackage6, prefs.appActivityClassName6, prefs.appUser6, prefs.isShortcut6, prefs.shortcutId6)) {
@@ -843,6 +922,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             prefs.appName8 = ""
             prefs.appPackage8 = ""
         }
+        adjustHomeAppsLayoutForTextScale()
     }
 
     private fun setHomeAppText(
@@ -958,10 +1038,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             textView.compoundDrawablePadding = 0
             return
         }
-        val iconSize = 24.dpToPx()
+        val iconSize = if (prefs.textSizeScale >= 1.15f) 20.dpToPx() else 24.dpToPx()
         drawable.setBounds(0, 0, iconSize, iconSize)
         textView.setCompoundDrawablesRelative(drawable, null, null, null)
-        textView.compoundDrawablePadding = 12.dpToPx()
+        textView.compoundDrawablePadding = if (prefs.textSizeScale >= 1.15f) 8.dpToPx() else 12.dpToPx()
     }
 
     private fun hideHomeApps() {

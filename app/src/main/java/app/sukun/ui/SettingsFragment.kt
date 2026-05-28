@@ -343,7 +343,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 applyTextSizeScale()
             }
             R.id.textSizeXLarge -> {
-                pendingTextSizeScale = 1.5f
+                pendingTextSizeScale = 1.25f
                 applyTextSizeScale()
             }
 
@@ -1307,7 +1307,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private var pendingTextSizeScale: Float = -1f
 
     private fun adjustTextSizePreview(delta: Float) {
-        val maxScale = if (isTablet(requireContext())) 2.0f else 1.5f
+        val maxScale = if (isTablet(requireContext())) 2.0f else 1.25f
         val current = if (pendingTextSizeScale > 0) pendingTextSizeScale else prefs.textSizeScale
         val newScale = Math.round((current + delta) * 10f) / 10f
         val clamped = newScale.coerceIn(0.5f, maxScale)
@@ -1333,7 +1333,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         return when {
             scale <= 0.95f -> getString(R.string.small)
             scale <= 1.05f -> getString(R.string.medium)
-            scale < 1.3f -> getString(R.string.large)
+            scale < 1.2f -> getString(R.string.large)
             else -> getString(R.string.xlarge)
         }
     }
@@ -1384,8 +1384,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         val defaultColor = requireContext().getColorFromAttr(R.attr.primaryColorTrans50)
         binding.textSizeSmall?.setTextColor(if (scale <= 0.95f) selectedColor else defaultColor)
         binding.textSizeMedium?.setTextColor(if (scale > 0.95f && scale <= 1.05f) selectedColor else defaultColor)
-        binding.textSizeLarge?.setTextColor(if (scale > 1.05f && scale < 1.3f) selectedColor else defaultColor)
-        binding.textSizeXLarge?.setTextColor(if (scale >= 1.3f) selectedColor else defaultColor)
+        binding.textSizeLarge?.setTextColor(if (scale > 1.05f && scale < 1.2f) selectedColor else defaultColor)
+        binding.textSizeXLarge?.setTextColor(if (scale >= 1.2f) selectedColor else defaultColor)
     }
 
     private fun getTextSizeLabelWithScale(scale: Float): String {
