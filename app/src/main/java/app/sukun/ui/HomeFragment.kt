@@ -42,6 +42,7 @@ import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.data.PrayerState
 import app.sukun.data.WeatherData
+import app.sukun.data.toReminderList
 import app.sukun.databinding.FragmentHomeBinding
 import app.sukun.helper.appUsagePermissionGranted
 import app.sukun.helper.canOpenNotificationsInFocusMode
@@ -109,11 +110,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         initSwipeTouchListener()
         initClickListeners()
         applyReadableHomeTextColors()
+        binding.remindersBellContainer.bringToFront()
+        updateRemindersBellCount()
     }
 
     override fun onResume() {
         super.onResume()
         syncFocusModeState()
+        updateRemindersBellCount()
         populateHomeScreen(false)
         viewModel.loadWeather()
         viewModel.loadPrayerState()
@@ -136,6 +140,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             R.id.ringClock -> openClockApp()
             R.id.ringDate -> openCalendarApp()
             R.id.prayerText -> { /* mark on long-press only */ }
+            R.id.remindersBellContainer -> openReminders()
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
             R.id.tvScreenTime -> openScreenTimeDigitalWellbeing()
             R.id.dailyNotesCard -> showDailyNotesEditor()
@@ -288,6 +293,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.prayerText?.let { prayerText ->
             prayerText.setOnTouchListener(getViewSwipeTouchListener(context, prayerText))
         }
+        binding.remindersBellContainer.setOnTouchListener(
+            getViewSwipeTouchListener(context, binding.remindersBellContainer)
+        )
         binding.dailyNotesCard.setOnTouchListener(getViewSwipeTouchListener(context, binding.dailyNotesCard))
         binding.homeApp1.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp1))
         binding.homeApp2.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp2))
@@ -316,6 +324,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             true
         }
         binding.weatherText?.setOnClickListener { openGoogleWeather() }
+        binding.remindersBellContainer.setOnClickListener(this)
         binding.tvScreenTime?.setOnClickListener(this)
         binding.tvScreenTime?.setOnLongClickListener(this)
         binding.dailyNotesCard.setOnClickListener(this)
@@ -1310,6 +1319,26 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         prefs.startFocusMode(durationInMillis)
         syncFocusModeState()
         viewModel.refreshHome(false)
+    }
+
+    private fun updateRemindersBellCount() {
+        val count = prefs.remindersJson.toReminderList().size
+        binding.remindersBellCount.isVisible = count > 0
+        if (count > 0) {
+            binding.remindersBellCount.text = count.toString()
+        }
+    }
+
+    private fun openReminders() {
+        if (!isAdded) return
+        if (syncFocusModeState()) {
+            requireContext().showToast(R.string.focus_mode_blocked)
+            return
+        }
+        try {
+            findNavController().navigate(R.id.action_mainFragment_to_remindersFragment)
+        } catch (_: Exception) {
+        }
     }
 
     private fun openHomeSettings() {

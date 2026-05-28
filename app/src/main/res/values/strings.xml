@@ -32,8 +32,8 @@
     <string name="white">White</string>
     <string name="change_default_launcher">Change default launcher</string>
     <string name="turn_off_sukun_launcher">Turn off Sukun launcher</string>
-    <string name="turn_off_sukun_confirmation">This will switch your phone back to another home screen. Sukun will stay installed and you can open it again from the app icon.</string>
-    <string name="turn_off_sukun_hint">Select your phone launcher to turn off Sukun</string>
+    <string name="turn_off_sukun_confirmation">Sukun will stop being your home screen. On the next screen, choose your phone\'s normal launcher (not Sukun). Sukun stays installed — open it from your app list anytime.</string>
+    <string name="turn_off_sukun_hint">Opening Home app settings — choose another launcher to replace Sukun</string>
     <string name="turn_off">Turn off</string>
     <string name="privacy">Privacy</string>
     <string name="share">Share</string>

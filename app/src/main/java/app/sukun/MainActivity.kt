@@ -40,6 +40,7 @@ import app.sukun.helper.setPlainWallpaper
 import app.sukun.helper.shareApp
 import app.sukun.helper.showLauncherSelector
 import app.sukun.helper.showToast
+import app.sukun.helper.turnOffSukunLauncher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -190,10 +191,12 @@ class MainActivity : AppCompatActivity() {
             openLauncherChooser(it)
         }
         viewModel.resetLauncherLiveData.observe(this) {
-            if (isDefaultLauncher() || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-                resetLauncherViaFakeActivity()
-            else
-                showLauncherSelector(Constants.REQUEST_CODE_LAUNCHER_SELECTOR)
+            when {
+                isDefaultLauncher() -> turnOffSukunLauncher()
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
+                    showLauncherSelector(Constants.REQUEST_CODE_LAUNCHER_SELECTOR)
+                else -> resetLauncherViaFakeActivity()
+            }
         }
         viewModel.checkForMessages.observe(this) {
             checkForMessages()

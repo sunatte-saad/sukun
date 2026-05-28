@@ -1222,7 +1222,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             .setMessage(R.string.turn_off_sukun_confirmation)
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.turn_off) { _, _ ->
-                requireContext().showToast(R.string.turn_off_sukun_hint, Toast.LENGTH_LONG)
                 viewModel.resetLauncherLiveData.call()
             }
             .show()

@@ -16,6 +16,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.UserHandle
 import android.provider.Settings
+import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
@@ -51,6 +52,37 @@ fun Activity.showLauncherSelector(requestCode: Int) {
         resetDefaultLauncher()
 }
 
+/**
+ * Stops Sukun from being the default launcher without uninstalling.
+ * Opens the phone's Home app settings so the user can pick another launcher (e.g. the system home).
+ * Does not show an in-app "pick a launcher" chooser — that is only used when setting Sukun as default.
+ */
+fun Activity.turnOffSukunLauncher() {
+    try {
+        packageManager.clearPackagePreferredActivities(packageName)
+    } catch (_: Exception) {
+    }
+    showToast(R.string.turn_off_sukun_hint, android.widget.Toast.LENGTH_LONG)
+    openHomeAppSettings()
+    moveTaskToBack(true)
+}
+
+fun Context.openHomeAppSettings() {
+    val candidates = listOf(
+        Intent(Settings.ACTION_HOME_SETTINGS),
+        Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS),
+    )
+    val settingsIntent = candidates.firstOrNull { intent ->
+        packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null
+    } ?: return
+    try {
+        settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(settingsIntent)
+    } catch (e: Exception) {
+        Log.w("Sukun", "Failed to open home app settings", e)
+    }
+}
+
 fun Context.resetDefaultLauncher() {
     try {
         val componentName = ComponentName(this, FakeHomeActivity::class.java)
@@ -60,7 +92,7 @@ fun Context.resetDefaultLauncher() {
             PackageManager.DONT_KILL_APP
         )
         val selector = Intent(Intent.ACTION_MAIN)
-        selector.addCategory(Intent.CATEGORY_HOME)
+            .addCategory(Intent.CATEGORY_HOME)
         startActivity(selector)
         // Delay disabling FakeHomeActivity so the chooser has time to render before it disappears
         Handler(Looper.getMainLooper()).postDelayed({
@@ -73,7 +105,7 @@ fun Context.resetDefaultLauncher() {
                     )
                 }
             } catch (_: Exception) {}
-        }, 1500)
+        }, 2500)
     } catch (e: Exception) {
         e.printStackTrace()
     }
