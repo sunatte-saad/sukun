@@ -72,6 +72,7 @@ class Prefs(context: Context) {
     private val WEATHER_LAST_UPDATED = "WEATHER_LAST_UPDATED"
     private val SHOW_PRAYER_ON_HOME = "SHOW_PRAYER_ON_HOME"
     private val SHOW_DAILY_NOTES_ON_HOME = "SHOW_DAILY_NOTES_ON_HOME"
+    private val SHOW_REMINDERS_ON_HOME = "SHOW_REMINDERS_ON_HOME"
     private val DAILY_NOTES_LIST = "DAILY_NOTES_LIST"
     private val PRAYER_SOURCE_MODE = "PRAYER_SOURCE_MODE"
     private val PRAYER_LOCATION_QUERY = "PRAYER_LOCATION_QUERY"
@@ -377,6 +378,10 @@ class Prefs(context: Context) {
     var showDailyNotesOnHome: Boolean
         get() = prefs.getBoolean(SHOW_DAILY_NOTES_ON_HOME, false)
         set(value) = prefs.edit { putBoolean(SHOW_DAILY_NOTES_ON_HOME, value).apply() }
+
+    var showRemindersOnHome: Boolean
+        get() = prefs.getBoolean(SHOW_REMINDERS_ON_HOME, true)
+        set(value) = prefs.edit { putBoolean(SHOW_REMINDERS_ON_HOME, value).apply() }
 
     var dailyNotesList: String
         get() = prefs.getString(DAILY_NOTES_LIST, "").toString()

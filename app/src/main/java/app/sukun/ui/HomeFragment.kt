@@ -1322,6 +1322,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun updateRemindersBellCount() {
+        val showReminders = prefs.showRemindersOnHome
+        binding.remindersBellContainer.isVisible = showReminders
+        if (!showReminders) return
         val count = prefs.remindersJson.toReminderList().size
         binding.remindersBellCount.isVisible = count > 0
         if (count > 0) {

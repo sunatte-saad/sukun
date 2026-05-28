@@ -34,6 +34,7 @@ import app.sukun.data.Prefs
 import app.sukun.databinding.FragmentSettingsBinding
 import app.sukun.helper.HourlyChimeScheduler
 import app.sukun.helper.PrayerReminderScheduler
+import app.sukun.helper.ReminderScheduler
 import app.sukun.helper.animateAlpha
 import app.sukun.helper.appUsagePermissionGranted
 import app.sukun.helper.getFocusModeStatus
@@ -150,6 +151,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             populateFocusModeNotificationsLock()
             populateWeatherSettings()
             populateDailyNotesSettings()
+            populateRemindersSettings()
             populatePremiumStatus()
             populatePrayerSettings()
             populateHourlyChime()
@@ -256,6 +258,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.prayerSubMenuLayout?.visibility = if (isVisible) View.GONE else View.VISIBLE
                 binding.prayerSettingsToggle?.text = getString(if (isVisible) R.string.manage else R.string.close)
             }
+            R.id.remindersSettingsHeader -> {
+                val isVisible = binding.remindersSubMenuLayout?.visibility == View.VISIBLE
+                binding.remindersSubMenuLayout?.visibility = if (isVisible) View.GONE else View.VISIBLE
+                binding.remindersSettingsToggle?.text = getString(if (isVisible) R.string.manage else R.string.close)
+            }
+            R.id.remindersOnOff -> toggleReminders()
             R.id.prayerOnOff -> togglePrayer()
             R.id.prayerSource -> binding.prayerSourceSelectLayout?.visibility = View.VISIBLE
             R.id.prayerSourceManual -> updatePrayerSource(Constants.PrayerSource.MANUAL)
@@ -379,6 +387,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.appInfo.setOnClickListener(this)
         binding.setLauncher.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
+        binding.remindersSettingsHeader?.setOnClickListener(this)
+        binding.remindersOnOff?.setOnClickListener(this)
         binding.remindersManage?.setOnClickListener(this)
         binding.prayerAnalytics?.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
@@ -558,6 +568,22 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.dailyNotesOnOff.text = getString(if (prefs.showDailyNotesOnHome) R.string.on else R.string.off)
         binding.dailyNotesOptionsLayout.isVisible = prefs.showDailyNotesOnHome
         binding.dailyNotesList.text = getDailyNotesSummary(prefs.dailyNotesList)
+    }
+
+    private fun toggleReminders() {
+        prefs.showRemindersOnHome = !prefs.showRemindersOnHome
+        populateRemindersSettings()
+        if (prefs.showRemindersOnHome) {
+            ReminderScheduler.scheduleAll(requireContext())
+        } else {
+            ReminderScheduler.cancelAll(requireContext())
+        }
+        viewModel.refreshHome(false)
+    }
+
+    private fun populateRemindersSettings() {
+        binding.remindersOnOff?.text = getString(if (prefs.showRemindersOnHome) R.string.on else R.string.off)
+        binding.remindersOptionsLayout?.isVisible = prefs.showRemindersOnHome
     }
 
     private fun populatePremiumStatus() {
@@ -1510,6 +1536,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateWeatherSettings()
         refreshWeatherIfConfigured()
         populatePrayerSettings()
+        populateRemindersSettings()
         refreshPrayerIfConfigured(forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
     }
 

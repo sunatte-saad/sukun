@@ -1601,6 +1601,7 @@
                 </LinearLayout>
 
                 <FrameLayout
+                    android:id="@+id/remindersSettingsHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
@@ -1616,7 +1617,7 @@
                         android:textColor="?attr/primaryColor" />
 
                     <TextView
-                        android:id="@+id/remindersManage"
+                        android:id="@+id/remindersSettingsToggle"
                         style="@style/TextSmallBold"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -1626,6 +1627,73 @@
                         android:text="@string/manage" />
 
                 </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/remindersSubMenuLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:animateLayoutChanges="true"
+                    tools:visibility="visible">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/reminders"
+                            android:textColor="?attr/primaryColor" />
+
+                        <TextView
+                            android:id="@+id/remindersOnOff"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|bottom"
+                            android:layout_marginEnd="4dp"
+                            android:padding="8dp"
+                            android:text="@string/off" />
+
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:id="@+id/remindersOptionsLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/manage_reminders"
+                            android:textColor="?attr/primaryColor" />
+
+                        <TextView
+                            android:id="@+id/remindersManage"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|bottom"
+                            android:layout_marginEnd="4dp"
+                            android:padding="8dp"
+                            android:text="@string/manage" />
+
+                    </FrameLayout>
+                </LinearLayout>
 
                 <FrameLayout
                     android:layout_width="match_parent"

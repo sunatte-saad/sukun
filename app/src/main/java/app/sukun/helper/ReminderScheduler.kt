@@ -14,11 +14,24 @@ import java.util.Calendar
 object ReminderScheduler {
 
     fun scheduleAll(context: Context) {
-        val reminders = Prefs(context).remindersJson.toReminderList()
+        val prefs = Prefs(context)
+        if (!prefs.showRemindersOnHome) {
+            cancelAll(context)
+            return
+        }
+        val reminders = prefs.remindersJson.toReminderList()
         reminders.forEach { if (it.enabled) schedule(context, it) else cancel(context, it.id) }
     }
 
+    fun cancelAll(context: Context) {
+        Prefs(context).remindersJson.toReminderList().forEach { cancel(context, it.id) }
+    }
+
     fun schedule(context: Context, reminder: Reminder) {
+        if (!Prefs(context).showRemindersOnHome) {
+            cancel(context, reminder.id)
+            return
+        }
         if (!reminder.enabled) {
             cancel(context, reminder.id)
             return

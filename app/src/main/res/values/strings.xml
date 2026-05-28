@@ -284,6 +284,7 @@
     <string name="notification_bar">Notification bar</string>
     <string name="private_space">Private space</string>
     <string name="reminders">Reminders</string>
+    <string name="manage_reminders">Manage reminders</string>
     <string name="manage">Manage</string>
     <string name="add_reminder">+ Add</string>
     <string name="no_reminders">No reminders yet.\nTap + Add to create one.</string>

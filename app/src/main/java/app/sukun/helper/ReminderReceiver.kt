@@ -22,6 +22,7 @@ import app.sukun.data.toReminderList
 class ReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        if (!Prefs(context).showRemindersOnHome) return
         val id = intent.getIntExtra(Constants.Reminder.EXTRA_ID, -1)
         if (id == -1) return
         val title = intent.getStringExtra(Constants.Reminder.EXTRA_TITLE) ?: return
