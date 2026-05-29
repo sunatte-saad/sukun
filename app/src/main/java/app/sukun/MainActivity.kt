@@ -36,6 +36,7 @@ import app.sukun.helper.isDefaultLauncher
 import app.sukun.helper.isEinkDisplay
 import app.sukun.helper.isSukunDefault
 import app.sukun.helper.isTablet
+import app.sukun.helper.LocaleHelper
 import app.sukun.helper.openUrl
 import app.sukun.helper.rateApp
 import app.sukun.helper.resetLauncherViaFakeActivity
@@ -68,6 +69,15 @@ class MainActivity : AppCompatActivity() {
     override fun attachBaseContext(context: Context) {
         val newConfig = Configuration(context.resources.configuration)
         newConfig.fontScale = Prefs(context).textSizeScale.coerceIn(0.5f, 2.0f)
+        
+        // Apply language preference
+        val prefs = Prefs(context)
+        val languageCode = prefs.appLanguage
+        if (languageCode.isNotEmpty()) {
+            val locale = java.util.Locale(languageCode)
+            newConfig.setLocale(locale)
+        }
+        
         applyOverrideConfiguration(newConfig)
         super.attachBaseContext(context)
     }

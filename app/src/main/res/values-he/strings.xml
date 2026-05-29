@@ -1,10 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
+    <string name="app_name" translatable="false">Sukun</string>
+    <string name="github" translatable="false">Github</string>
+    <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
+    <string name="recents_layout_description" translatable="false">recents layout description to be used a unique id to show recent apps</string>
+    <string name="digital_minimalism" translatable="false" />
+    <string name="day_battery" formatted="false" translatable="false">%s, %d%%</string>
+    <string name="tag_0" translatable="false">0</string>
+    <string name="tag_1" translatable="false">1</string>
+    <string name="tag_2" translatable="false">2</string>
+    <string name="tag_3" translatable="false">3</string>
+    <string name="tag_4" translatable="false">4</string>
+    <string name="tag_5" translatable="false">5</string>
+    <string name="tag_6" translatable="false">6</string>
+    <string name="tag_7" translatable="false">7</string>
+    <string name="tag_8" translatable="false">8</string>
+    <string name="time_spent_min" translatable="false" />
+    <string name="time_spent_hour" translatable="false">%1$sh %2$sm</string>
     <string name="app">יישום</string>
     <string name="set_as_default_launcher">הגדרה בתור משגר ברירת המחדל</string>
     <string name="set_as_default_launcher_u">הגדר תחילה את Sukun כברירת מחדל</string>
-    <string name="set_as_default_launcher_first"><u>הגדר תחילה את Sukun כברירת מחדל</u></string>
+    <string name="set_as_default_launcher_first" />
     <string name="app_text_color">צבע הטקסט</string>
     <string name="double_tap_to_lock_screen">נעילת המסך בהקשה כפולה</string>
+    <string name="home_button_show_recents">כפתור הבית לאחרונים</string>
     <string name="admin_permission_message">יישום Sukun ישתמש בהרשאה של נעילת המסך באופן מתון. יישום Sukun אינו אוסף או משתף נתונים כלל.</string>
     <string name="about">מידע כללי</string>
     <string name="off">כבוי</string>
@@ -12,6 +31,10 @@
     <string name="black">שחור</string>
     <string name="white">לבן</string>
     <string name="change_default_launcher">שינוי משגר ברירת המחדל</string>
+    <string name="turn_off_sukun_launcher">Turn off Sukun launcher</string>
+    <string name="turn_off_sukun_confirmation">Sukun will stop being your home screen. On the next screen, choose your phone\'s normal launcher (not Sukun). Sukun stays installed — open it from your app list anytime.</string>
+    <string name="turn_off_sukun_hint">Opening Home app settings — choose another launcher to replace Sukun</string>
+    <string name="turn_off">Turn off</string>
     <string name="privacy">פרטיות</string>
     <string name="share">שיתוף</string>
     <string name="share_now">שתף עכשיו</string>
@@ -22,7 +45,99 @@
     <string name="donate">תרומה</string>
     <string name="swipe_up_for_apps">1. החלקה כלפי מעלה תפתח את הרשימה של כל היישומים\n2. לפתיחת הגדרות מסך הבית יש ללחוץ לחיצה ארוכה מכל מקום על גבי המסך.</string>
     <string name="apps_on_home_screen">יישומים במסך הבית</string>
+    <string name="show_home_app_icons">Show app icons</string>
+    <string name="daily_notes">Daily tasks / notes</string>
+    <string name="daily_notes_list">Tasks / notes list</string>
+    <string name="daily_notes_hint">Add one task or note per line</string>
+    <string name="daily_notes_empty_hint">Tap to add tasks or notes</string>
+    <string name="daily_notes_saved">Tasks / notes updated</string>
+    <string name="focus_mode">Focus mode</string>
+    <string name="focus_mode_status">Focus mode active</string>
+    <string name="focus_mode_blocked">Focus mode is active</string>
+    <string name="focus_mode_enable_accessibility">Enable Sukun accessibility service to use focus mode</string>
+    <string name="focus_until">Until %1$s</string>
+    <string name="focus_time_remaining">%1$s left</string>
+    <string name="focus_15m">15m</string>
+    <string name="focus_30m">30m</string>
+    <string name="focus_1h">1h</string>
+    <string name="focus_2h">2h</string>
+    <string name="custom">Custom</string>
+    <string name="minutes">Minutes</string>
+    <string name="focus_mode_duration_prompt">Set focus mode duration</string>
+    <string name="focus_mode_duration_prompt_subtitle">Choose how long you want focus mode to stay active.</string>
+    <string name="focus_mode_custom_prompt">Custom focus duration</string>
+    <string name="focus_mode_custom_prompt_subtitle">Enter a duration in minutes.</string>
+    <string name="start_focus_mode">Start focus mode</string>
+    <string name="cancel">Cancel</string>
+    <string name="focus_mode_lock_notifications">Lock notifications</string>
+    <string name="focus_mode_hide_status_bar">Hide status bar</string>
+    <string name="focus_custom_duration_error">Enter a focus duration between %1$d and %2$d minutes</string>
+    <string name="weather">Weather</string>
+    <string name="weather_source">Weather source</string>
+    <string name="weather_location">Weather location</string>
+    <string name="weather_units">Weather units</string>
+    <string name="manual_location">Manual</string>
+    <string name="device_location">Device</string>
+    <string name="google_weather">Google Weather</string>
+    <string name="google_weather_card">Google Weather
+Tap to open forecast</string>
+    <string name="current_location">Current location</string>
+    <string name="type_city_name">Type city name</string>
+    <string name="save">Save</string>
+    <string name="not_set">Not set</string>
+    <string name="celsius_short">C</string>
+    <string name="fahrenheit_short">F</string>
+    <string name="weather_permission_needed">Location permission is needed for device weather</string>
+    <string name="location_services_disabled">Location is off — tap to enable</string>
+    <string name="weather_location_required">Set a weather location first</string>
+    <string name="weather_saved">Weather updated</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="use_same_location_for_prayer">Use this location for prayer times too?</string>
+    <string name="use_same_location_for_weather">Use this location for weather too?</string>
+    <string name="weather_unavailable">Weather unavailable</string>
+    <string name="prayer_times">Prayer times</string>
+    <string name="prayer_next">Next prayer</string>
+    <string name="prayer_source">Prayer source</string>
+    <string name="prayer_location">Prayer location</string>
+    <string name="prayer_permission_needed">Location permission is needed for device prayer times</string>
+    <string name="prayer_location_required">Set a prayer location first</string>
+    <string name="prayer_saved">Prayer location updated</string>
+    <string name="prayer_exact_alarm_permission_needed">Allow exact alarms so azan can play on time</string>
+    <string name="premium_feature_requires_upgrade">This feature requires Sukun Premium.</string>
+    <string name="go_premium">Go Premium</string>
+    <string name="upgrade_to_premium">Upgrade</string>
+    <string name="premium_enabled">Sukun Premium activated</string>
+    <string name="premium_already_active">Sukun Premium is already active</string>
+    <string name="prayer_overlay_text">%1$s  %2$s  %3$s</string>
+    <string name="prayer_reminder">Prayer reminder</string>
+    <string name="prayer_reminder_channel_name">Prayer reminders</string>
+    <string name="prayer_reminder_channel_description">Azan playback and prayer-time reminders</string>
+    <string name="playing_azan_for_prayer">Playing azan for %1$s</string>
+    <string name="prayer_time_now">Prayer time now</string>
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+    <string name="prayer_mark_done">Prayed ✓</string>
+    <string name="prayer_mark_confirm">Mark %1$s as prayed?</string>
+    <string name="prayer_marked_prayed">Marked as prayed</string>
+    <string name="prayer_mark_missed">Missed ✗</string>
+    <string name="prayer_marked_missed">Marked as missed</string>
+    <string name="prayer_analytics">Prayer Analytics</string>
+    <string name="prayer_today">Today</string>
+    <string name="prayer_this_month">This Month  %1$s</string>
+    <string name="prayer_this_year">This Year  %1$s</string>
+    <string name="total">Total</string>
+    <string name="azan">Azan</string>
+    <string name="azan_sound">Azan sound</string>
+    <string name="azan_sound_makkah">Makkah</string>
+    <string name="azan_sound_marylebone">Marylebone</string>
+    <string name="custom_azan_file">Custom azan file</string>
+    <string name="prayer_azan_saved">Custom azan updated</string>
     <string name="daily_wallpaper_update">רקע חדש בכל יום</string>
+    <string name="change_wallpaper_now">Change wallpaper now</string>
     <string name="left">ימין</string>
     <string name="right">שמאל</string>
     <string name="center">מרכז</string>
@@ -42,16 +157,36 @@
     <string name="okay">אישור</string>
     <string name="cool">מגניב!</string>
     <string name="auto_show_keyboard">הצגת המקלדת באופן אוטומטי</string>
+    <string name="app_drawer_fast_scroller">App drawer fast scroller</string>
     <string name="hide">הסתרה</string>
     <string name="status_bar">הצגת שורת המצב</string>
+    <string name="audio">Audio</string>
+    <string name="hourly_chime">Hourly chime</string>
+    <string name="hourly_chime_from">From</string>
+    <string name="hourly_chime_to">to</string>
     <string name="rename">שינוי שם</string>
     <string name="show_date_time">Show date time</string>
     <string name="appearance">מראה</string>
     <string name="gestures">מחוות</string>
     <string name="theme_mode">ערכת נושא</string>
+    <string name="theme">Theme</string>
+    <string name="settings">Settings</string>
+    <string name="home">Home</string>
+    <string name="apps">Apps</string>
+    <string name="daily_wallpaper">Daily wallpaper</string>
+    <string name="prayer">Prayer</string>
     <string name="system_default">מערכת</string>
+    <string name="theme_mode_ambient">Auto (ambient)</string>
+    <string name="theme_mode_ambient_premium">Auto (ambient) · Premium</string>
+    <string name="ambient_theme_no_sensor">This device has no light sensor. Auto (ambient) theme is unavailable.</string>
     <string name="dark">כהה</string>
     <string name="light">בהירה</string>
+    <string name="small">Small</string>
+    <string name="medium">Medium</string>
+    <string name="large">Large</string>
+    <string name="xlarge">X-Large</string>
+    <string name="language">Language</string>
+    <string name="select_language">Select Language</string>
     <string name="welcome_to_sukun_settings">למטה מופיע קישור לעמוד "מידע כללי", ובו אפשר למצוא תשובות לכל השאלות. לא לשכוח :)
         \n\nThank you.</string>
     <string name="rate_us_message">היי, לא נציג לך הודעה זו בשנית.
@@ -60,6 +195,9 @@
         \n\nהיית רוצה אולי לספר לחברים שלך על Sukun? זה יכול לסייע לנו מאוד. תודה רבה!</string>
     <string name="keyboard_message">היי, יותר מהיר למצוא ולפתוח יישומים ב־Sukun בעזרת ההקלדה. אולי בכל זאת היית רוצה להשאיר את ההגדרה הזאת ולתת לה עוד הזדמנות?
         \n\nThe choice is always yours.</string>
+    <string name="digital_wellbeing_message">אם ברצונך להגדיר מגבלות זמן עבור אפליקציות מסוימות, תכונת Digital Wellbeing של אנדרואיד יכולה לעזור לך לעשות זאת. חפש את Digital Wellbeing בהגדרות הטלפון שלך והפעל אותה.</string>
+    <string name="app_usage_message">כדי להציג/להסתיר את זמן המסך שלך במסך הבית, אנא אפשר או בטל את הרשאת השימוש באפליקציה. הערה: לא נאספים נתוני שימוש באפליקציה. הכל מעובד במכשיר שלך.</string>
+    <string name="pro_message">ל-Sukun יש גם גרסת Pro בשם Pro Launcher. יש לה תכונות נוספות כמו מזג אוויר, ווידג\'טים, גופנים, תיקיות, טפטים של AMOLED וכן הלאה. זוהי גם הדרך הטובה ביותר לתמוך במפתחי Sukun. תבדקו!</string>
     <string name="wallpaper_message">Sukun מציע טפטים חדשים ויפים מדי יום. תנו למסך הבית שלכם מראה חדש ורענן בכל יום, בחינם! רוצים לנסות?</string>
     <string name="accessibility_service_description">הרשאת הנגישות נחוצה להפעלת הנעילה בהקשה כפולה ולחצן הבית להצגת אפליקציות אחרונות. כל הנתונים שייאספו על ידי Sukun דרך השירות הזה לא יועברו הלאה ממכשירך.</string>
     <string name="support_sukun_for_free">אפשר לתמוך ב־Sukun מבלי לשלם שקל, בעזרת שימוש בקישור ה־Amazon affiliate שלנו.</string>
@@ -67,6 +205,8 @@
     <string name="open">פתיחת קישור</string>
     <string name="copy">העתקה</string>
     <string name="close">סגירה</string>
+    <string name="stop">Stop</string>
+    <string name="change">Change</string>
     <string name="not_now">לא כעת</string>
     <string name="public_roadmap">Sukun public roadmap</string>
     <string name="instagram">אינסטגרם</string>
@@ -74,6 +214,17 @@
     <string name="roadmap">Roadmap</string>
     <string name="date">תאריך</string>
     <string name="date_only">תאריך בלבד</string>
+    <string name="clock_style">Clock style</string>
+    <string name="clock_style_standard">Standard</string>
+    <string name="clock_style_day_ring">Day ring</string>
+    <string name="day_start_hour">Day start hour</string>
+    <string name="day_end_hour">Day end hour</string>
+    <string name="day_start_hour_title">Set day start hour</string>
+    <string name="day_end_hour_title">Set day end hour</string>
+    <string name="clock_hour_hint">Hour</string>
+    <string name="clock_hour_format">%1$02d:00</string>
+    <string name="day_start_hour_error">Enter a start hour from 0 to 23, earlier than the end hour</string>
+    <string name="day_end_hour_error">Enter an end hour from 1 to 24, later than the start hour</string>
     <string name="bottom_on">הצגה למטה: מופעל</string>
     <string name="bottom_off">הצגה למטה: כבוי</string>
     <string name="please_set_sukun_as_default_first">ראשית, נא להגדיר את Sukun בתור ברירת המחדל למסך בית.</string>
@@ -81,16 +232,18 @@
     <string name="tip_start_typing_for_rename">עצה: אפשר להתחיל להקליד בשביל להגיע לאפשרות לשינוי שם של יישומים</string>
     <string name="hidden_apps_message">הערה: בשביל להגיע ליישומים המוסתרים, יש ללחוץ על הכיתוב \'Sukun\' שנמצא בראש עמוד ההגדרות.\n\nפרטים נוספים אפשר למצוא בעמוד ה"מידע כללי" שלנו למטה.</string>
     <string name="swipe_down_for">פעולה בעת החלקה למטה</string>
+    <string name="double_tap_action">Double tap action</string>
+    <string name="lock">Lock</string>
+    <string name="focus">Focus</string>
     <string name="search">חיפוש</string>
     <string name="notifications">התראות</string>
     <string name="accessibility_disclosure">נא להפעיל את שירות הנגישות של Sukun בהגדרות המכשיר שלך כדי להפעיל את מחוות הנעילה בהקשה כפולה או לחצן הבית לאפליקציות אחרונות.\n\nשימו לב ששירות זה משמש רק למחוות אלה. שירות הנגישות שלנו אינו אוסף או משתף נתונים כלשהם.</string>
     <string name="accept">הסכמה</string>
     <string name="permission">הרשאה</string>
     <string name="double_tap_lock">לחיצה כפולה לנעילת המסך</string>
-    <string name="home_button_show_recents">כפתור הבית לאחרונים</string>
     <string name="enable">הפעלה</string>
     <string name="disable">השבתהe</string>
-    <string name="not_working"><u>לא עובד?</u></string>
+    <string name="not_working" />
     <string name="info">מידע</string>
     <string name="delete">מחיקה</string>
     <string name="text_size">גודל הטקסט</string>
@@ -118,21 +271,57 @@
     <string name="adapter_show">הצגה</string>
     <string name="adapter_hide">הסתרה</string>
     <string name="are_you_using_your_phone_or_is_your_phone_using_you">האם אתם משתמשים בטלפון, או שהוא משתמש בכם?</string>
-    <string name="hey">היי</string>
-    <string name="more_features">עוד תכונות…</string>
-    <string name="new_year_wish">לעבר שנה טובה יותר מכל מה שקדם. שנה טובה!</string>
-    <string name="new_year_wish_1">לא משנה איך עבר ינואר. עדיין יש לך את שאר השנה להצליח יותר מתמיד</string>
-    <string name="cheers">לחיים!</string>
     <string name="about_sukun">אודות ושאלות נפוצות</string>
     <string name="screen_time">זמן מסך</string>
+    <string name="recently_used">Recently used</string>
+    <string name="all_apps">All apps</string>
     <string name="learn_more">למדו עוד</string>
     <string name="did_you_know">האם ידעת?</string>
     <string name="leave_a_review">השאירו ביקורת</string>
     <string name="review_message">‏Sukun חינמית ותמיד תהיה. אין בה פרסומות, היא אינה אוספת נתונים, והיא מפחיתה את זמן המסך שלכם – מה שמוביל לחיים בריאים יותר.</string>
     <string name="alignment_changed">היישור השתנה ✅</string>
     <string name="home_screen">מסך הבית</string>
-    <string name="digital_wellbeing_message">אם ברצונך להגדיר מגבלות זמן עבור אפליקציות מסוימות, תכונת Digital Wellbeing של אנדרואיד יכולה לעזור לך לעשות זאת. חפש את Digital Wellbeing בהגדרות הטלפון שלך והפעל אותה.</string>
-    <string name="app_usage_message">כדי להציג/להסתיר את זמן המסך שלך במסך הבית, אנא אפשר או בטל את הרשאת השימוש באפליקציה. הערה: לא נאספים נתוני שימוש באפליקציה. הכל מעובד במכשיר שלך.</string>
-    <string name="pro_message">ל-Sukun יש גם גרסת Pro בשם Pro Launcher. יש לה תכונות נוספות כמו מזג אוויר, ווידג\'טים, גופנים, תיקיות, טפטים של AMOLED וכן הלאה. זוהי גם הדרך הטובה ביותר לתמוך במפתחי Sukun. תבדקו!</string>
+    <string name="focus_and_productivity">Focus &amp; Productivity</string>
+    <string name="hey">היי</string>
+    <string name="more_features">עוד תכונות…</string>
+    <string name="new_year_wish">לעבר שנה טובה יותר מכל מה שקדם. שנה טובה!</string>
+    <string name="new_year_wish_1">לא משנה איך עבר ינואר. עדיין יש לך את שאר השנה להצליח יותר מתמיד</string>
+    <string name="cheers">לחיים!</string>
     <string name="notification_bar">שורת ההתראות</string>
+    <string name="private_space">Private space</string>
+    <string name="reminders">Reminders</string>
+    <string name="manage_reminders">Manage reminders</string>
+    <string name="manage">Manage</string>
+    <string name="add_reminder">+ Add</string>
+    <string name="no_reminders">No reminders yet.\nTap + Add to create one.</string>
+    <string name="reminder_title_hint">Title, e.g. Quran time</string>
+    <string name="reminder_message_hint">Message, e.g. Time to read Quran</string>
+    <string name="reminder_schedule">Schedule</string>
+    <string name="schedule_daily">Daily</string>
+    <string name="schedule_hourly">Hourly</string>
+    <string name="schedule_weekly">Days</string>
+    <string name="reminder_time">Time</string>
+    <string name="reminder_repeat_every">Repeat every</string>
+    <string name="reminder_interval_1h">1 hour</string>
+    <string name="reminder_interval_nh">%1$d hours</string>
+    <string name="day_sun">Su</string>
+    <string name="day_mon">Mo</string>
+    <string name="day_tue">Tu</string>
+    <string name="day_wed">We</string>
+    <string name="day_thu">Th</string>
+    <string name="day_fri">Fr</string>
+    <string name="day_sat">Sa</string>
+    <string name="delete_reminder_confirm">Delete "%1$s"?</string>
+    <string name="reminder_delete">Delete</string>
+    <string name="reminder_added">Reminder added</string>
+    <string name="reminder_updated">Reminder updated</string>
+    <string name="reminder_deleted">Reminder deleted</string>
+    <string name="reminder_title_required">Please enter a title</string>
+    <string name="reminder_days_required">Please select at least one day</string>
+    <string name="reminder_exact_alarm_needed">Allow exact alarms for precise reminder timing</string>
+    <string name="reminder_notifications_needed">Enable notifications to receive reminders</string>
+    <string name="reminder_channel_name">Reminders</string>
+    <string name="reminder_channel_description">Custom reminder notifications</string>
+    <string name="reminder_done">Done</string>
+    <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
 </resources>

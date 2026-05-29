@@ -42,6 +42,7 @@ class Prefs(context: Context) {
     private val SHOW_HINT_COUNTER = "SHOW_HINT_COUNTER"
     private val APP_THEME = "APP_THEME"
     private val AMBIENT_THEME_DARK = "AMBIENT_THEME_DARK"
+    private val APP_LANGUAGE = "APP_LANGUAGE"
     private val PRO_USER = "PRO_USER"
     private val PRO_PURCHASE_TOKEN = "PRO_PURCHASE_TOKEN"
     private val ABOUT_CLICKED = "ABOUT_CLICKED"
@@ -287,6 +288,10 @@ class Prefs(context: Context) {
             else -> false
         }
     }
+
+    var appLanguage: String
+        get() = prefs.getString(APP_LANGUAGE, "").toString()
+        set(value) = prefs.edit { putString(APP_LANGUAGE, value).apply() }
 
     var textSizeScale: Float
         get() = prefs.getFloat(TEXT_SIZE_SCALE, 1.0f).coerceIn(0.5f, 2.0f)

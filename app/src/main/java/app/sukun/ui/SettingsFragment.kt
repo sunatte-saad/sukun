@@ -33,6 +33,7 @@ import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.databinding.FragmentSettingsBinding
 import app.sukun.helper.HourlyChimeScheduler
+import app.sukun.helper.LocaleHelper
 import app.sukun.helper.PrayerReminderScheduler
 import app.sukun.helper.ReminderScheduler
 import app.sukun.helper.animateAlpha
@@ -145,6 +146,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             populateScreenTimeOnOff()
             populateWallpaperText()
             populateAppThemeText()
+            populateLanguage()
             populateTextSize()
             populateAlignment()
             populateHomeAppIcons()
@@ -317,6 +319,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.themeDark -> updateTheme(AppCompatDelegate.MODE_NIGHT_YES)
             R.id.themeSystem -> updateTheme(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
             R.id.themeAmbient -> updateTheme(Constants.THEME_MODE_AMBIENT_LIGHT)
+            R.id.appLanguageText -> showLanguageSelector()
             R.id.textSizeValue -> binding.textSizesLayout.visibility = View.VISIBLE
             R.id.actionAccessibility -> openAccessibilityService()
             R.id.closeAccessibility -> toggleAccessibilityVisibility(false)
@@ -483,8 +486,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.textSizeMedium?.setOnClickListener(this)
         binding.textSizeLarge?.setOnClickListener(this)
         binding.textSizeXLarge?.setOnClickListener(this)
+        binding.appLanguageText?.setOnClickListener(this)
 
         binding.dailyWallpaper.setOnLongClickListener(this)
+
         binding.alignment.setOnLongClickListener(this)
         binding.appThemeText.setOnLongClickListener(this)
         binding.swipeLeftApp.setOnLongClickListener(this)
@@ -610,6 +615,30 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 requireContext().showToast(R.string.premium_enabled)
             }
             .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun populateLanguage() {
+        val selectedLanguage = LocaleHelper.getSelectedLanguage(requireContext())
+        binding.appLanguageText?.text = selectedLanguage.displayName
+    }
+
+    private fun showLanguageSelector() {
+        val languages = LocaleHelper.getAvailableLanguages()
+        val languageNames = languages.map { it.displayName }.toTypedArray()
+        val currentLanguage = LocaleHelper.getSelectedLanguage(requireContext())
+        val checkedItem = languages.indexOf(currentLanguage)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.select_language)
+            .setSingleChoiceItems(languageNames, checkedItem) { dialog, which ->
+                val selectedLanguage = languages[which]
+                LocaleHelper.setLocale(requireContext(), selectedLanguage.code)
+                populateLanguage()
+                // Recreate activity to apply language change
+                activity?.recreate()
+                dialog.dismiss()
+            }
             .show()
     }
 
