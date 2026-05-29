@@ -23,6 +23,7 @@ import androidx.navigation.findNavController
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.databinding.ActivityMainBinding
+import app.sukun.helper.AmbientThemeController
 import app.sukun.helper.applyLauncherBrightnessForTheme
 import app.sukun.helper.clearLauncherBrightnessOverride
 import app.sukun.helper.getColorFromAttr
@@ -57,6 +58,7 @@ class MainActivity : AppCompatActivity() {
     private var timerJob: Job? = null
     private var isResumed = false
     private var profileReceiver: BroadcastReceiver? = null
+    private var ambientThemeController: AmbientThemeController? = null
 
 //    override fun onBackPressed() {
 //        if (navController.currentDestination?.id != R.id.mainFragment)
@@ -73,7 +75,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = Prefs(this)
         if (isEinkDisplay()) prefs.appTheme = AppCompatDelegate.MODE_NIGHT_NO
-        AppCompatDelegate.setDefaultNightMode(prefs.appTheme)
+        AppCompatDelegate.setDefaultNightMode(prefs.resolveLaunchNightMode())
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -135,6 +137,7 @@ class MainActivity : AppCompatActivity() {
                 profileReceiver = null
             }
         }
+        setupAmbientThemeController()
     }
 
     override fun onStart() {
@@ -145,6 +148,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         isResumed = true
+        ambientThemeController?.start()
         applyLauncherBrightnessForTheme()
         viewModel.isPrivateSpaceToggling = false
         if (viewModel.appList.value.isNullOrEmpty()) {
@@ -153,6 +157,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        ambientThemeController?.stop()
         clearLauncherBrightnessOverride()
         super.onPause()
     }
@@ -180,7 +185,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        AppCompatDelegate.setDefaultNightMode(prefs.appTheme)
+        AppCompatDelegate.setDefaultNightMode(prefs.resolveLaunchNightMode())
         if (prefs.dailyWallpaper && AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
             setPlainWallpaper()
             viewModel.setWallpaperWorker()
@@ -379,6 +384,7 @@ class MainActivity : AppCompatActivity() {
             val mismatch = when (themeMode) {
                 AppCompatDelegate.MODE_NIGHT_YES -> !isDark
                 AppCompatDelegate.MODE_NIGHT_NO -> isDark
+                Constants.THEME_MODE_AMBIENT_LIGHT -> false
                 else -> false
             }
 
@@ -398,7 +404,34 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupAmbientThemeController() {
+        ambientThemeController?.stop()
+        ambientThemeController = null
+        if (!prefs.isAmbientLightTheme() || !prefs.isProUser) return
+
+        ambientThemeController = AmbientThemeController(
+            context = this,
+            initialDark = prefs.ambientThemeDark,
+        ) { dark ->
+            val nightMode = AmbientThemeController.nightModeForDark(dark)
+            if (prefs.ambientThemeDark == dark &&
+                AppCompatDelegate.getDefaultNightMode() == nightMode
+            ) {
+                return@AmbientThemeController
+            }
+            prefs.ambientThemeDark = dark
+            AppCompatDelegate.setDefaultNightMode(nightMode)
+            applyLauncherBrightnessForTheme()
+            if (isResumed && !isRecreating) {
+                isRecreating = true
+                recreate()
+            }
+        }.also { it.start() }
+    }
+
     override fun onDestroy() {
+        ambientThemeController?.stop()
+        ambientThemeController = null
         profileReceiver?.let {
             try {
                 unregisterReceiver(it)

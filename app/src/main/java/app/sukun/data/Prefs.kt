@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.view.Gravity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
+import app.sukun.helper.AmbientThemeController
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -40,6 +41,7 @@ class Prefs(context: Context) {
     private val HIDDEN_APPS_UPDATED = "HIDDEN_APPS_UPDATED"
     private val SHOW_HINT_COUNTER = "SHOW_HINT_COUNTER"
     private val APP_THEME = "APP_THEME"
+    private val AMBIENT_THEME_DARK = "AMBIENT_THEME_DARK"
     private val PRO_USER = "PRO_USER"
     private val PRO_PURCHASE_TOKEN = "PRO_PURCHASE_TOKEN"
     private val ABOUT_CLICKED = "ABOUT_CLICKED"
@@ -259,6 +261,32 @@ class Prefs(context: Context) {
     var appTheme: Int
         get() = prefs.getInt(APP_THEME, AppCompatDelegate.MODE_NIGHT_YES)
         set(value) = prefs.edit { putInt(APP_THEME, value).apply() }
+
+    /** Resolved dark state when [appTheme] is [Constants.THEME_MODE_AMBIENT_LIGHT]. */
+    var ambientThemeDark: Boolean
+        get() = prefs.getBoolean(AMBIENT_THEME_DARK, true)
+        set(value) = prefs.edit { putBoolean(AMBIENT_THEME_DARK, value).apply() }
+
+    fun isAmbientLightTheme(): Boolean = appTheme == Constants.THEME_MODE_AMBIENT_LIGHT
+
+    fun resolveLaunchNightMode(): Int {
+        return when (appTheme) {
+            Constants.THEME_MODE_AMBIENT_LIGHT -> {
+                if (!isProUser) AppCompatDelegate.MODE_NIGHT_YES
+                else AmbientThemeController.nightModeForDark(ambientThemeDark)
+            }
+            else -> appTheme
+        }
+    }
+
+    fun isEffectivelyDarkTheme(): Boolean {
+        return when (appTheme) {
+            AppCompatDelegate.MODE_NIGHT_YES -> true
+            AppCompatDelegate.MODE_NIGHT_NO -> false
+            Constants.THEME_MODE_AMBIENT_LIGHT -> ambientThemeDark
+            else -> false
+        }
+    }
 
     var textSizeScale: Float
         get() = prefs.getFloat(TEXT_SIZE_SCALE, 1.0f).coerceIn(0.5f, 2.0f)

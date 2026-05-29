@@ -38,6 +38,8 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
 import android.view.animation.LinearInterpolator
@@ -329,6 +331,11 @@ fun setPlainWallpaperByTheme(context: Context, appTheme: Int) {
     when (appTheme) {
         AppCompatDelegate.MODE_NIGHT_YES -> setPlainWallpaper(context, android.R.color.black)
         AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(context, android.R.color.white)
+        app.sukun.data.Constants.THEME_MODE_AMBIENT_LIGHT -> {
+            val dark = Prefs(context).ambientThemeDark
+            val color = if (dark) android.R.color.black else android.R.color.white
+            setPlainWallpaper(context, color)
+        }
         else -> {
             val color = if (context.isDarkThemeOn()) android.R.color.black else android.R.color.white
             setPlainWallpaper(context, color)
@@ -356,6 +363,11 @@ fun getChangedAppTheme(context: Context, currentAppTheme: Int): Int {
     return when (currentAppTheme) {
         AppCompatDelegate.MODE_NIGHT_YES -> AppCompatDelegate.MODE_NIGHT_NO
         AppCompatDelegate.MODE_NIGHT_NO -> AppCompatDelegate.MODE_NIGHT_YES
+        app.sukun.data.Constants.THEME_MODE_AMBIENT_LIGHT -> {
+            val prefs = Prefs(context)
+            prefs.ambientThemeDark = !prefs.ambientThemeDark
+            app.sukun.data.Constants.THEME_MODE_AMBIENT_LIGHT
+        }
         else -> {
             if (context.isDarkThemeOn())
                 AppCompatDelegate.MODE_NIGHT_NO
@@ -888,8 +900,37 @@ fun openSearch(context: Context) {
     context.startActivity(intent)
 }
 
+fun applyLauncherStatusBarVisibility(activity: Activity, show: Boolean) {
+    val decorView = activity.window.decorView
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        decorView.windowInsetsController?.let { controller ->
+            if (show) {
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_DEFAULT
+                controller.show(WindowInsets.Type.statusBars())
+            } else {
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                controller.hide(WindowInsets.Type.statusBars())
+            }
+        }
+    } else {
+        @Suppress("DEPRECATION")
+        decorView.systemUiVisibility = if (show) {
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        } else {
+            View.SYSTEM_UI_FLAG_IMMERSIVE or View.SYSTEM_UI_FLAG_FULLSCREEN
+        }
+    }
+}
+
 @SuppressLint("WrongConstant", "PrivateApi")
 fun expandNotificationDrawer(context: Context) {
+    val activity = context as? Activity
+    if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        activity.window.decorView.windowInsetsController?.apply {
+            systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            show(WindowInsets.Type.statusBars())
+        }
+    }
     // Source: https://stackoverflow.com/a/51132142
     try {
         val statusBarService = context.getSystemService("statusbar")

@@ -1792,9 +1792,40 @@
                             style="@style/TextSmallBold"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginEnd="24dp"
                             android:gravity="center"
                             android:paddingVertical="6dp"
                             android:text="@string/dark" />
+
+                        <FrameLayout
+                            android:id="@+id/themeAmbient"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingVertical="6dp"
+                            android:paddingEnd="6dp">
+
+                            <TextView
+                                android:id="@+id/themeAmbientLabel"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:gravity="center"
+                                android:text="@string/theme_mode_ambient" />
+
+                            <TextView
+                                android:id="@+id/themeAmbientStar"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|end"
+                                android:includeFontPadding="false"
+                                android:text="★"
+                                android:textColor="?attr/primaryColor"
+                                android:textSize="8sp"
+                                android:translationX="4dp"
+                                android:translationY="-3dp" />
+                        </FrameLayout>
 
                     </LinearLayout>
 

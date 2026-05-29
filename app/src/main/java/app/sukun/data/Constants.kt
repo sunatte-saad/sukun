@@ -121,9 +121,8 @@ object Constants {
     const val WALL_TYPE_LIGHT = "light"
     const val WALL_TYPE_DARK = "dark"
 
-//    const val THEME_MODE_DARK = 0
-//    const val THEME_MODE_LIGHT = 1
-//    const val THEME_MODE_SYSTEM = 2
+    /** Premium: switch light/dark from ambient light sensor (stored in prefs, not AppCompat mode). */
+    const val THEME_MODE_AMBIENT_LIGHT = 3
 
     const val FLAG_LAUNCH_APP = 100
     const val FLAG_HIDDEN_APPS = 101

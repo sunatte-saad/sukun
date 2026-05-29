@@ -1,8 +1,10 @@
 package app.sukun.ui
 
 import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.LauncherApps
 import android.content.res.Configuration
 import android.content.res.ColorStateList
@@ -19,10 +21,10 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsets
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.TextClock
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -50,6 +52,7 @@ import app.sukun.databinding.FragmentHomeBinding
 import app.sukun.helper.appUsagePermissionGranted
 import app.sukun.helper.canOpenNotificationsInFocusMode
 import app.sukun.helper.dpToPx
+import app.sukun.helper.applyLauncherStatusBarVisibility
 import app.sukun.helper.expandNotificationDrawer
 import app.sukun.helper.getFocusModeStatus
 import app.sukun.helper.getChangedAppTheme
@@ -86,6 +89,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private var focusModeJob: Job? = null
     private var prayerJob: Job? = null
     private var dateTimeJob: Job? = null
+    private var systemTimeReceiver: BroadcastReceiver? = null
     private var currentPrayerState: PrayerState? = null
     private var defaultHomeAppsPaddingTop = 0
     private var defaultHomeAppsPaddingBottom = 0
@@ -125,6 +129,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         syncFocusModeState()
         updateRemindersBellCount()
         populateHomeScreen(false)
+        registerSystemTimeReceiver()
         viewModel.loadWeather()
         viewModel.loadPrayerState()
         viewModel.isSukunDefault()
@@ -134,6 +139,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         stopFocusModeTicker()
         stopPrayerTicker()
         stopDateTimeTicker()
+        unregisterSystemTimeReceiver()
         super.onPause()
     }
 
@@ -254,7 +260,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 // Reset so the button reappears if the app later loses default status
                 prefs.hideSetDefaultLauncher = false
             } else {
-                if (prefs.dailyWallpaper && prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES) {
+                if (prefs.dailyWallpaper && prefs.isEffectivelyDarkTheme()) {
                     prefs.dailyWallpaper = false
                     viewModel.cancelWallpaperWorker()
                 }
@@ -380,7 +386,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     )
 
     private fun setHomeAlignment(horizontalGravity: Int = prefs.homeAlignment) {
-        val verticalGravity = if (prefs.homeBottomAlignment) Gravity.BOTTOM else Gravity.CENTER_VERTICAL
+        val verticalGravity = if (prefs.homeBottomAlignment) Gravity.BOTTOM else Gravity.TOP
         binding.homeAppsLayout.gravity = horizontalGravity or verticalGravity
         binding.dateTimeLayout.gravity = horizontalGravity
         binding.weatherText.gravity = horizontalGravity
@@ -408,6 +414,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.date?.isVisible = Constants.DateTime.isDateVisible(prefs.dateTimeVisibility) && !showRingClock
         binding.ringClock.isVisible = showRingClock
         binding.ringDate.isVisible = showRingClock
+        if (binding.clock.isVisible) resetTextClockToSystem(binding.clock)
+        if (binding.ringClock.isVisible) resetTextClockToSystem(binding.ringClock)
         updateDateTimeDisplay()
         if (binding.dateTimeLayout.isVisible) startDateTimeTicker()
         else stopDateTimeTicker()
@@ -425,9 +433,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         var ringDateText = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
 
         if (!prefs.showStatusBar) {
-            val battery = (requireContext().getSystemService(Context.BATTERY_SERVICE) as BatteryManager)
-                .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            if (battery > 0) {
+            currentBatteryLevel()?.let { battery ->
                 defaultDateText = getString(R.string.day_battery, defaultDateText, battery)
                 ringDateText = getString(R.string.day_battery, ringDateText, battery)
             }
@@ -708,42 +714,26 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.homeApp8,
     )
 
-    private fun homeAppsBottomPadding(): Int {
-        return if (prefs.textSizeScale >= 1.15f) {
-            minOf(defaultHomeAppsPaddingBottom, 20.dpToPx())
-        } else {
-            defaultHomeAppsPaddingBottom
-        }
-    }
+    private fun homeAppsBottomPadding(): Int = defaultHomeAppsPaddingBottom
 
     private fun adjustHomeAppsLayoutForTextScale() {
         if (_binding == null) return
         val scale = prefs.textSizeScale
-        val useCompactLayout = scale >= 1.15f
         val defaultItemPadding = resources.getDimensionPixelSize(R.dimen.home_app_padding_vertical)
         val itemPadding = when {
-            !useCompactLayout -> defaultItemPadding
-            scale >= 1.2f -> 2.dpToPx()
-            else -> 4.dpToPx()
+            scale >= 1.2f -> (defaultItemPadding * 1.1f).toInt()
+            scale >= 1.1f -> defaultItemPadding
+            else -> defaultItemPadding
         }
         val horizontalGravity = prefs.homeAlignment
         homeAppTextViews().forEach { textView ->
             textView.maxLines = 1
             textView.ellipsize = TextUtils.TruncateAt.END
-            textView.gravity = if (useCompactLayout) {
-                horizontalGravity or Gravity.CENTER_VERTICAL
-            } else {
-                horizontalGravity
-            }
+            textView.gravity = horizontalGravity
             textView.setPadding(textView.paddingLeft, itemPadding, textView.paddingRight, itemPadding)
             val lp = textView.layoutParams as? LinearLayout.LayoutParams ?: return@forEach
-            if (useCompactLayout && textView.isVisible) {
-                lp.height = 0
-                lp.weight = 1f
-            } else {
-                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                lp.weight = 0f
-            }
+            lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
+            lp.weight = 0f
             textView.layoutParams = lp
         }
         binding.homeAppsLayout.setPadding(
@@ -784,10 +774,64 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             while (isActive) {
                 if (!binding.dateTimeLayout.isVisible) break
                 updateDateTimeDisplay()
-                delay(30000)
+                delay(if (prefs.showStatusBar) 60_000L else 15_000L)
             }
             dateTimeJob = null
         }
+    }
+
+    private fun resetTextClockToSystem(clock: TextClock) {
+        clock.timeZone = java.util.TimeZone.getDefault().id
+    }
+
+    private fun currentBatteryLevel(): Int? {
+        val batteryIntent = requireContext().registerReceiver(
+            null,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+        )
+        if (batteryIntent != null) {
+            val level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+            if (level >= 0 && scale > 0) {
+                return ((level * 100f) / scale).toInt().coerceIn(0, 100)
+            }
+        }
+        val capacity = (requireContext().getSystemService(Context.BATTERY_SERVICE) as BatteryManager)
+            .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        return capacity.takeIf { it in 1..100 }
+    }
+
+    private fun registerSystemTimeReceiver() {
+        unregisterSystemTimeReceiver()
+        if (prefs.showStatusBar || !binding.dateTimeLayout.isVisible) return
+
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_TIME_TICK)
+            addAction(Intent.ACTION_TIME_CHANGED)
+            addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            addAction(Intent.ACTION_BATTERY_CHANGED)
+        }
+        systemTimeReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                updateDateTimeDisplay()
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(systemTimeReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            requireContext().registerReceiver(systemTimeReceiver, filter)
+        }
+    }
+
+    private fun unregisterSystemTimeReceiver() {
+        systemTimeReceiver?.let { receiver ->
+            try {
+                requireContext().unregisterReceiver(receiver)
+            } catch (_: IllegalArgumentException) {
+            }
+        }
+        systemTimeReceiver = null
     }
 
     private fun stopDateTimeTicker() {
@@ -1241,35 +1285,16 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
     }
 
-    private fun showStatusBar() {
-        val decorView = activity?.window?.decorView ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            decorView.windowInsetsController?.show(WindowInsets.Type.statusBars())
-        else
-            @Suppress("DEPRECATION", "InlinedApi")
-            decorView.apply {
-                systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            }
-    }
-
-    private fun hideStatusBar() {
-        val decorView = activity?.window?.decorView ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            decorView.windowInsetsController?.hide(WindowInsets.Type.statusBars())
-        else {
-            @Suppress("DEPRECATION")
-            decorView.apply {
-                systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE or View.SYSTEM_UI_FLAG_FULLSCREEN
-            }
-        }
-    }
-
     private fun updateStatusBarVisibility(isFocusModeActive: Boolean = prefs.isFocusModeActive()) {
+        val activity = activity ?: return
         val hideForFocus = isFocusModeActive && prefs.focusModeHideStatusBar
-        if (hideForFocus || !prefs.showStatusBar) {
-            hideStatusBar()
+        val show = !hideForFocus && prefs.showStatusBar
+        applyLauncherStatusBarVisibility(activity, show)
+        if (show) {
+            unregisterSystemTimeReceiver()
         } else {
-            showStatusBar()
+            registerSystemTimeReceiver()
+            updateDateTimeDisplay()
         }
     }
 
@@ -1281,7 +1306,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             setPlainWallpaperByTheme(requireContext(), changedAppTheme)
             viewModel.setWallpaperWorker()
         }
-        AppCompatDelegate.setDefaultNightMode(changedAppTheme)
+        AppCompatDelegate.setDefaultNightMode(prefs.resolveLaunchNightMode())
     }
 
     private fun openScreenTimeDigitalWellbeing() {
@@ -1575,6 +1600,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     override fun onDestroyView() {
         stopFocusModeTicker()
+        unregisterSystemTimeReceiver()
         super.onDestroyView()
         _binding = null
     }

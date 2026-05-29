@@ -15,7 +15,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsets
+import app.sukun.helper.applyLauncherStatusBarVisibility
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +38,7 @@ import app.sukun.helper.ReminderScheduler
 import app.sukun.helper.animateAlpha
 import app.sukun.helper.appUsagePermissionGranted
 import app.sukun.helper.getFocusModeStatus
+import app.sukun.helper.AmbientThemeController
 import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hasWeatherLocationPermission
 import app.sukun.helper.isLocationServicesEnabled
@@ -315,6 +316,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.themeLight -> updateTheme(AppCompatDelegate.MODE_NIGHT_NO)
             R.id.themeDark -> updateTheme(AppCompatDelegate.MODE_NIGHT_YES)
             R.id.themeSystem -> updateTheme(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            R.id.themeAmbient -> updateTheme(Constants.THEME_MODE_AMBIENT_LIGHT)
             R.id.textSizeValue -> binding.textSizesLayout.visibility = View.VISIBLE
             R.id.actionAccessibility -> openAccessibilityService()
             R.id.closeAccessibility -> toggleAccessibilityVisibility(false)
@@ -371,7 +373,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.dailyWallpaper -> removeWallpaper()
             R.id.appThemeText -> {
                 binding.appThemeSelectLayout.visibility = View.VISIBLE
-                binding.themeSystem.visibility = View.VISIBLE
             }
 
             R.id.swipeLeftApp -> toggleSwipeLeft()
@@ -465,6 +466,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.themeLight.setOnClickListener(this)
         binding.themeDark.setOnClickListener(this)
         binding.themeSystem.setOnClickListener(this)
+        binding.themeAmbient.setOnClickListener(this)
         binding.textSizeValue.setOnClickListener(this)
         binding.actionAccessibility.setOnClickListener(this)
         binding.closeAccessibility.setOnClickListener(this)
@@ -1091,11 +1093,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateStatusBar() {
+        val activity = activity ?: return
         if (prefs.showStatusBar) {
-            showStatusBar()
+            applyLauncherStatusBarVisibility(activity, show = true)
             binding.statusBar.text = getString(R.string.on)
         } else {
-            hideStatusBar()
+            applyLauncherStatusBarVisibility(activity, show = false)
             binding.statusBar.text = getString(R.string.off)
         }
     }
@@ -1174,29 +1177,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun formatHourLabel(hour: Int): String {
         return getString(R.string.clock_hour_format, hour)
-    }
-
-    private fun showStatusBar() {
-        val decorView = activity?.window?.decorView ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            decorView.windowInsetsController?.show(WindowInsets.Type.statusBars())
-        else
-            @Suppress("DEPRECATION", "InlinedApi")
-            decorView.apply {
-                systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            }
-    }
-
-    private fun hideStatusBar() {
-        val decorView = activity?.window?.decorView ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            decorView.windowInsetsController?.hide(WindowInsets.Type.statusBars())
-        else {
-            @Suppress("DEPRECATION")
-            decorView.apply {
-                systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE or View.SYSTEM_UI_FLAG_FULLSCREEN
-            }
-        }
     }
 
     private fun showHiddenApps() {
@@ -1341,13 +1321,31 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun updateTheme(appTheme: Int) {
         if (prefs.appTheme == appTheme) return
+        if (appTheme == Constants.THEME_MODE_AMBIENT_LIGHT) {
+            if (!AmbientThemeController.hasLightSensor(requireContext())) {
+                requireContext().showToast(R.string.ambient_theme_no_sensor)
+                return
+            }
+            if (!canUsePremiumFeature()) {
+                showUpgradeDialog()
+                return
+            }
+        }
         prefs.appTheme = appTheme
         populateAppThemeText(appTheme)
         if (prefs.dailyWallpaper) {
             setPlainWallpaper(appTheme)
             viewModel.setWallpaperWorker()
         }
-        AppCompatDelegate.setDefaultNightMode(appTheme)
+        val nightMode = when (appTheme) {
+            Constants.THEME_MODE_AMBIENT_LIGHT -> {
+                val dark = requireContext().isDarkThemeOn()
+                prefs.ambientThemeDark = dark
+                AmbientThemeController.nightModeForDark(dark)
+            }
+            else -> appTheme
+        }
+        AppCompatDelegate.setDefaultNightMode(nightMode)
         if (isAdded) {
             requireActivity().recreate()
         }
@@ -1362,6 +1360,14 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         when (appTheme) {
             AppCompatDelegate.MODE_NIGHT_YES -> setPlainWallpaper(requireContext(), android.R.color.black)
             AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(requireContext(), android.R.color.white)
+            Constants.THEME_MODE_AMBIENT_LIGHT -> {
+                val color = if (prefs.ambientThemeDark) {
+                    android.R.color.black
+                } else {
+                    android.R.color.white
+                }
+                setPlainWallpaper(requireContext(), color)
+            }
             else -> {
                 val color = if (requireContext().isDarkThemeOn()) {
                     android.R.color.black
@@ -1374,10 +1380,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateAppThemeText(appTheme: Int = prefs.appTheme) {
-        when (appTheme) {
-            AppCompatDelegate.MODE_NIGHT_YES -> binding.appThemeText.text = getString(R.string.dark)
-            AppCompatDelegate.MODE_NIGHT_NO -> binding.appThemeText.text = getString(R.string.light)
-            else -> binding.appThemeText.text = getString(R.string.system_default)
+        binding.themeAmbientLabel.text = getString(R.string.theme_mode_ambient)
+        binding.themeAmbientStar.isVisible = true
+        binding.appThemeText.text = when (appTheme) {
+            AppCompatDelegate.MODE_NIGHT_YES -> getString(R.string.dark)
+            AppCompatDelegate.MODE_NIGHT_NO -> getString(R.string.light)
+            Constants.THEME_MODE_AMBIENT_LIGHT -> getString(R.string.theme_mode_ambient)
+            else -> getString(R.string.system_default)
         }
     }
 
@@ -1591,3 +1600,4 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         super.onDestroy()
     }
 }
+

@@ -14,7 +14,7 @@ class WallpaperWorker(appContext: Context, workerParams: WorkerParameters) : Cor
 
     override suspend fun doWork(): Result = coroutineScope {
         if (prefs.dailyWallpaper.not()) return@coroutineScope Result.success()
-        if (prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES && !isSukunDefault(applicationContext))
+        if (prefs.isEffectivelyDarkTheme() && !isSukunDefault(applicationContext))
             return@coroutineScope Result.retry()
 
         val success =
@@ -54,6 +54,11 @@ class WallpaperWorker(appContext: Context, workerParams: WorkerParameters) : Cor
         return when (prefs.appTheme) {
             AppCompatDelegate.MODE_NIGHT_YES -> Constants.WALL_TYPE_DARK
             AppCompatDelegate.MODE_NIGHT_NO -> Constants.WALL_TYPE_LIGHT
+            Constants.THEME_MODE_AMBIENT_LIGHT -> if (prefs.ambientThemeDark) {
+                Constants.WALL_TYPE_DARK
+            } else {
+                Constants.WALL_TYPE_LIGHT
+            }
             else -> if (applicationContext.isDarkThemeOn()) {
                 Constants.WALL_TYPE_DARK
             } else {
