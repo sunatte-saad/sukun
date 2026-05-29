@@ -1361,9 +1361,14 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private fun setPlainWallpaper(appTheme: Int) {
         when (appTheme) {
             AppCompatDelegate.MODE_NIGHT_YES -> setPlainWallpaper(requireContext(), android.R.color.black)
-            AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(requireContext(), android.R.color.black)
+            AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(requireContext(), android.R.color.white)
             else -> {
-                setPlainWallpaper(requireContext(), android.R.color.black)
+                val color = if (requireContext().isDarkThemeOn()) {
+                    android.R.color.black
+                } else {
+                    android.R.color.white
+                }
+                setPlainWallpaper(requireContext(), color)
             }
         }
     }

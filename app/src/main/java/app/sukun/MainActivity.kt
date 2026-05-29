@@ -23,6 +23,8 @@ import androidx.navigation.findNavController
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.databinding.ActivityMainBinding
+import app.sukun.helper.applyLauncherBrightnessForTheme
+import app.sukun.helper.clearLauncherBrightnessOverride
 import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hasBeenDays
 import app.sukun.helper.hasBeenHours
@@ -143,10 +145,16 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         isResumed = true
+        applyLauncherBrightnessForTheme()
         viewModel.isPrivateSpaceToggling = false
         if (viewModel.appList.value.isNullOrEmpty()) {
             viewModel.getAppList()
         }
+    }
+
+    override fun onPause() {
+        clearLauncherBrightnessOverride()
+        super.onPause()
     }
 
     override fun onStop() {

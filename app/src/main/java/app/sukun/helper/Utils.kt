@@ -1,6 +1,7 @@
 package app.sukun.helper
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.SearchManager
 import android.app.WallpaperManager
 import android.app.role.RoleManager
@@ -38,6 +39,7 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
+import android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
 import androidx.annotation.AttrRes
@@ -302,12 +304,34 @@ fun getDefaultLauncherPackage(context: Context): String {
     } else "android"
 }
 
+/** Boosts window brightness in light theme so home/settings text stays readable. */
+private const val LIGHT_THEME_SCREEN_BRIGHTNESS = 0.95f
+
+fun Activity.applyLauncherBrightnessForTheme() {
+    val layoutParams = window.attributes
+    layoutParams.screenBrightness = if (isDarkThemeOn()) {
+        BRIGHTNESS_OVERRIDE_NONE
+    } else {
+        LIGHT_THEME_SCREEN_BRIGHTNESS
+    }
+    window.attributes = layoutParams
+}
+
+fun Activity.clearLauncherBrightnessOverride() {
+    val layoutParams = window.attributes
+    if (layoutParams.screenBrightness != BRIGHTNESS_OVERRIDE_NONE) {
+        layoutParams.screenBrightness = BRIGHTNESS_OVERRIDE_NONE
+        window.attributes = layoutParams
+    }
+}
+
 fun setPlainWallpaperByTheme(context: Context, appTheme: Int) {
     when (appTheme) {
         AppCompatDelegate.MODE_NIGHT_YES -> setPlainWallpaper(context, android.R.color.black)
-        AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(context, android.R.color.black)
+        AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(context, android.R.color.white)
         else -> {
-            setPlainWallpaper(context, android.R.color.black)
+            val color = if (context.isDarkThemeOn()) android.R.color.black else android.R.color.white
+            setPlainWallpaper(context, color)
         }
     }
 }

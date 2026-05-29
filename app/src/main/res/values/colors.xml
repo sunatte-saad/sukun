@@ -28,4 +28,8 @@
     <color name="blackInverseTrans80">#CCFFFFFF</color>
     <color name="blackInverseTrans90">#E6FFFFFF</color>
 
+    <!-- Full-screen overlays for app drawer, settings, etc. -->
+    <color name="scrim_dark">#B3000000</color>
+    <color name="scrim_light">#EBFFFFFF</color>
+
 </resources>

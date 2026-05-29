@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.content.res.Configuration
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.ColorDrawable
@@ -52,6 +53,8 @@ import app.sukun.helper.dpToPx
 import app.sukun.helper.expandNotificationDrawer
 import app.sukun.helper.getFocusModeStatus
 import app.sukun.helper.getChangedAppTheme
+import app.sukun.helper.getColorFromAttr
+import app.sukun.helper.isDarkThemeOn
 import app.sukun.helper.getUserHandleFromString
 import app.sukun.helper.isAccessServiceEnabled
 import app.sukun.helper.isPackageInstalled
@@ -118,6 +121,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     override fun onResume() {
         super.onResume()
+        applyReadableHomeTextColors()
         syncFocusModeState()
         updateRemindersBellCount()
         populateHomeScreen(false)
@@ -333,14 +337,24 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun applyReadableHomeTextColors() {
-        val primaryTextColor = Color.WHITE
-        val hintTextColor = Color.argb(190, 255, 255, 255)
-        val shadowColor = Color.argb(230, 0, 0, 0)
+        val context = requireContext()
+        val isLight = !context.isDarkThemeOn()
+        val primaryTextColor = context.getColorFromAttr(R.attr.primaryColor)
+        val hintTextColor = context.getColorFromAttr(R.attr.primaryColorTrans80)
+        val shadowColor = context.getColorFromAttr(R.attr.primaryTextShadowColor)
+        val shadowRadius = if (isLight) 3f else 7f
         readableTextViews().forEach { textView ->
             textView.setTextColor(primaryTextColor)
             textView.setHintTextColor(hintTextColor)
-            textView.setShadowLayer(7f, 0f, 2f, shadowColor)
+            if (shadowColor == Color.TRANSPARENT) {
+                textView.setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT)
+            } else {
+                textView.setShadowLayer(shadowRadius, 0f, 2f, shadowColor)
+            }
         }
+        binding.remindersBell.imageTintList = ColorStateList.valueOf(primaryTextColor)
+        binding.readabilityScrim.alpha = if (isLight) 1f else 0.55f
+        binding.dayProgressRingView.invalidate()
     }
 
     private fun readableTextViews(): List<TextView> = listOfNotNull(

@@ -33,14 +33,15 @@
 
         <item name="primaryColor">@color/black</item>
         <item name="primaryInverseColor">@color/blackInverse</item>
-        <item name="primaryTextShadowColor">@android:color/transparent</item>
+        <item name="primaryTextShadowColor">@color/whiteTrans80</item>
+        <item name="scrimColor">@color/scrim_light</item>
         <item name="primaryColorTrans50">@color/blackTrans50</item>
         <item name="primaryColorTrans80">@color/blackTrans80</item>
         <item name="primaryColorInverseTrans50">@color/blackInverseTrans50</item>
         <item name="primaryColorInverseTrans80">@color/blackInverseTrans80</item>
         <item name="primaryColorInverseTrans90">@color/blackInverseTrans90</item>
         <item name="primaryShadeColor">@color/whiteInverseTrans10</item>
-        <item name="primaryShadeDarkColor">@color/whiteInverseTrans10</item>
+        <item name="primaryShadeDarkColor">@color/whiteInverseTrans25</item>
         <item name="dialogShadeColor">@color/blackInverseTrans90</item>
         <item name="dividerColor">@color/whiteInverseTrans25</item>
 
