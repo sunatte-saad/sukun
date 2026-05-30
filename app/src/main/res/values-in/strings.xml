@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -319,4 +319,24 @@
     <string name="reminder_channel_description">Notifikasi pengingat kustom</string>
     <string name="reminder_done">Selesai</string>
     <string name="reminder_stats">%1$d/%2$d selesai (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Batas</string>
+    <string name="cooldown_warning_title">%1$s sedang dalam periode pendinginan</string>
+    <string name="cooldown_warning_stats">Anda telah membuka %1$s sebanyak %2$d kali hari ini dan menggunakannya selama %3$s.</string>
+    <string name="cooldown_warning_remaining">Periode pendinginan: %1$d menit tersisa.</string>
+    <string name="cooldown_warning_ack">Saya memahami pentingnya menggunakan %1$s secara bijak.</string>
+    <string name="cooldown_open_anyway">Buka tetap</string>
+    <string name="cooldown_stay_focused">Tetap fokus</string>
+    <string name="cooldown_config_title">Tetapkan batas untuk %1$s</string>
+    <string name="cooldown_config_subtitle">Tetapkan batas harian. Periode pendinginan dimulai ketika salah satu batas tercapai. Biarkan kolom kosong untuk menonaktifkan batas tersebut.</string>
+    <string name="cooldown_config_opens_label">Maks. pembukaan per hari (0 = mati)</string>
+    <string name="cooldown_config_opens_hint">mis. 5</string>
+    <string name="cooldown_config_duration_label">Maks. penggunaan per hari (menit, 0 = mati)</string>
+    <string name="cooldown_config_duration_hint">mis. 30</string>
+    <string name="cooldown_config_cooloff_label">Periode pendinginan (menit)</string>
+    <string name="cooldown_config_cooloff_hint">mis. 30</string>
+    <string name="cooldown_config_save">Simpan</string>
+    <string name="cooldown_config_remove">Hapus batas</string>
+    <string name="cooldown_no_limits_set">Tetapkan setidaknya satu batas (pembukaan atau durasi)</string>
 </resources>

@@ -77,6 +77,8 @@ class Prefs(context: Context) {
     private val SHOW_DAILY_NOTES_ON_HOME = "SHOW_DAILY_NOTES_ON_HOME"
     private val SHOW_REMINDERS_ON_HOME = "SHOW_REMINDERS_ON_HOME"
     private val DAILY_NOTES_LIST = "DAILY_NOTES_LIST"
+    private val SHOW_TODO_ON_HOME = "SHOW_TODO_ON_HOME"
+    private val TODO_ITEMS_JSON = "TODO_ITEMS_JSON"
     private val PRAYER_SOURCE_MODE = "PRAYER_SOURCE_MODE"
     private val PRAYER_LOCATION_QUERY = "PRAYER_LOCATION_QUERY"
     private val PRAYER_LOCATION_LABEL = "PRAYER_LOCATION_LABEL"
@@ -97,6 +99,9 @@ class Prefs(context: Context) {
     private val RECENT_APPS = "RECENT_APPS"
     private val REMINDERS_JSON = "REMINDERS_JSON"
     private val PRAYER_LOGS = "PRAYER_LOGS"
+    private val COOLDOWN_CONFIGS = "COOLDOWN_CONFIGS"
+    private val COOLDOWN_DAILY_USAGE_PREFIX = "COOLDOWN_USAGE_"
+    private val COOLDOWN_LAST_PKG = "COOLDOWN_LAST_PKG"
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -421,6 +426,14 @@ class Prefs(context: Context) {
     var dailyNotesList: String
         get() = prefs.getString(DAILY_NOTES_LIST, "").toString()
         set(value) = prefs.edit { putString(DAILY_NOTES_LIST, value).apply() }
+
+    var showTodoOnHome: Boolean
+        get() = prefs.getBoolean(SHOW_TODO_ON_HOME, false)
+        set(value) = prefs.edit { putBoolean(SHOW_TODO_ON_HOME, value).apply() }
+
+    var todoItemsJson: String
+        get() = prefs.getString(TODO_ITEMS_JSON, "").toString()
+        set(value) = prefs.edit { putString(TODO_ITEMS_JSON, value).apply() }
 
     var prayerSourceMode: String
         get() = prefs.getString(PRAYER_SOURCE_MODE, Constants.PrayerSource.DEVICE).toString()
@@ -1037,5 +1050,85 @@ class Prefs(context: Context) {
 
     fun getFocusModeRemainingMillis(): Long {
         return if (isFocusModeActive()) focusModeEndsAt - System.currentTimeMillis() else 0L
+    }
+
+    // --- Cooldown ---
+
+    var cooldownLastLaunchedPkg: String
+        get() = prefs.getString(COOLDOWN_LAST_PKG, "") ?: ""
+        set(value) = prefs.edit { putString(COOLDOWN_LAST_PKG, value) }
+
+    fun getCooldownConfig(packageName: String): AppCooldownConfig? {
+        val json = prefs.getString(COOLDOWN_CONFIGS, "{}") ?: "{}"
+        return try {
+            val obj = org.json.JSONObject(json)
+            if (!obj.has(packageName)) return null
+            val pkg = obj.getJSONObject(packageName)
+            AppCooldownConfig(
+                packageName = packageName,
+                maxOpens = pkg.optInt("opens", 0),
+                maxDurationMinutes = pkg.optInt("duration", 0),
+                cooloffMinutes = pkg.optInt("cooloff", 30)
+            )
+        } catch (_: Exception) { null }
+    }
+
+    fun setCooldownConfig(config: AppCooldownConfig) {
+        val json = prefs.getString(COOLDOWN_CONFIGS, "{}") ?: "{}"
+        val obj = try { org.json.JSONObject(json) } catch (_: Exception) { org.json.JSONObject() }
+        obj.put(config.packageName, org.json.JSONObject().apply {
+            put("opens", config.maxOpens)
+            put("duration", config.maxDurationMinutes)
+            put("cooloff", config.cooloffMinutes)
+        })
+        prefs.edit { putString(COOLDOWN_CONFIGS, obj.toString()) }
+    }
+
+    fun removeCooldownConfig(packageName: String) {
+        val json = prefs.getString(COOLDOWN_CONFIGS, "{}") ?: "{}"
+        val obj = try { org.json.JSONObject(json) } catch (_: Exception) { org.json.JSONObject() }
+        obj.remove(packageName)
+        prefs.edit { putString(COOLDOWN_CONFIGS, obj.toString()) }
+    }
+
+    fun getAllCooldownPackages(): Set<String> {
+        val json = prefs.getString(COOLDOWN_CONFIGS, "{}") ?: "{}"
+        return try {
+            val obj = org.json.JSONObject(json)
+            obj.keys().asSequence().toSet()
+        } catch (_: Exception) { emptySet() }
+    }
+
+    fun getCooldownDailyUsage(packageName: String): AppCooldownManager.DailyUsage? {
+        val key = COOLDOWN_DAILY_USAGE_PREFIX + packageName
+        val json = prefs.getString(key, "") ?: ""
+        if (json.isBlank()) return null
+        return try {
+            val obj = org.json.JSONObject(json)
+            AppCooldownManager.DailyUsage(
+                date = obj.getString("date"),
+                packageName = packageName,
+                openCount = obj.optInt("opens", 0),
+                totalDurationMs = obj.optLong("duration", 0L),
+                cooloffEndsAt = obj.optLong("cooloffEndsAt", 0L),
+                lastLaunchTimeMs = obj.optLong("lastLaunch", 0L)
+            )
+        } catch (_: Exception) { null }
+    }
+
+    fun saveCooldownDailyUsage(packageName: String, usage: AppCooldownManager.DailyUsage) {
+        val key = COOLDOWN_DAILY_USAGE_PREFIX + packageName
+        val obj = org.json.JSONObject().apply {
+            put("date", usage.date)
+            put("opens", usage.openCount)
+            put("duration", usage.totalDurationMs)
+            put("cooloffEndsAt", usage.cooloffEndsAt)
+            put("lastLaunch", usage.lastLaunchTimeMs)
+        }
+        prefs.edit { putString(key, obj.toString()) }
+    }
+
+    fun clearCooldownDailyUsage(packageName: String) {
+        prefs.edit { remove(COOLDOWN_DAILY_USAGE_PREFIX + packageName) }
     }
 }

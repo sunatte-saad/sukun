@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -329,4 +329,24 @@ Tap to open forecast</string>
     <string name="reminder_channel_description">Custom reminder notifications</string>
     <string name="reminder_done">Done</string>
     <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Ograničenje</string>
+    <string name="cooldown_warning_title">%1$s je u periodu hlađenja</string>
+    <string name="cooldown_warning_stats">Otvorili ste %1$s %2$d put(a) danas i koristili ga %3$s.</string>
+    <string name="cooldown_warning_remaining">Period hlađenja: preostalo %1$d min.</string>
+    <string name="cooldown_warning_ack">Razumijem da je važno svjesno koristiti %1$s.</string>
+    <string name="cooldown_open_anyway">Otvori svejedno</string>
+    <string name="cooldown_stay_focused">Ostani usredotočen</string>
+    <string name="cooldown_config_title">Postavi ograničenje za %1$s</string>
+    <string name="cooldown_config_subtitle">Postavite dnevna ograničenja. Period hlađenja počinje kada se dosegne bilo koje ograničenje. Ostavite polje prazno da biste onemogućili to ograničenje.</string>
+    <string name="cooldown_config_opens_label">Maks. otvaranja dnevno (0 = isključeno)</string>
+    <string name="cooldown_config_opens_hint">npr. 5</string>
+    <string name="cooldown_config_duration_label">Maks. upotreba dnevno (minute, 0 = isključeno)</string>
+    <string name="cooldown_config_duration_hint">npr. 30</string>
+    <string name="cooldown_config_cooloff_label">Period hlađenja (minute)</string>
+    <string name="cooldown_config_cooloff_hint">npr. 30</string>
+    <string name="cooldown_config_save">Spremi</string>
+    <string name="cooldown_config_remove">Ukloni ograničenje</string>
+    <string name="cooldown_no_limits_set">Postavite barem jedno ograničenje (otvaranja ili trajanje)</string>
 </resources>

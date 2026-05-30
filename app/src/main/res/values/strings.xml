@@ -51,6 +51,12 @@
     <string name="daily_notes_hint">Add one task or note per line</string>
     <string name="daily_notes_empty_hint">Tap to add tasks or notes</string>
     <string name="daily_notes_saved">Tasks / notes updated</string>
+    <string name="todo_list">Todo list</string>
+    <string name="todo_add_hint">New task…</string>
+    <string name="todo_empty_hint">No tasks yet</string>
+    <string name="todo_clear_completed">Clear done</string>
+    <string name="todo_list_title_count">Todo (%1$d pending)</string>
+    <string name="add">Add</string>
     <string name="focus_mode">Focus mode</string>
     <string name="focus_mode_status">Focus mode active</string>
     <string name="focus_mode_blocked">Focus mode is active</string>
@@ -333,4 +339,24 @@
     <string name="reminder_channel_description">Custom reminder notifications</string>
     <string name="reminder_done">Done</string>
     <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Limit</string>
+    <string name="cooldown_warning_title">%1$s is on cool-off</string>
+    <string name="cooldown_warning_stats">You\'ve opened %1$s %2$d time(s) today and used it for %3$s.</string>
+    <string name="cooldown_warning_remaining">Cool-off period: %1$d min remaining.</string>
+    <string name="cooldown_warning_ack">I understand it\'s important to be mindful with my usage of %1$s.</string>
+    <string name="cooldown_open_anyway">Open anyway</string>
+    <string name="cooldown_stay_focused">Stay focused</string>
+    <string name="cooldown_config_title">Set limit for %1$s</string>
+    <string name="cooldown_config_subtitle">Set daily limits. A cool-off period begins when either limit is reached. Leave a field empty to disable that limit.</string>
+    <string name="cooldown_config_opens_label">Max opens per day (0 = off)</string>
+    <string name="cooldown_config_opens_hint">e.g. 5</string>
+    <string name="cooldown_config_duration_label">Max total usage per day (minutes, 0 = off)</string>
+    <string name="cooldown_config_duration_hint">e.g. 30</string>
+    <string name="cooldown_config_cooloff_label">Cool-off period (minutes)</string>
+    <string name="cooldown_config_cooloff_hint">e.g. 30</string>
+    <string name="cooldown_config_save">Save</string>
+    <string name="cooldown_config_remove">Remove limit</string>
+    <string name="cooldown_no_limits_set">Set at least one limit (opens or duration)</string>
 </resources>

@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -319,4 +319,24 @@
     <string name="reminder_channel_description">사용자 지정 알림</string>
     <string name="reminder_done">완료</string>
     <string name="reminder_stats">%1$d/%2$d 완료 (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">제한</string>
+    <string name="cooldown_warning_title">%1$s 이(가) 쿨다운 중</string>
+    <string name="cooldown_warning_stats">오늘 %1$s 을(를) %2$d번 열었고 %3$s 동안 사용했습니다.</string>
+    <string name="cooldown_warning_remaining">쿨다운 기간: %1$d분 남음.</string>
+    <string name="cooldown_warning_ack">%1$s 을(를) 의식적으로 사용하는 것이 중요하다는 것을 이해합니다.</string>
+    <string name="cooldown_open_anyway">그래도 열기</string>
+    <string name="cooldown_stay_focused">집중 유지</string>
+    <string name="cooldown_config_title">%1$s 의 제한 설정</string>
+    <string name="cooldown_config_subtitle">일일 제한을 설정합니다. 어느 한 제한에 도달하면 쿨다운 기간이 시작됩니다. 필드를 비워두면 해당 제한이 비활성화됩니다.</string>
+    <string name="cooldown_config_opens_label">하루 최대 열기 횟수 (0 = 끄기)</string>
+    <string name="cooldown_config_opens_hint">예: 5</string>
+    <string name="cooldown_config_duration_label">하루 최대 사용 시간 (분, 0 = 끄기)</string>
+    <string name="cooldown_config_duration_hint">예: 30</string>
+    <string name="cooldown_config_cooloff_label">쿨다운 기간 (분)</string>
+    <string name="cooldown_config_cooloff_hint">예: 30</string>
+    <string name="cooldown_config_save">저장</string>
+    <string name="cooldown_config_remove">제한 제거</string>
+    <string name="cooldown_no_limits_set">최소 하나의 제한 (열기 횟수 또는 시간)을 설정하세요</string>
 </resources>

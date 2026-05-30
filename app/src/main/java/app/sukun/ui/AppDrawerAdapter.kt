@@ -22,9 +22,13 @@ import app.sukun.databinding.AdapterAppDrawerBinding
 import app.sukun.databinding.AdapterAppSectionHeaderBinding
 import app.sukun.databinding.AdapterPrivateSpaceHeaderBinding
 import app.sukun.helper.dpToPx
+import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hideKeyboard
 import app.sukun.helper.isSystemApp
 import app.sukun.helper.showKeyboard
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
 import java.text.Normalizer
 
 class AppDrawerAdapter(
@@ -39,6 +43,7 @@ class AppDrawerAdapter(
     private val appRenameListener: (AppModel, String) -> Unit,
     private val privateSpaceToggleListener: () -> Unit = {},
     private val privateSpaceSettingsListener: () -> Unit = {},
+    private val appCooldownLimitListener: (AppModel) -> Unit = {},
 ) : ListAdapter<AppModel, RecyclerView.ViewHolder>(DIFF_CALLBACK), Filterable {
 
     companion object {
@@ -71,6 +76,8 @@ class AppDrawerAdapter(
     private val appFilter = createAppFilter()
     private val myUserHandle = android.os.Process.myUserHandle()
     private val sectionPositions = linkedMapOf<String, Int>()
+    var cooledOffPackages: Set<String> = emptySet()
+        private set
 
     var appsList: MutableList<AppModel> = mutableListOf()
     var appFilteredList: MutableList<AppModel> = mutableListOf()
@@ -130,11 +137,13 @@ class AppDrawerAdapter(
                     showAppIcons,
                     myUserHandle,
                     appModel,
+                    appModel.appPackage in cooledOffPackages,
                     appClickListener,
                     appDeleteListener,
                     appInfoListener,
                     appHideListener,
-                    appRenameListener
+                    appRenameListener,
+                    appCooldownLimitListener
                 )
             }
         } catch (e: Exception) {
@@ -234,6 +243,11 @@ class AppDrawerAdapter(
         if (first != null) appClickListener(first)
     }
 
+    fun updateCooledOff(packages: Set<String>) {
+        cooledOffPackages = packages
+        notifyDataSetChanged()
+    }
+
     fun getSections(): List<String> = sectionPositions.keys.toList()
 
     fun getPositionForSection(section: String): Int? = sectionPositions[section]
@@ -288,26 +302,47 @@ class AppDrawerAdapter(
             showAppIcons: Boolean,
             myUserHandle: UserHandle,
             appModel: AppModel,
+            isCoolingOff: Boolean,
             clickListener: (AppModel) -> Unit,
             appDeleteListener: (AppModel) -> Unit,
             appInfoListener: (AppModel) -> Unit,
             appHideListener: (AppModel, Int) -> Unit,
             appRenameListener: (AppModel, String) -> Unit,
+            cooldownLimitListener: (AppModel) -> Unit,
         ) = with(binding) {
             appHideLayout.visibility = View.GONE
             renameLayout.visibility = View.GONE
             appTitle.visibility = View.VISIBLE
 
             // Show indicators in title based on app type and state
-            appTitle.text = buildString {
+            val baseLabel = buildString {
                 append(appModel.appLabel)
                 if (appModel.isNew) append(" ✦")
+            }
+            if (isCoolingOff && appModel.appPackage.isNotBlank()) {
+                val indicator = "  ⏸"
+                val full = baseLabel + indicator
+                val span = SpannableString(full)
+                val start = full.length - indicator.length
+                span.setSpan(RelativeSizeSpan(0.85f), start, full.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+                span.setSpan(
+                    ForegroundColorSpan(appTitle.context.getColorFromAttr(R.attr.primaryColorTrans80)),
+                    start, full.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+                appTitle.text = span
+            } else {
+                appTitle.text = baseLabel
             }
             appTitle.gravity = appLabelGravity
             setAppIcon(showAppIcons, appModel)
             otherProfileIndicator.isVisible = appModel.user != myUserHandle
 
             appTitle.setOnClickListener { clickListener(appModel) }
+            appCooldownLimit.setOnClickListener {
+                appHideLayout.visibility = View.GONE
+                appTitle.visibility = View.VISIBLE
+                cooldownLimitListener(appModel)
+            }
 
             appTitle.setOnLongClickListener {
                 if (appModel.appPackage.isNotEmpty()) {

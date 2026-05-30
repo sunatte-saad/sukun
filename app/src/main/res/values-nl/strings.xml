@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -328,4 +328,24 @@ Tap to open forecast</string>
     <string name="reminder_channel_description">Custom reminder notifications</string>
     <string name="reminder_done">Done</string>
     <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Limiet</string>
+    <string name="cooldown_warning_title">%1$s is in afkoelperiode</string>
+    <string name="cooldown_warning_stats">Je hebt %1$s vandaag %2$d keer geopend en %3$s gebruikt.</string>
+    <string name="cooldown_warning_remaining">Afkoelperiode: %1$d min resterend.</string>
+    <string name="cooldown_warning_ack">Ik begrijp dat het belangrijk is om %1$s bewust te gebruiken.</string>
+    <string name="cooldown_open_anyway">Toch openen</string>
+    <string name="cooldown_stay_focused">Gefocust blijven</string>
+    <string name="cooldown_config_title">Limiet instellen voor %1$s</string>
+    <string name="cooldown_config_subtitle">Stel dagelijkse limieten in. Een afkoelperiode begint wanneer een limiet bereikt wordt. Laat een veld leeg om die limiet uit te schakelen.</string>
+    <string name="cooldown_config_opens_label">Max. openingen per dag (0 = uit)</string>
+    <string name="cooldown_config_opens_hint">bijv. 5</string>
+    <string name="cooldown_config_duration_label">Max. gebruik per dag (minuten, 0 = uit)</string>
+    <string name="cooldown_config_duration_hint">bijv. 30</string>
+    <string name="cooldown_config_cooloff_label">Afkoelperiode (minuten)</string>
+    <string name="cooldown_config_cooloff_hint">bijv. 30</string>
+    <string name="cooldown_config_save">Opslaan</string>
+    <string name="cooldown_config_remove">Limiet verwijderen</string>
+    <string name="cooldown_no_limits_set">Stel minimaal één limiet in (openingen of duur)</string>
 </resources>

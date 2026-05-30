@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -319,4 +319,24 @@
     <string name="reminder_channel_description">Notificações de lembrete personalizadas</string>
     <string name="reminder_done">Concluído</string>
     <string name="reminder_stats">%1$d/%2$d concluído (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Limite</string>
+    <string name="cooldown_warning_title">%1$s está em resfriamento</string>
+    <string name="cooldown_warning_stats">Você abriu %1$s %2$d vez(es) hoje e o usou por %3$s.</string>
+    <string name="cooldown_warning_remaining">Período de resfriamento: %1$d min restantes.</string>
+    <string name="cooldown_warning_ack">Entendo que é importante usar %1$s com consciência.</string>
+    <string name="cooldown_open_anyway">Abrir mesmo assim</string>
+    <string name="cooldown_stay_focused">Manter o foco</string>
+    <string name="cooldown_config_title">Definir limite para %1$s</string>
+    <string name="cooldown_config_subtitle">Defina limites diários. O período de resfriamento começa quando qualquer limite é atingido. Deixe um campo vazio para desativar esse limite.</string>
+    <string name="cooldown_config_opens_label">Máx. de aberturas por dia (0 = desativado)</string>
+    <string name="cooldown_config_opens_hint">ex. 5</string>
+    <string name="cooldown_config_duration_label">Uso máximo por dia (minutos, 0 = desativado)</string>
+    <string name="cooldown_config_duration_hint">ex. 30</string>
+    <string name="cooldown_config_cooloff_label">Período de resfriamento (minutos)</string>
+    <string name="cooldown_config_cooloff_hint">ex. 30</string>
+    <string name="cooldown_config_save">Salvar</string>
+    <string name="cooldown_config_remove">Remover limite</string>
+    <string name="cooldown_no_limits_set">Defina pelo menos um limite (aberturas ou duração)</string>
 </resources>

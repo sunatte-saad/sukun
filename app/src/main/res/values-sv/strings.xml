@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -329,4 +329,24 @@ Tap to open forecast</string>
     <string name="reminder_channel_description">Custom reminder notifications</string>
     <string name="reminder_done">Done</string>
     <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Gräns</string>
+    <string name="cooldown_warning_title">%1$s är i nedkylningsperiod</string>
+    <string name="cooldown_warning_stats">Du har öppnat %1$s %2$d gång(er) idag och använt det i %3$s.</string>
+    <string name="cooldown_warning_remaining">Nedkylningsperiod: %1$d min kvar.</string>
+    <string name="cooldown_warning_ack">Jag förstår att det är viktigt att använda %1$s medvetet.</string>
+    <string name="cooldown_open_anyway">Öppna ändå</string>
+    <string name="cooldown_stay_focused">Håll fokus</string>
+    <string name="cooldown_config_title">Sätt gräns för %1$s</string>
+    <string name="cooldown_config_subtitle">Sätt dagliga gränser. En nedkylningsperiod börjar när en gräns nås. Lämna ett fält tomt för att inaktivera den gränsen.</string>
+    <string name="cooldown_config_opens_label">Max öppningar per dag (0 = av)</string>
+    <string name="cooldown_config_opens_hint">t.ex. 5</string>
+    <string name="cooldown_config_duration_label">Max användning per dag (minuter, 0 = av)</string>
+    <string name="cooldown_config_duration_hint">t.ex. 30</string>
+    <string name="cooldown_config_cooloff_label">Nedkylningsperiod (minuter)</string>
+    <string name="cooldown_config_cooloff_hint">t.ex. 30</string>
+    <string name="cooldown_config_save">Spara</string>
+    <string name="cooldown_config_remove">Ta bort gräns</string>
+    <string name="cooldown_no_limits_set">Ange minst en gräns (öppningar eller varaktighet)</string>
 </resources>

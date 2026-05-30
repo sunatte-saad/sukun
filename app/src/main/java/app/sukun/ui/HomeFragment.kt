@@ -21,9 +21,11 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextClock
 import android.widget.TextView
 import android.widget.Toast
@@ -47,7 +49,10 @@ import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.data.PrayerState
 import app.sukun.data.WeatherData
+import app.sukun.data.TodoItem
 import app.sukun.data.toReminderList
+import app.sukun.data.toTodoJson
+import app.sukun.data.toTodoList
 import app.sukun.databinding.FragmentHomeBinding
 import app.sukun.helper.appUsagePermissionGranted
 import app.sukun.helper.canOpenNotificationsInFocusMode
@@ -120,7 +125,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         initClickListeners()
         applyReadableHomeTextColors()
         binding.remindersBellContainer.bringToFront()
+        binding.todoIconContainer.bringToFront()
         updateRemindersBellCount()
+        updateTodoIconCount()
     }
 
     override fun onResume() {
@@ -128,6 +135,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         applyReadableHomeTextColors()
         syncFocusModeState()
         updateRemindersBellCount()
+        updateTodoIconCount()
         populateHomeScreen(false)
         registerSystemTimeReceiver()
         viewModel.loadWeather()
@@ -153,9 +161,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             R.id.ringDate -> openCalendarApp()
             R.id.prayerText -> { /* mark on long-press only */ }
             R.id.remindersBellContainer -> openReminders()
+            R.id.todoIconContainer -> openTodoList()
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
             R.id.tvScreenTime -> openScreenTimeDigitalWellbeing()
-            R.id.dailyNotesCard -> showDailyNotesEditor()
 
             else -> {
                 try { // Launch app
@@ -278,7 +286,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             updateWeatherLayout()
         }
         viewModel.screenTimeValue.observe(viewLifecycleOwner) {
-            it?.let { binding.tvScreenTime?.text = it }
+            if (it != null) {
+                binding.tvScreenTime?.text = it
+                binding.tvScreenTime?.visibility = View.VISIBLE
+            }
         }
         viewModel.weatherData.observe(viewLifecycleOwner) {
             populateWeather(it)
@@ -308,7 +319,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.remindersBellContainer.setOnTouchListener(
             getViewSwipeTouchListener(context, binding.remindersBellContainer)
         )
-        binding.dailyNotesCard.setOnTouchListener(getViewSwipeTouchListener(context, binding.dailyNotesCard))
+        binding.todoIconContainer.setOnTouchListener(getViewSwipeTouchListener(context, binding.todoIconContainer))
         binding.homeApp1.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp1))
         binding.homeApp2.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp2))
         binding.homeApp3.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp3))
@@ -337,9 +348,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
         binding.weatherText?.setOnClickListener { openGoogleWeather() }
         binding.remindersBellContainer.setOnClickListener(this)
+        binding.todoIconContainer.setOnClickListener(this)
         binding.tvScreenTime?.setOnClickListener(this)
         binding.tvScreenTime?.setOnLongClickListener(this)
-        binding.dailyNotesCard.setOnClickListener(this)
     }
 
     private fun applyReadableHomeTextColors() {
@@ -359,6 +370,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             }
         }
         binding.remindersBell.imageTintList = ColorStateList.valueOf(primaryTextColor)
+        binding.todoIcon.imageTintList = ColorStateList.valueOf(primaryTextColor)
         binding.readabilityScrim.alpha = if (isLight) 1f else 0.55f
         binding.dayProgressRingView.invalidate()
     }
@@ -371,7 +383,6 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.weatherText,
         binding.prayerText,
         binding.focusModeStatus,
-        binding.dailyNotesText,
         binding.tvScreenTime,
         binding.homeApp1,
         binding.homeApp2,
@@ -523,64 +534,164 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             .show()
     }
 
-    private fun populateDailyNotes() {
-        val formattedNotes = formatDailyNotes(prefs.dailyNotesList)
-        val showNotes = prefs.showDailyNotesOnHome
-        binding.dailyNotesCard.isVisible = showNotes
-        if (showNotes) {
-            // Keep notes card above full-screen app list container so touches are not intercepted.
-            binding.dailyNotesCard.bringToFront()
-            val isEmpty = formattedNotes.isBlank()
-            binding.dailyNotesText.text = if (isEmpty) {
-                getString(R.string.daily_notes_empty_hint)
-            } else {
-                formattedNotes
-            }
-            binding.dailyNotesText.alpha = if (isEmpty) 0.75f else 1f
-        }
-        positionOverlayText()
+    private fun updateTodoIconCount() {
+        val show = prefs.showTodoOnHome
+        binding.todoIconContainer.isVisible = show
+        if (!show) return
+        val pending = prefs.todoItemsJson.toTodoList().count { !it.completed }
+        binding.todoIconCount.isVisible = pending > 0
+        if (pending > 0) binding.todoIconCount.text = pending.toString()
     }
 
-    private fun formatDailyNotes(rawNotes: String): String {
-        return rawNotes
-            .lineSequence()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .joinToString("\n") { note ->
-                if (note.startsWith("- ") || note.startsWith("* ") || note.matches(Regex("\\d+\\..*"))) {
-                    note
-                } else {
-                    "- $note"
-                }
+    private fun openTodoList() {
+        if (!prefs.showTodoOnHome) return
+        val context = requireContext()
+        val todos = prefs.todoItemsJson.toTodoList().toMutableList()
+
+        val rootLayout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(20.dpToPx(), 8.dpToPx(), 20.dpToPx(), 4.dpToPx())
+        }
+
+        val scrollView = ScrollView(context)
+        val itemsLayout = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+        scrollView.addView(itemsLayout)
+        rootLayout.addView(scrollView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 320.dpToPx()
+        ))
+
+        val inputRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.topMargin = 8.dpToPx() }
+        }
+        val addInput = EditText(context).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            hint = getString(R.string.todo_add_hint)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val addButton = TextView(context).apply {
+            text = getString(R.string.add)
+            setPadding(12.dpToPx(), 8.dpToPx(), 4.dpToPx(), 8.dpToPx())
+            setTextColor(context.getColorFromAttr(R.attr.primaryColor))
+        }
+        inputRow.addView(addInput)
+        inputRow.addView(addButton)
+        rootLayout.addView(inputRow)
+
+        var dialogRef: AlertDialog? = null
+
+        fun saveTodos() {
+            prefs.todoItemsJson = todos.toTodoJson()
+            updateTodoIconCount()
+        }
+
+        fun rebuildList() {
+            itemsLayout.removeAllViews()
+            if (todos.isEmpty()) {
+                itemsLayout.addView(TextView(context).apply {
+                    text = getString(R.string.todo_empty_hint)
+                    alpha = 0.6f
+                    textSize = 14f
+                    gravity = Gravity.CENTER
+                    setPadding(0, 24.dpToPx(), 0, 24.dpToPx())
+                })
+                return
             }
+            todos.toList().forEachIndexed { index, item ->
+                itemsLayout.addView(buildTodoRow(context, item, onToggle = { checked ->
+                    todos[index] = item.copy(completed = checked)
+                    saveTodos()
+                    dialogRef?.setTitle(todoDialogTitle(todos))
+                }, onDelete = {
+                    todos.removeAt(index)
+                    saveTodos()
+                    rebuildList()
+                    dialogRef?.setTitle(todoDialogTitle(todos))
+                }))
+            }
+            if (todos.any { it.completed }) {
+                itemsLayout.addView(TextView(context).apply {
+                    text = getString(R.string.todo_clear_completed)
+                    textSize = 13f
+                    alpha = 0.7f
+                    gravity = Gravity.END
+                    setPadding(0, 12.dpToPx(), 4.dpToPx(), 8.dpToPx())
+                    setTextColor(context.getColorFromAttr(R.attr.primaryColor))
+                    setOnClickListener {
+                        todos.removeAll { it.completed }
+                        saveTodos()
+                        rebuildList()
+                        dialogRef?.setTitle(todoDialogTitle(todos))
+                    }
+                })
+            }
+        }
+
+        fun addItem() {
+            val text = addInput.text?.toString()?.trim() ?: return
+            if (text.isBlank()) return
+            todos.add(0, TodoItem(id = System.currentTimeMillis(), text = text))
+            saveTodos()
+            addInput.text?.clear()
+            rebuildList()
+            dialogRef?.setTitle(todoDialogTitle(todos))
+        }
+
+        addButton.setOnClickListener { addItem() }
+        addInput.setOnEditorActionListener { _, _, _ -> addItem(); true }
+
+        rebuildList()
+
+        dialogRef = AlertDialog.Builder(context)
+            .setTitle(todoDialogTitle(todos))
+            .setView(rootLayout)
+            .setPositiveButton(R.string.close, null)
+            .show()
+    }
+
+    private fun buildTodoRow(
+        context: Context,
+        item: TodoItem,
+        onToggle: (Boolean) -> Unit,
+        onDelete: () -> Unit
+    ): View = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(0, 4.dpToPx(), 0, 4.dpToPx())
+        addView(CheckBox(context).apply {
+            isChecked = item.completed
+            setOnCheckedChangeListener { _, checked -> onToggle(checked) }
+        })
+        addView(TextView(context).apply {
+            text = item.text
+            textSize = 15f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            if (item.completed) {
+                paintFlags = paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+                alpha = 0.5f
+            }
+        })
+        addView(TextView(context).apply {
+            text = "×"
+            textSize = 20f
+            setPadding(12.dpToPx(), 4.dpToPx(), 4.dpToPx(), 4.dpToPx())
+            alpha = 0.5f
+            setOnClickListener { onDelete() }
+        })
+    }
+
+    private fun todoDialogTitle(todos: List<TodoItem>): String {
+        val pending = todos.count { !it.completed }
+        return if (pending > 0) getString(R.string.todo_list_title_count, pending)
+        else getString(R.string.todo_list)
     }
 
     private fun updateWeatherLayout(horizontalGravity: Int = prefs.homeAlignment) {
         positionOverlayText(horizontalGravity)
-    }
-
-    private fun showDailyNotesEditor() {
-        if (!prefs.showDailyNotesOnHome) return
-        val input = EditText(requireContext()).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or
-                    InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
-                    InputType.TYPE_TEXT_FLAG_MULTI_LINE
-            minLines = 4
-            gravity = Gravity.TOP or Gravity.START
-            setText(prefs.dailyNotesList)
-            setSelection(text?.length ?: 0)
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.daily_notes_list)
-            .setMessage(R.string.daily_notes_hint)
-            .setView(input)
-            .setPositiveButton(R.string.save) { _, _ ->
-                prefs.dailyNotesList = input.text?.toString()?.trim().orEmpty()
-                populateDailyNotes()
-                requireContext().showToast(R.string.daily_notes_saved)
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
     }
 
     private fun updatePrayerLayout(horizontalGravity: Int = prefs.homeAlignment) {
@@ -646,8 +757,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                     0
                 }
                 val topOverlayBottom = max(overlayBottom, screenTimeBottom)
-                val notesTopMargin = max(topOverlayBottom + spacing, 56.dpToPx())
-                updateDailyNotesLayout(notesTopMargin, topOverlayBottom + spacing)
+                updateHomeAppsTopPadding(topOverlayBottom + spacing)
             } catch (_: Throwable) {
                 // View was likely destroyed while this runnable executed; safely ignore
             }
@@ -680,23 +790,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         overlayView.layoutParams = params
     }
 
-    private fun updateDailyNotesLayout(topMargin: Int, homeAppsMinTop: Int) {
-        val params = binding.dailyNotesCard.layoutParams as? FrameLayout.LayoutParams ?: return
-        params.gravity = Gravity.TOP or Gravity.END
-        params.topMargin = topMargin
-        binding.dailyNotesCard.layoutParams = params
-        updateHomeAppsTopPadding(topMargin, homeAppsMinTop)
-    }
-
-    private fun updateHomeAppsTopPadding(notesTopMargin: Int, homeAppsMinTop: Int) {
-        val notesBottom = if (binding.dailyNotesCard.isVisible) {
-            notesTopMargin + binding.dailyNotesCard.height + 12.dpToPx()
-        } else {
-            defaultHomeAppsPaddingTop
-        }
+    private fun updateHomeAppsTopPadding(homeAppsMinTop: Int) {
         binding.homeAppsLayout.setPadding(
             binding.homeAppsLayout.paddingLeft,
-            max(max(defaultHomeAppsPaddingTop, notesBottom), homeAppsMinTop),
+            max(defaultHomeAppsPaddingTop, homeAppsMinTop),
             binding.homeAppsLayout.paddingRight,
             homeAppsBottomPadding(),
         )
@@ -874,7 +971,6 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (requireContext().appUsagePermissionGranted().not()) return
 
         viewModel.getTodaysScreenTime()
-        binding.tvScreenTime?.visibility = View.VISIBLE
 
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val screenTimeOnRight = prefs.homeAlignment != Gravity.END
@@ -903,7 +999,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private fun populateHomeScreen(appCountUpdated: Boolean) {
         if (appCountUpdated) hideHomeApps()
         populateDateTime()
-        populateDailyNotes()
+        updateTodoIconCount()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             populateScreenTime()
@@ -1171,17 +1267,56 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun launchApp(appName: String, packageName: String, activityClassName: String?, userString: String) {
-        viewModel.selectedApp(
-            AppModel.App(
-                appLabel = appName,
-                key = null,
-                appPackage = packageName,
-                activityClassName = activityClassName,
-                isNew = false,
-                user = getUserHandleFromString(requireContext(), userString)
-            ),
-            Constants.FLAG_LAUNCH_APP
+        val appModel = AppModel.App(
+            appLabel = appName,
+            key = null,
+            appPackage = packageName,
+            activityClassName = activityClassName,
+            isNew = false,
+            user = getUserHandleFromString(requireContext(), userString)
         )
+        if (viewModel.cooldownManager.isInCooldown(packageName)) {
+            showHomeCooldownWarning(packageName, appName) {
+                viewModel.selectedApp(appModel, Constants.FLAG_LAUNCH_APP)
+            }
+            return
+        }
+        viewModel.selectedApp(appModel, Constants.FLAG_LAUNCH_APP)
+    }
+
+    private fun showHomeCooldownWarning(packageName: String, appName: String, onProceed: () -> Unit) {
+        val cm = viewModel.cooldownManager
+        val openCount = cm.getOpenCount(packageName)
+        val durationMs = cm.getTotalDurationMs(packageName)
+        val cooloffEndsAt = cm.getCooloffEndsAt(packageName)
+        val remaining = ((cooloffEndsAt - System.currentTimeMillis()) / 60_000).coerceAtLeast(1)
+        val durationText = run {
+            val mins = durationMs / 60_000
+            val h = mins / 60; val m = mins % 60
+            if (h > 0) "${h}h ${m}m" else "${m}m"
+        }
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_cooldown_warning, null)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningTitle).text =
+            getString(R.string.cooldown_warning_title, appName)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningStats).text =
+            getString(R.string.cooldown_warning_stats, appName, openCount, durationText)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningRemaining).text =
+            getString(R.string.cooldown_warning_remaining, remaining)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningAck).text =
+            getString(R.string.cooldown_warning_ack, appName)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialogView.findViewById<TextView>(R.id.cooldownOpenAnyway).setOnClickListener {
+            dialog.dismiss(); onProceed()
+        }
+        dialogView.findViewById<TextView>(R.id.cooldownStayFocused).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
     }
 
     private fun homeAppClicked(location: Int) {

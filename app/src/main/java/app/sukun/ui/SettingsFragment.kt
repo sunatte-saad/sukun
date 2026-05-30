@@ -168,7 +168,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             populateFocusMode()
             populateFocusModeNotificationsLock()
             populateWeatherSettings()
-            populateDailyNotesSettings()
+            populateTodoSettings()
             populateRemindersSettings()
             populatePremiumStatus()
             populatePrayerSettings()
@@ -254,8 +254,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.alignmentRight -> viewModel.updateHomeAlignment(Gravity.END)
             R.id.alignmentBottom -> updateHomeBottomAlignment()
             R.id.homeAppIcons -> toggleHomeAppIcons()
-            R.id.dailyNotesOnOff -> toggleDailyNotes()
-            R.id.dailyNotesList -> showDailyNotesEditor()
+            R.id.todoOnOff -> toggleTodo()
             R.id.weatherOnOff -> toggleWeather()
             R.id.goPremium -> showUpgradeDialog()
             R.id.weatherSource -> binding.weatherSourceSelectLayout.visibility = View.VISIBLE
@@ -424,8 +423,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.alignmentRight.setOnClickListener(this)
         binding.alignmentBottom?.setOnClickListener(this)
         binding.homeAppIcons?.setOnClickListener(this)
-        binding.dailyNotesOnOff.setOnClickListener(this)
-        binding.dailyNotesList.setOnClickListener(this)
+        binding.todoOnOff?.setOnClickListener(this)
         binding.goPremium.setOnClickListener(this)
         binding.weatherOnOff.setOnClickListener(this)
         binding.weatherSource.setOnClickListener(this)
@@ -588,16 +586,14 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         )
     }
 
-    private fun toggleDailyNotes() {
-        prefs.showDailyNotesOnHome = !prefs.showDailyNotesOnHome
-        populateDailyNotesSettings()
+    private fun toggleTodo() {
+        prefs.showTodoOnHome = !prefs.showTodoOnHome
+        populateTodoSettings()
         viewModel.refreshHome(false)
     }
 
-    private fun populateDailyNotesSettings() {
-        binding.dailyNotesOnOff.text = getString(if (prefs.showDailyNotesOnHome) R.string.on else R.string.off)
-        binding.dailyNotesOptionsLayout.isVisible = prefs.showDailyNotesOnHome
-        binding.dailyNotesList.text = getDailyNotesSummary(prefs.dailyNotesList)
+    private fun populateTodoSettings() {
+        binding.todoOnOff?.text = getString(if (prefs.showTodoOnHome) R.string.on else R.string.off)
     }
 
     private fun toggleReminders() {
@@ -665,44 +661,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             .show()
     }
 
-    private fun showDailyNotesEditor() {
-        if (!prefs.showDailyNotesOnHome) return
-        val input = EditText(requireContext()).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or
-                    InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
-                    InputType.TYPE_TEXT_FLAG_MULTI_LINE
-            minLines = 4
-            gravity = Gravity.TOP or Gravity.START
-            setText(prefs.dailyNotesList)
-            setSelection(text?.length ?: 0)
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.daily_notes_list)
-            .setMessage(R.string.daily_notes_hint)
-            .setView(input)
-            .setPositiveButton(R.string.save) { _, _ ->
-                prefs.dailyNotesList = input.text?.toString()?.trim().orEmpty()
-                populateDailyNotesSettings()
-                viewModel.refreshHome(false)
-                requireContext().showToast(R.string.daily_notes_saved)
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
     private fun canUsePremiumFeature(): Boolean {
         if (prefs.isProUser) return true
         requireContext().showToast(R.string.premium_feature_requires_upgrade)
         return false
-    }
-
-    private fun getDailyNotesSummary(rawNotes: String): String {
-        val notes = rawNotes.lineSequence()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .toList()
-        if (notes.isEmpty()) return getString(R.string.not_set)
-        return notes.first()
     }
 
     private fun populateFocusMode() {

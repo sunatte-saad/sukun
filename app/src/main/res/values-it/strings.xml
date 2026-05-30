@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -319,4 +319,24 @@
     <string name="reminder_channel_description">Notifiche promemoria personalizzate</string>
     <string name="reminder_done">Fatto</string>
     <string name="reminder_stats">%1$d/%2$d fatto (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Limite</string>
+    <string name="cooldown_warning_title">%1$s è in pausa raffreddamento</string>
+    <string name="cooldown_warning_stats">Hai aperto %1$s %2$d volta/e oggi e l\'hai usata per %3$s.</string>
+    <string name="cooldown_warning_remaining">Pausa raffreddamento: %1$d min rimanenti.</string>
+    <string name="cooldown_warning_ack">Capisco che è importante usare %1$s con consapevolezza.</string>
+    <string name="cooldown_open_anyway">Apri comunque</string>
+    <string name="cooldown_stay_focused">Rimani concentrato</string>
+    <string name="cooldown_config_title">Imposta limite per %1$s</string>
+    <string name="cooldown_config_subtitle">Imposta limiti giornalieri. Il periodo di pausa inizia quando viene raggiunto uno dei limiti. Lascia un campo vuoto per disabilitare quel limite.</string>
+    <string name="cooldown_config_opens_label">Aperture max al giorno (0 = disattivato)</string>
+    <string name="cooldown_config_opens_hint">es. 5</string>
+    <string name="cooldown_config_duration_label">Utilizzo massimo al giorno (minuti, 0 = disattivato)</string>
+    <string name="cooldown_config_duration_hint">es. 30</string>
+    <string name="cooldown_config_cooloff_label">Periodo di pausa (minuti)</string>
+    <string name="cooldown_config_cooloff_hint">es. 30</string>
+    <string name="cooldown_config_save">Salva</string>
+    <string name="cooldown_config_remove">Rimuovi limite</string>
+    <string name="cooldown_no_limits_set">Imposta almeno un limite (aperture o durata)</string>
 </resources>

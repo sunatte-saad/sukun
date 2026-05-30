@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -330,4 +330,24 @@ Tap to open forecast</string>
     <string name="reminder_channel_description">Custom reminder notifications</string>
     <string name="reminder_done">Done</string>
     <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Ліміт</string>
+    <string name="cooldown_warning_title">%1$s на перерві</string>
+    <string name="cooldown_warning_stats">Ви відкрили %1$s %2$d раз(ів) сьогодні та використовували %3$s.</string>
+    <string name="cooldown_warning_remaining">Перерва: залишилось %1$d хв.</string>
+    <string name="cooldown_warning_ack">Я розумію, що важливо усвідомлено використовувати %1$s.</string>
+    <string name="cooldown_open_anyway">Відкрити все одно</string>
+    <string name="cooldown_stay_focused">Залишитися зосередженим</string>
+    <string name="cooldown_config_title">Встановити ліміт для %1$s</string>
+    <string name="cooldown_config_subtitle">Встановіть щоденні ліміти. Перерва починається при досягненні будь-якого ліміту. Залиште поле порожнім, щоб вимкнути цей ліміт.</string>
+    <string name="cooldown_config_opens_label">Макс. відкрить на день (0 = вимк)</string>
+    <string name="cooldown_config_opens_hint">напр. 5</string>
+    <string name="cooldown_config_duration_label">Макс. використання на день (хвилини, 0 = вимк)</string>
+    <string name="cooldown_config_duration_hint">напр. 30</string>
+    <string name="cooldown_config_cooloff_label">Тривалість перерви (хвилини)</string>
+    <string name="cooldown_config_cooloff_hint">напр. 30</string>
+    <string name="cooldown_config_save">Зберегти</string>
+    <string name="cooldown_config_remove">Видалити ліміт</string>
+    <string name="cooldown_no_limits_set">Встановіть хоча б один ліміт (відкриття або тривалість)</string>
 </resources>

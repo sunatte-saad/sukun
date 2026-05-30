@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -324,4 +324,24 @@ Tap to open forecast</string>
     <string name="reminder_channel_description">Custom reminder notifications</string>
     <string name="reminder_done">Done</string>
     <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">הגבלה</string>
+    <string name="cooldown_warning_title">%1$s במצב קירור</string>
+    <string name="cooldown_warning_stats">פתחת את %1$s %2$d פעמים היום והשתמשת בו %3$s.</string>
+    <string name="cooldown_warning_remaining">תקופת קירור: נותרו %1$d דק\'.</string>
+    <string name="cooldown_warning_ack">אני מבין שחשוב להשתמש ב-%1$s במודעות.</string>
+    <string name="cooldown_open_anyway">פתח בכל זאת</string>
+    <string name="cooldown_stay_focused">הישאר ממוקד</string>
+    <string name="cooldown_config_title">הגדר הגבלה עבור %1$s</string>
+    <string name="cooldown_config_subtitle">הגדר מגבלות יומיות. תקופת הקירור מתחילה כאשר מגיעים לאחת מהמגבלות. השאר שדה ריק כדי להשבית מגבלה זו.</string>
+    <string name="cooldown_config_opens_label">מקסימום פתיחות ביום (0 = כבוי)</string>
+    <string name="cooldown_config_opens_hint">למשל 5</string>
+    <string name="cooldown_config_duration_label">מקסימום שימוש ביום (דקות, 0 = כבוי)</string>
+    <string name="cooldown_config_duration_hint">למשל 30</string>
+    <string name="cooldown_config_cooloff_label">תקופת קירור (דקות)</string>
+    <string name="cooldown_config_cooloff_hint">למשל 30</string>
+    <string name="cooldown_config_save">שמור</string>
+    <string name="cooldown_config_remove">הסר הגבלה</string>
+    <string name="cooldown_no_limits_set">הגדר לפחות מגבלה אחת (פתיחות או משך)</string>
 </resources>

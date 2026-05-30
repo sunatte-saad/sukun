@@ -591,11 +591,11 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:paddingVertical="8dp"
-                        android:text="@string/daily_notes"
+                        android:text="@string/todo_list"
                         android:textColor="?attr/primaryColor" />
 
                     <TextView
-                        android:id="@+id/dailyNotesOnOff"
+                        android:id="@+id/todoOnOff"
                         style="@style/TextSmallBold"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -604,44 +604,6 @@
                         android:padding="8dp"
                         android:text="@string/off" />
                 </FrameLayout>
-
-                <LinearLayout
-                    android:id="@+id/dailyNotesOptionsLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:animateLayoutChanges="true">
-
-                        <TextView
-                            style="@style/TextSmall"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:paddingVertical="8dp"
-                            android:text="@string/daily_notes_list"
-                            android:textColor="?attr/primaryColor" />
-
-                        <TextView
-                            android:id="@+id/dailyNotesList"
-                            style="@style/TextSmallBold"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="end|bottom"
-                            android:layout_marginEnd="4dp"
-                            android:ellipsize="end"
-                            android:maxLines="1"
-                            android:padding="8dp"
-                            android:text="@string/not_set"
-                            tools:text="Call Mom" />
-                    </FrameLayout>
-                </LinearLayout>
 
                 <FrameLayout
                     android:id="@+id/remindersSettingsHeader"

@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -328,4 +328,24 @@ Toca para abrir el pronóstico</string>
     <string name="reminder_channel_description">Notificaciones de recordatorios personalizados</string>
     <string name="reminder_done">Listo</string>
     <string name="reminder_stats">%1$d/%2$d completados (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Límite</string>
+    <string name="cooldown_warning_title">%1$s está en pausa</string>
+    <string name="cooldown_warning_stats">Has abierto %1$s %2$d veces hoy y lo has usado durante %3$s.</string>
+    <string name="cooldown_warning_remaining">Pausa: %1$d min restantes.</string>
+    <string name="cooldown_warning_ack">Entiendo que es importante usar %1$s con moderación.</string>
+    <string name="cooldown_open_anyway">Abrir de todas formas</string>
+    <string name="cooldown_stay_focused">Mantenerme enfocado</string>
+    <string name="cooldown_config_title">Establecer límite para %1$s</string>
+    <string name="cooldown_config_subtitle">Establece límites diarios. El período de pausa comienza cuando se alcanza cualquier límite. Deja un campo vacío para desactivar ese límite.</string>
+    <string name="cooldown_config_opens_label">Máx. de aperturas por día (0 = desactivado)</string>
+    <string name="cooldown_config_opens_hint">ej. 5</string>
+    <string name="cooldown_config_duration_label">Uso máximo por día (minutos, 0 = desactivado)</string>
+    <string name="cooldown_config_duration_hint">ej. 30</string>
+    <string name="cooldown_config_cooloff_label">Período de pausa (minutos)</string>
+    <string name="cooldown_config_cooloff_hint">ej. 30</string>
+    <string name="cooldown_config_save">Guardar</string>
+    <string name="cooldown_config_remove">Eliminar límite</string>
+    <string name="cooldown_no_limits_set">Establece al menos un límite (aperturas o duración)</string>
 </resources>

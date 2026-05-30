@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -331,4 +331,24 @@ Tap to open forecast</string>
     <string name="reminder_channel_description">Custom reminder notifications</string>
     <string name="reminder_done">Done</string>
     <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Korlát</string>
+    <string name="cooldown_warning_title">%1$s lehűlési időszakban van</string>
+    <string name="cooldown_warning_stats">Ma %2$d alkalommal nyitottad meg a(z) %1$s alkalmazást, és %3$s-ig használtad.</string>
+    <string name="cooldown_warning_remaining">Lehűlési időszak: %1$d perc van hátra.</string>
+    <string name="cooldown_warning_ack">Megértem, hogy fontos tudatosan használni a(z) %1$s alkalmazást.</string>
+    <string name="cooldown_open_anyway">Megnyitás mindenképpen</string>
+    <string name="cooldown_stay_focused">Maradj fókuszban</string>
+    <string name="cooldown_config_title">Korlát beállítása ehhez: %1$s</string>
+    <string name="cooldown_config_subtitle">Állíts be napi korlátokat. A lehűlési időszak akkor kezdődik, amikor bármelyik korlátot eléred. Hagyd üresen a mezőt a korlát kikapcsolásához.</string>
+    <string name="cooldown_config_opens_label">Napi max. megnyitás (0 = kikapcsolva)</string>
+    <string name="cooldown_config_opens_hint">pl. 5</string>
+    <string name="cooldown_config_duration_label">Napi max. használat (perc, 0 = kikapcsolva)</string>
+    <string name="cooldown_config_duration_hint">pl. 30</string>
+    <string name="cooldown_config_cooloff_label">Lehűlési időszak (perc)</string>
+    <string name="cooldown_config_cooloff_hint">pl. 30</string>
+    <string name="cooldown_config_save">Mentés</string>
+    <string name="cooldown_config_remove">Korlát eltávolítása</string>
+    <string name="cooldown_no_limits_set">Állíts be legalább egy korlátot (megnyitás vagy időtartam)</string>
 </resources>

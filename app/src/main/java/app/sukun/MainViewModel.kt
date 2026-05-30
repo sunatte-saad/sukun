@@ -19,6 +19,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import app.sukun.data.AppCooldownManager
 import app.sukun.data.AppModel
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
@@ -66,6 +67,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var hiddenAppsLoadGeneration = 0
     private val appContext by lazy { application.applicationContext }
     private val prefs = Prefs(appContext)
+    val cooldownManager by lazy { AppCooldownManager(prefs) }
 
     val firstOpen = MutableLiveData<Boolean>()
     val refreshHome = MutableLiveData<Boolean>()
@@ -407,15 +409,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         try {
             launcher.startMainActivity(component, userHandle, null, null)
             prefs.pushRecentApp(packageName)
+            cooldownManager.recordLaunch(packageName)
+            prefs.cooldownLastLaunchedPkg = packageName
         } catch (e: SecurityException) {
             try {
                 launcher.startMainActivity(component, android.os.Process.myUserHandle(), null, null)
                 prefs.pushRecentApp(packageName)
+                cooldownManager.recordLaunch(packageName)
+                prefs.cooldownLastLaunchedPkg = packageName
             } catch (e: Exception) {
                 appContext.showToast(appContext.getString(R.string.unable_to_open_app))
             }
         } catch (e: Exception) {
             appContext.showToast(appContext.getString(R.string.unable_to_open_app))
+        }
+    }
+
+    fun onReturnedToLauncher() {
+        val pkg = prefs.cooldownLastLaunchedPkg
+        if (pkg.isNotBlank()) {
+            cooldownManager.recordReturnToLauncher(pkg)
+            prefs.cooldownLastLaunchedPkg = ""
         }
     }
 
@@ -595,7 +609,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getTodaysScreenTime() {
-        if (prefs.screenTimeLastUpdated.hasBeenMinutes(1).not()) return
+        // Skip throttle when there is no cached value yet (e.g. fresh ViewModel after process death),
+        // so the view is never left visible-but-empty.
+        val hasValue = screenTimeValue.value != null
+        if (hasValue && prefs.screenTimeLastUpdated.hasBeenMinutes(1).not()) return
 
         val eventLogWrapper = EventLogWrapper(
             appContext

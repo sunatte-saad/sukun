@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_rect_dialog"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/cooldownConfigTitle"
+            style="@style/TextLarge"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:textColor="?attr/primaryColor" />
+
+        <TextView
+            style="@style/TextSmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:lineSpacingExtra="2dp"
+            android:text="@string/cooldown_config_subtitle"
+            android:textColor="?attr/primaryColorTrans80" />
+
+        <TextView
+            style="@style/TextSmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/cooldown_config_opens_label"
+            android:textColor="?attr/primaryColorTrans80" />
+
+        <EditText
+            android:id="@+id/etCooldownOpens"
+            style="@style/TextMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/focus_mode_dialog_button"
+            android:gravity="center_vertical"
+            android:hint="@string/cooldown_config_opens_hint"
+            android:imeOptions="actionNext"
+            android:inputType="number"
+            android:maxLines="1"
+            android:paddingHorizontal="18dp"
+            android:paddingVertical="12dp"
+            android:textColor="?attr/primaryColor"
+            android:textColorHint="?attr/primaryColorTrans50" />
+
+        <TextView
+            style="@style/TextSmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/cooldown_config_duration_label"
+            android:textColor="?attr/primaryColorTrans80" />
+
+        <EditText
+            android:id="@+id/etCooldownDuration"
+            style="@style/TextMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/focus_mode_dialog_button"
+            android:gravity="center_vertical"
+            android:hint="@string/cooldown_config_duration_hint"
+            android:imeOptions="actionNext"
+            android:inputType="number"
+            android:maxLines="1"
+            android:paddingHorizontal="18dp"
+            android:paddingVertical="12dp"
+            android:textColor="?attr/primaryColor"
+            android:textColorHint="?attr/primaryColorTrans50" />
+
+        <TextView
+            style="@style/TextSmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/cooldown_config_cooloff_label"
+            android:textColor="?attr/primaryColorTrans80" />
+
+        <EditText
+            android:id="@+id/etCooldownCooloff"
+            style="@style/TextMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/focus_mode_dialog_button"
+            android:gravity="center_vertical"
+            android:hint="@string/cooldown_config_cooloff_hint"
+            android:imeOptions="actionDone"
+            android:inputType="number"
+            android:maxLines="1"
+            android:paddingHorizontal="18dp"
+            android:paddingVertical="12dp"
+            android:textColor="?attr/primaryColor"
+            android:textColorHint="?attr/primaryColorTrans50" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/cooldownConfigRemove"
+                style="@style/TextSmallBold"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:paddingHorizontal="4dp"
+                android:paddingVertical="14dp"
+                android:text="@string/cooldown_config_remove"
+                android:textColor="?attr/primaryColorTrans80" />
+
+            <TextView
+                android:id="@+id/cooldownConfigCancel"
+                style="@style/TextSmallBold"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:paddingHorizontal="4dp"
+                android:paddingVertical="14dp"
+                android:text="@string/cancel"
+                android:textColor="?attr/primaryColorTrans80" />
+
+            <TextView
+                android:id="@+id/cooldownConfigSave"
+                style="@style/TextSmallBold"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/focus_mode_dialog_button"
+                android:gravity="center"
+                android:paddingHorizontal="4dp"
+                android:paddingVertical="14dp"
+                android:text="@string/cooldown_config_save"
+                android:textColor="?attr/primaryColor" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

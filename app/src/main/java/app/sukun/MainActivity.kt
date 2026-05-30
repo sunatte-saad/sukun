@@ -161,6 +161,7 @@ class MainActivity : AppCompatActivity() {
         ambientThemeController?.start()
         applyLauncherBrightnessForTheme()
         viewModel.isPrivateSpaceToggling = false
+        viewModel.onReturnedToLauncher()
         if (viewModel.appList.value.isNullOrEmpty()) {
             viewModel.getAppList()
         }

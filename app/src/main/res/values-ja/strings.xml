@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">Sukun</string>
     <string name="github" translatable="false">Github</string>
@@ -319,4 +319,24 @@
     <string name="reminder_channel_description">カスタムリマインダー通知</string>
     <string name="reminder_done">完了</string>
     <string name="reminder_stats">%1$d/%2$d 完了 (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">制限</string>
+    <string name="cooldown_warning_title">%1$s はクールオフ中</string>
+    <string name="cooldown_warning_stats">今日 %1$s を %2$d 回開き、%3$s 使用しました。</string>
+    <string name="cooldown_warning_remaining">クールオフ期間：残り %1$d 分。</string>
+    <string name="cooldown_warning_ack">%1$s を意識的に使うことが大切だと理解しています。</string>
+    <string name="cooldown_open_anyway">とにかく開く</string>
+    <string name="cooldown_stay_focused">集中し続ける</string>
+    <string name="cooldown_config_title">%1$s の制限を設定</string>
+    <string name="cooldown_config_subtitle">毎日の制限を設定します。いずれかの制限に達するとクールオフ期間が始まります。フィールドを空にするとその制限が無効になります。</string>
+    <string name="cooldown_config_opens_label">1日の最大起動回数（0 = オフ）</string>
+    <string name="cooldown_config_opens_hint">例：5</string>
+    <string name="cooldown_config_duration_label">1日の最大使用時間（分、0 = オフ）</string>
+    <string name="cooldown_config_duration_hint">例：30</string>
+    <string name="cooldown_config_cooloff_label">クールオフ期間（分）</string>
+    <string name="cooldown_config_cooloff_hint">例：30</string>
+    <string name="cooldown_config_save">保存</string>
+    <string name="cooldown_config_remove">制限を削除</string>
+    <string name="cooldown_no_limits_set">少なくとも1つの制限（起動回数または時間）を設定してください</string>
 </resources>
