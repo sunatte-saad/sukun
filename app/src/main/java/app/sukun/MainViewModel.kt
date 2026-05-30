@@ -47,6 +47,7 @@ import app.sukun.helper.setWallpaperFromAsset
 import app.sukun.helper.setPlainWallpaper
 import app.sukun.helper.showToast
 import app.sukun.helper.usageStats.EventLogWrapper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -614,27 +615,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val hasValue = screenTimeValue.value != null
         if (hasValue && prefs.screenTimeLastUpdated.hasBeenMinutes(1).not()) return
 
-        val eventLogWrapper = EventLogWrapper(
-            appContext
-        )
-        // Start of today in millis
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val startTime = calendar.timeInMillis
-        val endTime = System.currentTimeMillis()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val eventLogWrapper = EventLogWrapper(appContext)
+                // Start of today in millis
+                val calendar = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startTime = calendar.timeInMillis
+                val endTime = System.currentTimeMillis()
 
-        val timeSpent = eventLogWrapper.aggregateSimpleUsageStats(
-            eventLogWrapper.aggregateForegroundStats(
-                eventLogWrapper.getForegroundStatsByTimestamps(startTime, endTime)
-            )
-        )
-        val viewTimeSpent = appContext.formattedTimeSpent(timeSpent)
-        screenTimeValue.postValue(viewTimeSpent)
-        prefs.screenTimeLastUpdated = endTime
+                val timeSpent = eventLogWrapper.aggregateSimpleUsageStats(
+                    eventLogWrapper.aggregateForegroundStats(
+                        eventLogWrapper.getForegroundStatsByTimestamps(startTime, endTime)
+                    )
+                )
+                val viewTimeSpent = appContext.formattedTimeSpent(timeSpent)
+                screenTimeValue.postValue(viewTimeSpent)
+                prefs.screenTimeLastUpdated = endTime
+            } catch (_: Exception) {
+                screenTimeValue.postValue(appContext.formattedTimeSpent(0L))
+            }
+        }
     }
 
     fun getPrivateSpaceAppList() {
