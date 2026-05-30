@@ -59,8 +59,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_marginBottom="16dp"
+                    android:fontFamily="monospace"
                     android:paddingVertical="4dp"
-                    tools:text="Fajr ✓\nDhuhr ✓\nAsr ✓\nMaghrib –\nIsha –" />
+                    tools:text="Fajr     ✓\nDhuhr    ✓\nAsr      ·\nMaghrib  ·\nIsha     ·" />
 
                 <!-- THIS MONTH -->
                 <TextView
@@ -80,8 +81,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_marginBottom="16dp"
+                    android:fontFamily="monospace"
                     android:paddingVertical="4dp"
-                    tools:text="Fajr      12 / 13\nDhuhr     13 / 13\nAsr        9 / 13\nMaghrib    7 / 13\nIsha       4 / 13\n─────────────\nTotal     45 / 65" />
+                    tools:text="Fajr     12 / 13\nDhuhr    13 / 13\nAsr       9 / 13\nMaghrib   7 / 13\nIsha      4 / 13" />
 
                 <!-- THIS YEAR -->
                 <TextView
@@ -101,8 +103,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_marginBottom="8dp"
+                    android:fontFamily="monospace"
                     android:paddingVertical="4dp"
-                    tools:text="Fajr      90 / 133\nDhuhr    125 / 133\nAsr       80 / 133\nMaghrib   95 / 133\nIsha      60 / 133\n─────────────\nTotal    450 / 665" />
+                    tools:text="Fajr      90 / 133\nDhuhr    125 / 133\nAsr       80 / 133\nMaghrib   95 / 133\nIsha      60 / 133" />
 
             </LinearLayout>
 
