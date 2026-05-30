@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.SystemClock
 import android.os.UserHandle
 import android.os.UserManager
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -38,6 +39,7 @@ import app.sukun.helper.getPrivateSpaceApps
 import app.sukun.helper.getPrivateSpaceUserHandle
 import app.sukun.helper.hasBeenMinutes
 import app.sukun.helper.isSukunDefault
+import app.sukun.helper.isDarkThemeOn
 import app.sukun.helper.isPackageInstalled
 import app.sukun.helper.isPrivateSpaceLocked
 import app.sukun.helper.isExpired
@@ -489,6 +491,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             )
     }
 
+    private fun isDarkWallpaper(): Boolean {
+        return when (prefs.appTheme) {
+            AppCompatDelegate.MODE_NIGHT_YES -> true
+            AppCompatDelegate.MODE_NIGHT_NO -> false
+            Constants.THEME_MODE_AMBIENT_LIGHT -> prefs.ambientThemeDark
+            else -> appContext.isDarkThemeOn()
+        }
+    }
+
     fun refreshWallpaperNow() {
         viewModelScope.launch {
             prefs.dailyWallpaper = true
@@ -498,7 +509,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val success = setWallpaperFromAsset(
                     appContext = appContext,
                     assetName = assetName,
-                    darkWallpaper = true
+                    darkWallpaper = isDarkWallpaper()
                 )
                 if (success) {
                     prefs.dailyWallpaperUrl = wallpaperKey
@@ -508,13 +519,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             prefs.dailyWallpaperUrl = ""
-            WorkManager.getInstance(appContext).enqueue(OneTimeWorkRequestBuilder<WallpaperWorker>().build())
+            WorkManager.getInstance(appContext).enqueueUniqueWork(
+                Constants.WALLPAPER_REFRESH_NOW_WORKER_NAME,
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<WallpaperWorker>().build()
+            )
             setWallpaperWorker()
         }
     }
 
     fun cancelWallpaperWorker() {
         WorkManager.getInstance(appContext).cancelUniqueWork(Constants.WALLPAPER_WORKER_NAME)
+        WorkManager.getInstance(appContext).cancelUniqueWork(Constants.WALLPAPER_REFRESH_NOW_WORKER_NAME)
         prefs.dailyWallpaperUrl = ""
         prefs.dailyWallpaper = false
     }

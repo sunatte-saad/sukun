@@ -204,7 +204,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(LOCK_MODE, value).apply() }
 
     var autoShowKeyboard: Boolean
-        get() = true
+        get() = prefs.getBoolean(AUTO_SHOW_KEYBOARD, true)
         set(value) = prefs.edit { putBoolean(AUTO_SHOW_KEYBOARD, value).apply() }
 
     var keyboardMessageShown: Boolean
@@ -220,8 +220,8 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(DAILY_WALLPAPER_URL, value).apply() }
 
     var homeAppsNum: Int
-        get() = prefs.getInt(HOME_APPS_NUM, 4).coerceIn(0, 5)
-        set(value) = prefs.edit { putInt(HOME_APPS_NUM, value.coerceIn(0, 5)).apply() }
+        get() = prefs.getInt(HOME_APPS_NUM, 4).coerceIn(0, 8)
+        set(value) = prefs.edit { putInt(HOME_APPS_NUM, value.coerceIn(0, 8)).apply() }
 
     var homeAlignment: Int
         get() = prefs.getInt(HOME_ALIGNMENT, Gravity.START)
@@ -310,7 +310,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(HIDE_SET_DEFAULT_LAUNCHER, value).apply() }
 
     var appDrawerFastScroller: Boolean
-        get() = true
+        get() = prefs.getBoolean(APP_DRAWER_FAST_SCROLLER, true)
         set(value) = prefs.edit { putBoolean(APP_DRAWER_FAST_SCROLLER, value).apply() }
 
     var screenTimeLastUpdated: Long
@@ -332,7 +332,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putInt(SHOWN_ON_DAY_OF_YEAR, value).apply() }
 
     var homeButtonShowRecents: Boolean
-        get() = true
+        get() = prefs.getBoolean(HOME_BUTTON_SHOW_RECENTS, true)
         set(value) = prefs.edit { putBoolean(HOME_BUTTON_SHOW_RECENTS, value).apply() }
 
     var focusModeEndsAt: Long

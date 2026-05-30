@@ -245,7 +245,7 @@ class AppDrawerAdapter(
 
     fun updateCooledOff(packages: Set<String>) {
         cooledOffPackages = packages
-        notifyDataSetChanged()
+        if (itemCount > 0) notifyItemRangeChanged(0, itemCount)
     }
 
     fun getSections(): List<String> = sectionPositions.keys.toList()

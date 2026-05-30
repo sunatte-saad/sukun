@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_weather_sheet"
+    android:orientation="vertical"
+    android:paddingBottom="32dp">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_chip_unselected" />
+
+    <!-- Weather on/off toggle -->
+    <FrameLayout
+        android:id="@+id/weatherToggleRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            style="@style/TextSmallBold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:paddingVertical="12dp"
+            android:text="@string/weather" />
+
+        <TextView
+            android:id="@+id/weatherToggle"
+            style="@style/TextSmallBold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="24dp"
+            android:paddingVertical="12dp"
+            android:text="@string/off" />
+
+    </FrameLayout>
+
+    <!-- Source/Location/Units — shown only when weather is on -->
+    <LinearLayout
+        android:id="@+id/weatherSubSettings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+    <!-- Source -->
+
+    <TextView
+        style="@style/TextSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="10dp"
+        android:text="@string/weather_source"
+        android:textColor="?attr/primaryColorTrans80" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="24dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/chipManual"
+            style="@style/TextSmallBold"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingVertical="10dp"
+            android:text="@string/manual_location" />
+
+        <TextView
+            android:id="@+id/chipDevice"
+            style="@style/TextSmallBold"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingVertical="10dp"
+            android:text="@string/device_location" />
+
+        <TextView
+            android:id="@+id/chipGoogle"
+            style="@style/TextSmallBold"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingVertical="10dp"
+            android:text="@string/google_weather" />
+
+    </LinearLayout>
+
+    <!-- Location (hidden when Google source) -->
+
+    <LinearLayout
+        android:id="@+id/locationSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            style="@style/TextSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginBottom="10dp"
+            android:text="@string/weather_location"
+            android:textColor="?attr/primaryColorTrans80" />
+
+        <TextView
+            android:id="@+id/locationValueLabel"
+            style="@style/TextSmallBold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:background="@drawable/bg_chip_unselected"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="10dp"
+            android:text="@string/not_set" />
+
+        <LinearLayout
+            android:id="@+id/locationEditLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/rounded_primary_gradient"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="2dp"
+            android:visibility="gone">
+
+            <androidx.appcompat.widget.AppCompatEditText
+                android:id="@+id/etLocation"
+                style="@style/TextSmall"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="@string/type_city_name"
+                android:imeOptions="actionDone"
+                android:inputType="textCapWords"
+                android:maxLines="1"
+                android:paddingVertical="8dp"
+                android:textColorHint="?attr/primaryColorTrans50" />
+
+            <TextView
+                android:id="@+id/btnSaveLocation"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:paddingVertical="8dp"
+                android:text="@string/save" />
+
+            <TextView
+                android:id="@+id/btnCloseLocation"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:paddingVertical="8dp"
+                android:text="@string/close" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Units -->
+
+    <TextView
+        style="@style/TextSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="10dp"
+        android:text="@string/weather_units"
+        android:textColor="?attr/primaryColorTrans80" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/chipCelsius"
+            style="@style/TextSmallBold"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingVertical="10dp"
+            android:text="@string/celsius_short" />
+
+        <TextView
+            android:id="@+id/chipFahrenheit"
+            style="@style/TextSmallBold"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingVertical="10dp"
+            android:text="@string/fahrenheit_short" />
+
+    </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

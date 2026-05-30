@@ -190,6 +190,36 @@
                             android:paddingVertical="8dp"
                             android:text="@string/_5" />
 
+                        <TextView
+                            android:id="@+id/maxApps6"
+                            style="@style/TextSmall"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:paddingVertical="8dp"
+                            android:text="@string/_6" />
+
+                        <TextView
+                            android:id="@+id/maxApps7"
+                            style="@style/TextSmall"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:paddingVertical="8dp"
+                            android:text="@string/_7" />
+
+                        <TextView
+                            android:id="@+id/maxApps8"
+                            style="@style/TextSmall"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:paddingVertical="8dp"
+                            android:text="@string/_8" />
+
                     </LinearLayout>
 
                 </FrameLayout>

@@ -67,52 +67,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
-    private val weatherLocationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
-                    || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            if (granted) {
-                prefs.weatherSourceMode = Constants.WeatherSource.DEVICE
-                prefs.clearWeatherCache()
-                populateWeatherSettings()
-                refreshWeatherIfConfigured()
-            } else {
-                requireContext().showToast(R.string.weather_permission_needed)
-            }
-        }
-    private val prayerLocationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
-                    || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            if (granted) {
-                prefs.prayerSourceMode = Constants.PrayerSource.DEVICE
-                prefs.clearPrayerCache()
-                populatePrayerSettings()
-                refreshPrayerIfConfigured(forceLocationRefresh = true)
-            } else {
-                requireContext().showToast(R.string.prayer_permission_needed)
-            }
-        }
-    private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: system handles denial */ }
     private var pendingScreenTimePermissionRequest = false
 
-    private val customAzanPickerLauncher =
-        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri == null) return@registerForActivityResult
-            try {
-                requireContext().contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: SecurityException) {
-            }
-            prefs.azanSound = Constants.AzanSound.CUSTOM
-            prefs.azanCustomUri = uri.toString()
-            populatePrayerSettings()
-            refreshPrayerIfConfigured()
-            requireContext().showToast(R.string.prayer_azan_saved)
-        }
     private val customChimePickerLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@registerForActivityResult
@@ -200,10 +156,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.dateTimeSelectLayout.visibility = View.GONE
         binding.appThemeSelectLayout.visibility = View.GONE
         binding.swipeDownSelectLayout.visibility = View.GONE
-        binding.weatherUnitsSelectLayout.visibility = View.GONE
-        binding.weatherSourceSelectLayout.visibility = View.GONE
-        binding.prayerSourceSelectLayout?.visibility = View.GONE
-        binding.azanSoundSelectLayout?.visibility = View.GONE
         binding.focusModeSelectLayout?.visibility = View.GONE
         binding.doubleTapActionSelectLayout.visibility = View.GONE
         if (view.id != R.id.textSizeSmall && view.id != R.id.textSizeMedium && view.id != R.id.textSizeLarge
@@ -213,20 +165,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.textSizesLayout.visibility = View.GONE
                 applyTextSizeScale()
             }
-        }
-        if (view.id != R.id.weatherLocation
-            && view.id != R.id.weatherLocationSave
-            && view.id != R.id.weatherLocationClose
-        ) {
-            binding.weatherLocationEditLayout?.visibility = View.GONE
-            binding.etWeatherLocation?.hideKeyboard()
-        }
-        if (view.id != R.id.prayerLocation
-            && view.id != R.id.prayerLocationSave
-            && view.id != R.id.prayerLocationClose
-        ) {
-            binding.prayerLocationEditLayout?.visibility = View.GONE
-            binding.etPrayerLocation?.hideKeyboard()
         }
         if (view.id != R.id.focusCustom
             && view.id != R.id.focusCustomStart
@@ -266,48 +204,15 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.alignmentBottom -> updateHomeBottomAlignment()
             R.id.homeAppIcons -> toggleHomeAppIcons()
             R.id.todoOnOff -> toggleTodo()
-            R.id.weatherOnOff -> toggleWeather()
             R.id.goPremium -> showUpgradeDialog()
-            R.id.weatherSource -> binding.weatherSourceSelectLayout.visibility = View.VISIBLE
-            R.id.weatherSourceManual -> updateWeatherSource(Constants.WeatherSource.MANUAL)
-            R.id.weatherSourceDevice -> selectDeviceWeatherSource()
-            R.id.weatherSourceGoogle -> updateWeatherSource(Constants.WeatherSource.GOOGLE)
-            R.id.weatherLocation -> showWeatherLocationEditor()
-            R.id.weatherLocationSave -> saveWeatherLocation()
-            R.id.weatherLocationClose -> {
-                binding.weatherLocationEditLayout?.visibility = View.GONE
-                binding.etWeatherLocation?.hideKeyboard()
-            }
-            R.id.weatherUnits -> binding.weatherUnitsSelectLayout.visibility = View.VISIBLE
-            R.id.weatherUnitCelsius -> updateWeatherUnits(Constants.WeatherUnit.CELSIUS)
-            R.id.weatherUnitFahrenheit -> updateWeatherUnits(Constants.WeatherUnit.FAHRENHEIT)
-            R.id.prayerSettingsHeader -> {
-                val isVisible = binding.prayerSubMenuLayout?.visibility == View.VISIBLE
-                binding.prayerSubMenuLayout?.visibility = if (isVisible) View.GONE else View.VISIBLE
-                binding.prayerSettingsToggle?.text = getString(if (isVisible) R.string.manage else R.string.close)
-            }
+            R.id.weatherSettings -> showWeatherSettingsSheet()
+            R.id.prayerSettings -> showPrayerSettingsSheet()
             R.id.remindersSettingsHeader -> {
                 val isVisible = binding.remindersSubMenuLayout?.visibility == View.VISIBLE
                 binding.remindersSubMenuLayout?.visibility = if (isVisible) View.GONE else View.VISIBLE
                 binding.remindersSettingsToggle?.text = getString(if (isVisible) R.string.manage else R.string.close)
             }
             R.id.remindersOnOff -> toggleReminders()
-            R.id.prayerOnOff -> togglePrayer()
-            R.id.prayerSource -> binding.prayerSourceSelectLayout?.visibility = View.VISIBLE
-            R.id.prayerSourceManual -> updatePrayerSource(Constants.PrayerSource.MANUAL)
-            R.id.prayerSourceDevice -> selectDevicePrayerSource()
-            R.id.prayerLocation -> showPrayerLocationEditor()
-            R.id.prayerLocationSave -> savePrayerLocation()
-            R.id.prayerLocationClose -> {
-                binding.prayerLocationEditLayout?.visibility = View.GONE
-                binding.etPrayerLocation?.hideKeyboard()
-            }
-            R.id.azanSound -> binding.azanSoundSelectLayout?.visibility = View.VISIBLE
-            R.id.azanSoundOff -> updateAzanSound(Constants.AzanSound.OFF)
-            R.id.azanSoundMakkah -> updateAzanSound(Constants.AzanSound.MAKKAH)
-            R.id.azanSoundMarylebone -> updateAzanSound(Constants.AzanSound.MARYLEBONE)
-            R.id.azanSoundCustom -> showCustomAzanPicker()
-            R.id.customAzanFile -> showCustomAzanPicker()
             R.id.focusMode -> {
                 if (prefs.isFocusModeActive()) requireContext().showToast(R.string.focus_mode_blocked)
                 else binding.focusModeSelectLayout?.visibility = View.VISIBLE
@@ -325,7 +230,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.etFocusCustomMinutes.hideKeyboard()
             }
             R.id.remindersManage -> findNavController().navigate(R.id.action_settingsFragment_to_remindersFragment)
-            R.id.prayerAnalytics -> findNavController().navigate(R.id.action_settingsFragment_to_prayerAnalyticsFragment)
             R.id.hourlyChimeOnOff -> toggleHourlyChime()
             R.id.hourlyChimeStartHour -> showHourPicker(isStart = true)
             R.id.hourlyChimeEndHour -> showHourPicker(isStart = false)
@@ -363,6 +267,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.maxApps3 -> updateHomeAppsNum(3)
             R.id.maxApps4 -> updateHomeAppsNum(4)
             R.id.maxApps5 -> updateHomeAppsNum(5)
+            R.id.maxApps6 -> updateHomeAppsNum(6)
+            R.id.maxApps7 -> updateHomeAppsNum(7)
+            R.id.maxApps8 -> updateHomeAppsNum(8)
 
             R.id.textSizeSmall -> {
                 pendingTextSizeScale = 0.9f
@@ -423,7 +330,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.remindersSettingsHeader?.setOnClickListener(this)
         binding.remindersOnOff?.setOnClickListener(this)
         binding.remindersManage?.setOnClickListener(this)
-        binding.prayerAnalytics?.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
         binding.dailyWallpaper.setOnClickListener(this)
@@ -436,31 +342,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.homeAppIcons?.setOnClickListener(this)
         binding.todoOnOff?.setOnClickListener(this)
         binding.goPremium.setOnClickListener(this)
-        binding.weatherOnOff.setOnClickListener(this)
-        binding.weatherSource.setOnClickListener(this)
-        binding.weatherSourceManual.setOnClickListener(this)
-        binding.weatherSourceDevice.setOnClickListener(this)
-        binding.weatherSourceGoogle.setOnClickListener(this)
-        binding.weatherLocation.setOnClickListener(this)
-        binding.weatherLocationSave.setOnClickListener(this)
-        binding.weatherLocationClose.setOnClickListener(this)
-        binding.weatherUnits.setOnClickListener(this)
-        binding.weatherUnitCelsius.setOnClickListener(this)
-        binding.weatherUnitFahrenheit.setOnClickListener(this)
-        binding.prayerSettingsHeader?.setOnClickListener(this)
-        binding.prayerOnOff?.setOnClickListener(this)
-        binding.prayerSource?.setOnClickListener(this)
-        binding.prayerSourceManual?.setOnClickListener(this)
-        binding.prayerSourceDevice?.setOnClickListener(this)
-        binding.prayerLocation?.setOnClickListener(this)
-        binding.prayerLocationSave?.setOnClickListener(this)
-        binding.prayerLocationClose?.setOnClickListener(this)
-        binding.azanSound?.setOnClickListener(this)
-        binding.azanSoundOff?.setOnClickListener(this)
-        binding.azanSoundMakkah?.setOnClickListener(this)
-        binding.azanSoundMarylebone?.setOnClickListener(this)
-        binding.azanSoundCustom?.setOnClickListener(this)
-        binding.customAzanFile?.setOnClickListener(this)
+        binding.weatherSettings?.setOnClickListener(this)
+        binding.prayerSettings?.setOnClickListener(this)
         binding.focusMode.setOnClickListener(this)
         binding.focus15m.setOnClickListener(this)
         binding.focus30m.setOnClickListener(this)
@@ -513,6 +396,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.maxApps3.setOnClickListener(this)
         binding.maxApps4.setOnClickListener(this)
         binding.maxApps5.setOnClickListener(this)
+        binding.maxApps6.setOnClickListener(this)
+        binding.maxApps7.setOnClickListener(this)
+        binding.maxApps8.setOnClickListener(this)
 
         binding.textSizeSmall?.setOnClickListener(this)
         binding.textSizeMedium?.setOnClickListener(this)
@@ -729,148 +615,37 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         startFocusMode(customMinutes * Constants.ONE_MINUTE_IN_MILLIS)
     }
 
-    private fun toggleWeather() {
-        if (!prefs.showWeatherOnHome && !canUsePremiumFeature()) return
-        prefs.showWeatherOnHome = !prefs.showWeatherOnHome
-        populateWeatherSettings()
-        if (prefs.showWeatherOnHome) {
-            when (prefs.weatherSourceMode) {
-                Constants.WeatherSource.DEVICE -> {
-                    if (requireContext().hasWeatherLocationPermission()) {
-                        refreshWeatherIfConfigured()
-                    } else {
-                        selectDeviceWeatherSource()
-                    }
-                }
-
-                else -> {
-                    if (prefs.weatherLocationQuery.isBlank()) {
-                        requireContext().showToast(R.string.weather_location_required)
-                    } else {
-                        refreshWeatherIfConfigured()
-                    }
-                }
-            }
-        } else {
-            refreshWeatherIfConfigured()
-        }
-        viewModel.refreshHome(false)
+    private fun populateWeatherSettings() {
+        binding.weatherSettingsSummary?.text = if (prefs.showWeatherOnHome) buildWeatherSummary() else getString(R.string.off)
     }
 
-    private fun populateWeatherSettings() {
-        binding.weatherOnOff.text = getString(if (prefs.showWeatherOnHome) R.string.on else R.string.off)
-        binding.weatherOptionsLayout.isVisible = prefs.showWeatherOnHome
-        binding.weatherSource.text = getString(
+    private fun buildWeatherSummary(): String {
+        val source = getString(
             when (prefs.weatherSourceMode) {
                 Constants.WeatherSource.DEVICE -> R.string.device_location
                 Constants.WeatherSource.GOOGLE -> R.string.google_weather
                 else -> R.string.manual_location
             }
         )
-        binding.weatherUnits.text = getString(
+        val units = getString(
             if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT)
                 R.string.fahrenheit_short
             else
                 R.string.celsius_short
         )
-        binding.weatherLocationRow.isVisible = prefs.showWeatherOnHome &&
-                prefs.weatherSourceMode != Constants.WeatherSource.GOOGLE
-        if (prefs.weatherSourceMode != Constants.WeatherSource.MANUAL || !prefs.showWeatherOnHome) {
-            binding.weatherLocationEditLayout?.visibility = View.GONE
-        }
-        binding.weatherLocation.text = when {
-            prefs.weatherSourceMode == Constants.WeatherSource.DEVICE ->
-                prefs.weatherLocationLabel.ifBlank { getString(R.string.current_location) }
-            prefs.weatherLocationQuery.isBlank() -> getString(R.string.not_set)
-            prefs.weatherLocationLabel.isNotBlank() -> prefs.weatherLocationLabel
-            else -> prefs.weatherLocationQuery
-        }
+        return "$source · $units"
     }
 
-    private fun updateWeatherUnits(units: String) {
-        if (prefs.weatherUnits == units) return
-        prefs.weatherUnits = units
-        prefs.clearWeatherCache()
-        populateWeatherSettings()
-        refreshWeatherIfConfigured()
-    }
-
-    private fun updateWeatherSource(sourceMode: String) {
-        if (prefs.weatherSourceMode == sourceMode) return
-        prefs.weatherSourceMode = sourceMode
-        prefs.clearWeatherCache()
-        populateWeatherSettings()
-        refreshWeatherIfConfigured()
-    }
-
-    private fun selectDeviceWeatherSource() {
-        if (requireContext().hasWeatherLocationPermission()) {
-            updateWeatherSource(Constants.WeatherSource.DEVICE)
-            return
-        }
-        weatherLocationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-    }
-
-    private fun showWeatherLocationEditor() {
-        when (prefs.weatherSourceMode) {
-            Constants.WeatherSource.DEVICE -> {
-                if (!requireContext().hasWeatherLocationPermission()) {
-                    weatherLocationPermissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                } else if (!requireContext().isLocationServicesEnabled()) {
-                    requireContext().showToast(R.string.location_services_disabled)
-                    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                }
-            }
-            Constants.WeatherSource.MANUAL -> {
-                binding.weatherLocationEditLayout?.visibility = View.VISIBLE
-                binding.etWeatherLocation?.setText(prefs.weatherLocationQuery)
-                binding.etWeatherLocation?.showKeyboard()
-            }
-            else -> return
-        }
-    }
-
-    private fun saveWeatherLocation() {
-        val weatherLocationQuery = binding.etWeatherLocation?.text?.toString()?.trim().orEmpty()
-        if (weatherLocationQuery.isBlank()) {
-            requireContext().showToast(R.string.weather_location_required)
-            binding.etWeatherLocation?.showKeyboard()
-            return
-        }
-        prefs.weatherLocationQuery = weatherLocationQuery
-        prefs.weatherLocationLabel = weatherLocationQuery
-        prefs.weatherLatitude = ""
-        prefs.weatherLongitude = ""
-        prefs.clearWeatherCache()
-        binding.weatherLocationEditLayout?.visibility = View.GONE
-        binding.etWeatherLocation?.hideKeyboard()
-        populateWeatherSettings()
-        refreshWeatherIfConfigured()
-        requireContext().showToast(R.string.weather_saved)
-        if (prefs.showPrayerOnHome && prefs.prayerSourceMode == Constants.PrayerSource.MANUAL
-            && prefs.prayerLocationQuery.isBlank()
-        ) {
-            AlertDialog.Builder(requireContext())
-                .setMessage(R.string.use_same_location_for_prayer)
-                .setPositiveButton(R.string.yes) { _, _ ->
-                    prefs.prayerLocationQuery = weatherLocationQuery
-                    prefs.prayerLocationLabel = weatherLocationQuery
-                    prefs.clearPrayerCache()
+    private fun showWeatherSettingsSheet() {
+        WeatherSettingsSheet.newInstance().also { sheet ->
+            sheet.setListener(object : WeatherSettingsSheet.Listener {
+                override fun onWeatherSettingsChanged() {
+                    populateWeatherSettings()
                     populatePrayerSettings()
-                    refreshPrayerIfConfigured()
+                    viewModel.refreshHome(false)
                 }
-                .setNegativeButton(R.string.no, null)
-                .show()
+            })
+            sheet.show(childFragmentManager, WeatherSettingsSheet.TAG)
         }
     }
 
@@ -905,68 +680,19 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
     }
 
-    private fun requestNotificationPermissionIfNeeded() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (androidx.core.content.ContextCompat.checkSelfPermission(
-                    requireContext(), Manifest.permission.POST_NOTIFICATIONS
-                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
-
-    private fun togglePrayer() {
-        if (!prefs.showPrayerOnHome && !canUsePremiumFeature()) return
-        prefs.showPrayerOnHome = !prefs.showPrayerOnHome
-        populatePrayerSettings()
-        if (prefs.showPrayerOnHome) {
-            requestNotificationPermissionIfNeeded()
-            when (prefs.prayerSourceMode) {
-                Constants.PrayerSource.DEVICE -> {
-                    if (requireContext().hasWeatherLocationPermission()) {
-                        refreshPrayerIfConfigured(forceLocationRefresh = true, promptForAlarmPermission = true)
-                    } else {
-                        selectDevicePrayerSource()
-                    }
-                }
-
-                else -> {
-                    if (prefs.prayerLocationQuery.isBlank()) {
-                        requireContext().showToast(R.string.prayer_location_required)
-                    } else {
-                        refreshPrayerIfConfigured(promptForAlarmPermission = true)
-                    }
-                }
-            }
-        } else {
-            refreshPrayerIfConfigured()
-        }
-        viewModel.refreshHome(false)
-    }
-
     private fun populatePrayerSettings() {
-        binding.prayerOnOff?.text = getString(if (prefs.showPrayerOnHome) R.string.on else R.string.off)
-        binding.prayerOptionsLayout?.isVisible = prefs.showPrayerOnHome
-        binding.prayerSource?.text = getString(
-            if (prefs.prayerSourceMode == Constants.PrayerSource.DEVICE) {
+        binding.prayerSettingsSummary?.text =
+            if (prefs.showPrayerOnHome) buildPrayerSummary() else getString(R.string.off)
+    }
+
+    private fun buildPrayerSummary(): String {
+        val source = getString(
+            if (prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
                 R.string.device_location
-            } else {
+            else
                 R.string.manual_location
-            }
         )
-        binding.prayerLocationRow?.isVisible = prefs.showPrayerOnHome
-        if (prefs.prayerSourceMode != Constants.PrayerSource.MANUAL || !prefs.showPrayerOnHome) {
-            binding.prayerLocationEditLayout?.visibility = View.GONE
-        }
-        binding.prayerLocation?.text = when {
-            prefs.prayerSourceMode == Constants.PrayerSource.DEVICE ->
-                prefs.prayerLocationLabel.ifBlank { getString(R.string.current_location) }
-            prefs.prayerLocationQuery.isBlank() -> getString(R.string.not_set)
-            prefs.prayerLocationLabel.isNotBlank() -> prefs.prayerLocationLabel
-            else -> prefs.prayerLocationQuery
-        }
-        binding.azanSound?.text = getString(
+        val azan = getString(
             when (prefs.azanSound) {
                 Constants.AzanSound.OFF -> R.string.off
                 Constants.AzanSound.MARYLEBONE -> R.string.azan_sound_marylebone
@@ -974,128 +700,20 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 else -> R.string.azan_sound_makkah
             }
         )
-        binding.customAzanRow?.isVisible = prefs.showPrayerOnHome && prefs.azanSound == Constants.AzanSound.CUSTOM
-        binding.customAzanFile?.text = if (prefs.azanCustomUri.isBlank()) {
-            getString(R.string.not_set)
-        } else {
-            getString(R.string.change)
-        }
+        return "$source · $azan"
     }
 
-    private fun updatePrayerSource(sourceMode: String) {
-        if (prefs.prayerSourceMode == sourceMode) return
-        prefs.prayerSourceMode = sourceMode
-        prefs.clearPrayerCache()
-        populatePrayerSettings()
-        refreshPrayerIfConfigured(forceLocationRefresh = sourceMode == Constants.PrayerSource.DEVICE)
-    }
-
-    private fun selectDevicePrayerSource() {
-        if (requireContext().hasWeatherLocationPermission()) {
-            updatePrayerSource(Constants.PrayerSource.DEVICE)
-            return
-        }
-        prayerLocationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-    }
-
-    private fun showPrayerLocationEditor() {
-        if (prefs.prayerSourceMode != Constants.PrayerSource.MANUAL) return
-        binding.prayerLocationEditLayout?.visibility = View.VISIBLE
-        binding.etPrayerLocation?.setText(prefs.prayerLocationQuery)
-        binding.etPrayerLocation?.showKeyboard()
-    }
-
-    private fun savePrayerLocation() {
-        val prayerLocationQuery = binding.etPrayerLocation?.text?.toString()?.trim().orEmpty()
-        if (prayerLocationQuery.isBlank()) {
-            requireContext().showToast(R.string.prayer_location_required)
-            binding.etPrayerLocation?.showKeyboard()
-            return
-        }
-        prefs.prayerLocationQuery = prayerLocationQuery
-        prefs.prayerLocationLabel = prayerLocationQuery
-        prefs.prayerLatitude = ""
-        prefs.prayerLongitude = ""
-        prefs.clearPrayerCache()
-        binding.prayerLocationEditLayout?.visibility = View.GONE
-        binding.etPrayerLocation?.hideKeyboard()
-        populatePrayerSettings()
-        refreshPrayerIfConfigured()
-        requireContext().showToast(R.string.prayer_saved)
-        if (prefs.showWeatherOnHome && prefs.weatherSourceMode == Constants.WeatherSource.MANUAL
-            && prefs.weatherLocationQuery.isBlank()
-        ) {
-            AlertDialog.Builder(requireContext())
-                .setMessage(R.string.use_same_location_for_weather)
-                .setPositiveButton(R.string.yes) { _, _ ->
-                    prefs.weatherLocationQuery = prayerLocationQuery
-                    prefs.weatherLocationLabel = prayerLocationQuery
-                    prefs.clearWeatherCache()
+    private fun showPrayerSettingsSheet() {
+        PrayerSettingsSheet.newInstance().also { sheet ->
+            sheet.setListener(object : PrayerSettingsSheet.Listener {
+                override fun onPrayerSettingsChanged() {
+                    populatePrayerSettings()
                     populateWeatherSettings()
-                    refreshWeatherIfConfigured()
+                    viewModel.refreshHome(false)
                 }
-                .setNegativeButton(R.string.no, null)
-                .show()
+            })
+            sheet.show(childFragmentManager, PrayerSettingsSheet.TAG)
         }
-    }
-
-    private fun updateAzanSound(sound: String) {
-        if (prefs.azanSound == sound && sound != Constants.AzanSound.CUSTOM) return
-        prefs.azanSound = sound
-        prefs.azanEnabled = sound != Constants.AzanSound.OFF
-        populatePrayerSettings()
-        if (prefs.azanEnabled) ensureExactAlarmPermissionIfNeeded()
-        refreshPrayerIfConfigured(promptForAlarmPermission = true)
-    }
-
-    private fun showCustomAzanPicker() {
-        if (!prefs.showPrayerOnHome) return
-        customAzanPickerLauncher.launch(arrayOf("audio/*"))
-    }
-
-    private fun refreshPrayerIfConfigured(
-        forceLocationRefresh: Boolean = false,
-        promptForAlarmPermission: Boolean = false,
-    ) {
-        if (!prefs.showPrayerOnHome) {
-            viewModel.cancelPrayerReminder(clearCachedPrayer = true)
-            return
-        }
-
-        val canRefreshPrayer = when (prefs.prayerSourceMode) {
-            Constants.PrayerSource.DEVICE -> requireContext().hasWeatherLocationPermission()
-            else -> prefs.prayerLocationQuery.isNotBlank()
-        }
-
-        if (canRefreshPrayer) {
-            if (promptForAlarmPermission) {
-                ensureExactAlarmPermissionIfNeeded()
-            }
-            viewModel.refreshPrayerData(forceLocationRefresh = forceLocationRefresh)
-        } else {
-            viewModel.cancelPrayerReminder(clearCachedPrayer = true)
-        }
-    }
-
-    private fun ensureExactAlarmPermissionIfNeeded(): Boolean {
-        if (PrayerReminderScheduler.canScheduleExactPrayerReminders(requireContext())) {
-            return true
-        }
-        requireContext().showToast(R.string.prayer_exact_alarm_permission_needed, Toast.LENGTH_LONG)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            startActivity(
-                Intent(
-                    Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                    Uri.parse("package:${requireContext().packageName}")
-                )
-            )
-        }
-        return false
     }
 
     private fun populateStatusBar() {
@@ -1587,7 +1205,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         refreshWeatherIfConfigured()
         populatePrayerSettings()
         populateRemindersSettings()
-        refreshPrayerIfConfigured(forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
+        if (prefs.showPrayerOnHome) {
+            viewModel.refreshPrayerData(forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
+        }
     }
 
     private fun populateHourlyChime() {

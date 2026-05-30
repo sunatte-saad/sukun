@@ -57,8 +57,6 @@ dependencies {
     implementation libs.recyclerview
     implementation libs.adhan
 
-    // Android lifecycle
-    implementation libs.lifecycle.extensions
     implementation libs.lifecycle.viewmodel.ktx
 
     // Navigation

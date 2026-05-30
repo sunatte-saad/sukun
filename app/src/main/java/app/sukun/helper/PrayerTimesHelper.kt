@@ -335,8 +335,12 @@ private suspend fun getPrayerJsonObject(urlString: String): JSONObject? = withCo
     try {
         val url = URL(urlString)
         connection = url.openConnection() as HttpURLConnection
+        connection.connectTimeout = 10_000
+        connection.readTimeout = 10_000
+        connection.instanceFollowRedirects = true
         connection.doInput = true
         connection.connect()
+        if (connection.responseCode !in 200..299) return@withContext null
         connection.inputStream.bufferedReader().use { reader ->
             JSONObject(reader.readText())
         }
