@@ -286,9 +286,12 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             updateWeatherLayout()
         }
         viewModel.screenTimeValue.observe(viewLifecycleOwner) {
-            if (it != null) {
+            if (it != null && prefs.showScreenTimeOnHome && requireContext().appUsagePermissionGranted()) {
                 binding.tvScreenTime?.text = it
                 binding.tvScreenTime?.visibility = View.VISIBLE
+                positionTopCornerStack()
+            } else {
+                binding.tvScreenTime?.visibility = View.GONE
                 positionTopCornerStack()
             }
         }
@@ -836,7 +839,11 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun populateScreenTime() {
-        if (requireContext().appUsagePermissionGranted().not()) return
+        if (!prefs.showScreenTimeOnHome || requireContext().appUsagePermissionGranted().not()) {
+            binding.tvScreenTime?.visibility = View.GONE
+            positionTopCornerStack()
+            return
+        }
 
         viewModel.getTodaysScreenTime()
         positionTopCornerStack()

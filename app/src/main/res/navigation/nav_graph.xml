@@ -81,6 +81,13 @@
             app:exitAnim="@anim/fade_exit"
             app:popEnterAnim="@anim/fade_enter"
             app:popExitAnim="@anim/fade_exit" />
+        <action
+            android:id="@+id/action_settingsFragment_to_languageFragment"
+            app:destination="@id/languageFragment"
+            app:enterAnim="@anim/fade_enter"
+            app:exitAnim="@anim/fade_exit"
+            app:popEnterAnim="@anim/fade_enter"
+            app:popExitAnim="@anim/fade_exit" />
     </fragment>
 
     <fragment
@@ -100,5 +107,11 @@
         android:name="app.sukun.ui.TodoFragment"
         android:label="TodoFragment"
         tools:layout="@layout/fragment_todo" />
+
+    <fragment
+        android:id="@+id/languageFragment"
+        android:name="app.sukun.ui.LanguageFragment"
+        android:label="LanguageFragment"
+        tools:layout="@layout/fragment_language" />
 
 </navigation>

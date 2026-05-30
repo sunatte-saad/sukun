@@ -15,13 +15,25 @@ object LocaleHelper {
         GERMAN("de", "German", "Deutsch"),
         ARABIC("ar", "Arabic", "العربية"),
         CHINESE("zh", "Chinese", "中文"),
-PORTUGUESE("pt", "Portuguese", "Português"),
+        PORTUGUESE("pt", "Portuguese", "Português"),
         ITALIAN("it", "Italian", "Italiano"),
         JAPANESE("ja", "Japanese", "日本語"),
         TURKISH("tr", "Turkish", "Türkçe"),
         RUSSIAN("ru", "Russian", "Русский"),
         KOREAN("ko", "Korean", "한국어"),
-        INDONESIAN("id", "Indonesian", "Bahasa Indonesia"),
+        INDONESIAN("id", "Indonesian", "Bahasa Indonesia");
+
+        fun listLabel(): String = when {
+            code.isEmpty() -> displayName
+            nativeName.isNotBlank() -> nativeName
+            else -> displayName
+        }
+
+        fun listSubtitle(): String? = when {
+            code.isEmpty() -> null
+            nativeName.isNotBlank() && nativeName != displayName -> displayName
+            else -> null
+        }
     }
 
     fun setLocale(context: Context, languageCode: String) {

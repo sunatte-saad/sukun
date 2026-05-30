@@ -54,6 +54,7 @@ class Prefs(context: Context) {
     private val HIDE_SET_DEFAULT_LAUNCHER = "HIDE_SET_DEFAULT_LAUNCHER"
     private val APP_DRAWER_FAST_SCROLLER = "APP_DRAWER_FAST_SCROLLER"
     private val SCREEN_TIME_LAST_UPDATED = "SCREEN_TIME_LAST_UPDATED"
+    private val SHOW_SCREEN_TIME_ON_HOME = "SHOW_SCREEN_TIME_ON_HOME"
     private val LAUNCHER_RESTART_TIMESTAMP = "LAUNCHER_RECREATE_TIMESTAMP"
     private val SHOWN_ON_DAY_OF_YEAR = "SHOWN_ON_DAY_OF_YEAR"
     private val HOME_BUTTON_SHOW_RECENTS = "HOME_BUTTON_SHOW_RECENTS"
@@ -315,6 +316,12 @@ class Prefs(context: Context) {
     var screenTimeLastUpdated: Long
         get() = prefs.getLong(SCREEN_TIME_LAST_UPDATED, 0L)
         set(value) = prefs.edit { putLong(SCREEN_TIME_LAST_UPDATED, value).apply() }
+
+    var showScreenTimeOnHome: Boolean
+        get() = prefs.getBoolean(SHOW_SCREEN_TIME_ON_HOME, false)
+        set(value) = prefs.edit { putBoolean(SHOW_SCREEN_TIME_ON_HOME, value).apply() }
+
+    fun hasShowScreenTimeOnHomePref(): Boolean = prefs.contains(SHOW_SCREEN_TIME_ON_HOME)
 
     var launcherRestartTimestamp: Long
         get() = prefs.getLong(LAUNCHER_RESTART_TIMESTAMP, 0L)

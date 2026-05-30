@@ -5,9 +5,6 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
-import android.graphics.Typeface
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -19,7 +16,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -99,6 +95,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: system handles denial */ }
+    private var pendingScreenTimePermissionRequest = false
+
     private val customAzanPickerLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@registerForActivityResult
@@ -164,6 +162,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             }
 
             binding.homeAppsNum.text = prefs.homeAppsNum.toString()
+            migrateScreenTimePrefIfNeeded()
             populateScreenTimeOnOff()
             populateWallpaperText()
             populateAppThemeText()
@@ -241,7 +240,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
         when (view.id) {
             R.id.sukunHiddenApps -> showHiddenApps()
-            R.id.screenTimeOnOff -> viewModel.showDialog.postValue(Constants.Dialog.DIGITAL_WELLBEING)
+            R.id.screenTimeOnOff -> toggleScreenTime()
             R.id.appInfo -> openAppInfo(requireContext(), Process.myUserHandle(), BuildConfig.APPLICATION_ID)
             R.id.setLauncher -> {
                 if (viewModel.isSukunDefault.value == true) {
@@ -251,7 +250,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 }
             }
             R.id.homeAppsNum -> binding.appsNumSelectLayout.visibility = View.VISIBLE
-            R.id.dailyWallpaperUrl -> requireContext().openUrl(prefs.dailyWallpaperUrl)
+            R.id.dailyWallpaperUrl -> {
+                if (prefs.dailyWallpaperUrl.isNotBlank()) {
+                    requireContext().openUrl(prefs.dailyWallpaperUrl)
+                } else {
+                    toggleDailyWallpaperUpdate()
+                }
+            }
             R.id.dailyWallpaper -> toggleDailyWallpaperUpdate()
             R.id.changeWallpaperNow -> changeWallpaperNow()
             R.id.alignment -> binding.alignmentSelectLayout.visibility = View.VISIBLE
@@ -343,7 +348,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.themeDark -> updateTheme(AppCompatDelegate.MODE_NIGHT_YES)
             R.id.themeSystem -> updateTheme(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
             R.id.themeAmbient -> updateTheme(Constants.THEME_MODE_AMBIENT_LIGHT)
-            R.id.appLanguageText -> showLanguageSelector()
+            R.id.appLanguageText -> findNavController().navigate(R.id.action_settingsFragment_to_languageFragment)
             R.id.textSizeValue -> binding.textSizesLayout.visibility = View.VISIBLE
             R.id.actionAccessibility -> openAccessibilityService()
             R.id.closeAccessibility -> toggleAccessibilityVisibility(false)
@@ -645,59 +650,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateLanguage() {
         val selectedLanguage = LocaleHelper.getSelectedLanguage(requireContext())
-        binding.appLanguageText?.text = selectedLanguage.displayName
-    }
-
-    private fun showLanguageSelector() {
-        val languages = LocaleHelper.getAvailableLanguages()
-        val currentLanguage = LocaleHelper.getSelectedLanguage(requireContext())
-        val checkedItem = languages.indexOf(currentLanguage)
-
-        val dialogView = layoutInflater.inflate(R.layout.dialog_language_selector, null)
-        val languageContainer = dialogView.findViewById<LinearLayout>(R.id.languageItemsContainer)
-        val languagePickerClose = dialogView.findViewById<TextView>(R.id.languagePickerClose)
-
-        val dialog = AlertDialog.Builder(requireContext())
-            .setView(dialogView)
-            .create()
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
-        languages.forEachIndexed { index, language ->
-            val isSelected = index == checkedItem
-            val languageOption = TextView(requireContext()).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    bottomMargin = 10.dpToPx()
-                }
-                setPadding(20.dpToPx(), 18.dpToPx(), 20.dpToPx(), 18.dpToPx())
-                text = language.displayName
-                textSize = 16f
-                setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
-                setTypeface(typeface, if (isSelected) Typeface.BOLD else Typeface.NORMAL)
-                alpha = if (isSelected) 1f else 0.92f
-                background = requireContext().getDrawable(R.drawable.rounded_rect_shade_color)
-                isClickable = true
-                isFocusable = true
-                if (isSelected) {
-                    append(" ✓")
-                }
-                setOnClickListener {
-                    LocaleHelper.setLocale(requireContext(), language.code)
-                    populateLanguage()
-                    activity?.recreate()
-                    dialog.dismiss()
-                }
-            }
-            languageContainer.addView(languageOption)
-        }
-
-        languagePickerClose.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialog.show()
+        binding.appLanguageText?.text = selectedLanguage.listLabel()
     }
 
     private fun canUsePremiumFeature(): Boolean {
@@ -1302,10 +1255,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun toggleDailyWallpaperUpdate() {
         if (!prefs.dailyWallpaper && !canUsePremiumFeature()) return
-        if (prefs.dailyWallpaper.not() && prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES && viewModel.isSukunDefault.value == false) {
-            requireContext().showToast(R.string.set_as_default_launcher_first)
-            return
-        }
         prefs.dailyWallpaper = !prefs.dailyWallpaper
         populateWallpaperText()
         if (prefs.dailyWallpaper) {
@@ -1460,10 +1409,35 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         return "$label ($formattedScale)"
     }
 
+    private fun migrateScreenTimePrefIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        if (prefs.hasShowScreenTimeOnHomePref()) return
+        prefs.showScreenTimeOnHome = requireContext().appUsagePermissionGranted()
+    }
+
+    private fun toggleScreenTime() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        if (prefs.showScreenTimeOnHome) {
+            prefs.showScreenTimeOnHome = false
+            populateScreenTimeOnOff()
+            viewModel.refreshHome(false)
+            return
+        }
+        if (requireContext().appUsagePermissionGranted()) {
+            prefs.showScreenTimeOnHome = true
+            populateScreenTimeOnOff()
+            viewModel.refreshHome(false)
+        } else {
+            pendingScreenTimePermissionRequest = true
+            viewModel.showDialog.postValue(Constants.Dialog.DIGITAL_WELLBEING)
+        }
+    }
+
     private fun populateScreenTimeOnOff() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (requireContext().appUsagePermissionGranted()) binding.screenTimeOnOff.text = getString(R.string.on)
-            else binding.screenTimeOnOff.text = getString(R.string.off)
+            binding.screenTimeOnOff.text = getString(
+                if (prefs.showScreenTimeOnHome) R.string.on else R.string.off
+            )
         } else binding.screenTimeLayout.visibility = View.GONE
     }
 
@@ -1598,6 +1572,16 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             return
         }
         viewModel.isSukunDefault()
+        if (pendingScreenTimePermissionRequest) {
+            pendingScreenTimePermissionRequest = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                && requireContext().appUsagePermissionGranted()
+            ) {
+                prefs.showScreenTimeOnHome = true
+                viewModel.refreshHome(false)
+            }
+        }
+        populateScreenTimeOnOff()
         populateFocusMode()
         populateWeatherSettings()
         refreshWeatherIfConfigured()
