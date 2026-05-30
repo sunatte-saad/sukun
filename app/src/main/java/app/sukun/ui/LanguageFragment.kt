@@ -69,8 +69,8 @@ class LanguageFragment : Fragment() {
             findNavController().navigateUp()
             return
         }
-        LocaleHelper.setLocale(requireContext(), language.code)
+        LocaleHelper.applyAppLocale(requireContext(), language.code)
         findNavController().popBackStack()
-        activity?.recreate()
+        requireActivity().recreate()
     }
 }

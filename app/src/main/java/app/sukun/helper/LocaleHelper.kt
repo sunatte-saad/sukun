@@ -2,6 +2,10 @@ package app.sukun.helper
 
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Build
+import android.os.LocaleList
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import app.sukun.data.Prefs
 import java.util.Locale
 
@@ -36,19 +40,29 @@ object LocaleHelper {
         }
     }
 
-    fun setLocale(context: Context, languageCode: String) {
-        val locale = if (languageCode.isEmpty()) {
-            Locale.getDefault()
-        } else {
-            Locale(languageCode)
-        }
-
-        val config = Configuration(context.resources.configuration)
-        config.setLocale(locale)
-        context.resources.updateConfiguration(config, context.resources.displayMetrics)
-
-        // Save preference
+    fun applyAppLocale(context: Context, languageCode: String) {
         Prefs(context).appLanguage = languageCode
+        AppCompatDelegate.setApplicationLocales(toLocaleList(languageCode))
+    }
+
+    fun syncAppLocale(context: Context) {
+        AppCompatDelegate.setApplicationLocales(toLocaleList(Prefs(context).appLanguage))
+    }
+
+    fun wrapContext(base: Context): Context {
+        val languageCode = Prefs(base).appLanguage
+        if (languageCode.isEmpty()) return base
+
+        val locale = localeForCode(languageCode)
+        Locale.setDefault(locale)
+
+        val config = Configuration(base.resources.configuration)
+        config.setLocale(locale)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            config.setLocales(LocaleList(locale))
+        }
+        config.setLayoutDirection(locale)
+        return base.createConfigurationContext(config)
     }
 
     fun getSelectedLanguage(context: Context): Language {
@@ -56,15 +70,20 @@ object LocaleHelper {
         return Language.values().find { it.code == languageCode } ?: Language.SYSTEM
     }
 
-    fun getAvailableLanguages(): List<Language> {
-        return Language.values().toList()
+    fun getAvailableLanguages(): List<Language> = Language.values().toList()
+
+    fun getLocaleForLanguage(language: Language): Locale = localeForCode(language.code)
+
+    private fun localeForCode(languageCode: String): Locale {
+        if (languageCode.isEmpty()) return Locale.getDefault()
+        return Locale.forLanguageTag(languageCode)
     }
 
-    fun getLocaleForLanguage(language: Language): Locale {
-        return if (language.code.isEmpty()) {
-            Locale.getDefault()
+    private fun toLocaleList(languageCode: String): LocaleListCompat {
+        return if (languageCode.isEmpty()) {
+            LocaleListCompat.getEmptyLocaleList()
         } else {
-            Locale(language.code)
+            LocaleListCompat.forLanguageTags(languageCode)
         }
     }
 }
