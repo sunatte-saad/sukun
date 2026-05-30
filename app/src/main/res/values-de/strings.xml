@@ -289,8 +289,8 @@
     <string name="manage">Verwalten</string>
     <string name="add_reminder">+ Hinzufügen</string>
     <string name="no_reminders">Noch keine Erinnerungen.\nTippe auf + Hinzufügen, um eine zu erstellen.</string>
-    <string name="reminder_title_hint">Titel, z. B. Quran-Zeit</string>
-    <string name="reminder_message_hint">Nachricht, z. B. Zeit zum Quran-Lesen</string>
+    <string name="reminder_title_hint">Titel</string>
+    <string name="reminder_message_hint">Nachricht</string>
     <string name="reminder_schedule">Zeitplan</string>
     <string name="schedule_daily">Täglich</string>
     <string name="schedule_hourly">Stündlich</string>

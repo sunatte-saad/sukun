@@ -289,8 +289,8 @@
     <string name="manage">Управление</string>
     <string name="add_reminder">+ Добавить</string>
     <string name="no_reminders">Пока нет напоминаний.\nНажмите + Добавить, чтобы создать одно.</string>
-    <string name="reminder_title_hint">Название, например: Время для Корана</string>
-    <string name="reminder_message_hint">Сообщение, например: Пора читать Коран</string>
+    <string name="reminder_title_hint">Название</string>
+    <string name="reminder_message_hint">Сообщение</string>
     <string name="reminder_schedule">Расписание</string>
     <string name="schedule_daily">Ежедневно</string>
     <string name="schedule_hourly">Ежечасно</string>

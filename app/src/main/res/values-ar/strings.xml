@@ -289,8 +289,8 @@
     <string name="manage">إدارة</string>
     <string name="add_reminder">+ إضافة</string>
     <string name="no_reminders">لا توجد تذكيرات بعد.\nانقر على + إضافة لإنشاء واحد.</string>
-    <string name="reminder_title_hint">العنوان، مثال: وقت القرآن</string>
-    <string name="reminder_message_hint">الرسالة، مثال: حان وقت قراءة القرآن</string>
+    <string name="reminder_title_hint">العنوان</string>
+    <string name="reminder_message_hint">الرسالة</string>
     <string name="reminder_schedule">الجدولة</string>
     <string name="schedule_daily">يومي</string>
     <string name="schedule_hourly">كل ساعة</string>

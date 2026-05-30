@@ -298,8 +298,8 @@ Toca para abrir el pronóstico</string>
     <string name="manage">Gestionar</string>
     <string name="add_reminder">+ Añadir</string>
     <string name="no_reminders">Aún no hay recordatorios.\nToca + Añadir para crear uno.</string>
-    <string name="reminder_title_hint">Título, p.ej. Hora del Corán</string>
-    <string name="reminder_message_hint">Mensaje, p.ej. Es hora de leer el Corán</string>
+    <string name="reminder_title_hint">Título</string>
+    <string name="reminder_message_hint">Mensaje</string>
     <string name="reminder_schedule">Programar</string>
     <string name="schedule_daily">Diario</string>
     <string name="schedule_hourly">Cada hora</string>

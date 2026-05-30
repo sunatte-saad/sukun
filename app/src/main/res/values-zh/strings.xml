@@ -289,8 +289,8 @@
     <string name="manage">管理</string>
     <string name="add_reminder">+ 添加</string>
     <string name="no_reminders">暂无提醒。\n点击 + 添加来创建一个。</string>
-    <string name="reminder_title_hint">标题，例如：古兰经时间</string>
-    <string name="reminder_message_hint">内容，例如：该读古兰经了</string>
+    <string name="reminder_title_hint">标题</string>
+    <string name="reminder_message_hint">内容</string>
     <string name="reminder_schedule">日程</string>
     <string name="schedule_daily">每天</string>
     <string name="schedule_hourly">每小时</string>

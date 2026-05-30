@@ -298,8 +298,8 @@ Appuyez pour ouvrir les prévisions</string>
     <string name="manage">Gérer</string>
     <string name="add_reminder">+ Ajouter</string>
     <string name="no_reminders">Aucun rappel pour l\'instant.\nAppuyez sur + Ajouter pour en créer un.</string>
-    <string name="reminder_title_hint">Titre, ex. Heure du Coran</string>
-    <string name="reminder_message_hint">Message, ex. Il est temps de lire le Coran</string>
+    <string name="reminder_title_hint">Titre</string>
+    <string name="reminder_message_hint">Message</string>
     <string name="reminder_schedule">Planifier</string>
     <string name="schedule_daily">Quotidien</string>
     <string name="schedule_hourly">Toutes les heures</string>

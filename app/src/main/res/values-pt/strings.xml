@@ -289,8 +289,8 @@
     <string name="manage">Gerenciar</string>
     <string name="add_reminder">+ Adicionar</string>
     <string name="no_reminders">Nenhum lembrete ainda.\nToque em + Adicionar para criar um.</string>
-    <string name="reminder_title_hint">Título, ex: Tempo do Alcorão</string>
-    <string name="reminder_message_hint">Mensagem, ex: Hora de ler o Alcorão</string>
+    <string name="reminder_title_hint">Título</string>
+    <string name="reminder_message_hint">Mensagem</string>
     <string name="reminder_schedule">Agendamento</string>
     <string name="schedule_daily">Diariamente</string>
     <string name="schedule_hourly">De hora em hora</string>

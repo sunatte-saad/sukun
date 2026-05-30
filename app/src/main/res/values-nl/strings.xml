@@ -298,8 +298,8 @@ Tap to open forecast</string>
     <string name="manage">Manage</string>
     <string name="add_reminder">+ Add</string>
     <string name="no_reminders">No reminders yet.\nTap + Add to create one.</string>
-    <string name="reminder_title_hint">Title, e.g. Quran time</string>
-    <string name="reminder_message_hint">Message, e.g. Time to read Quran</string>
+    <string name="reminder_title_hint">Title</string>
+    <string name="reminder_message_hint">Message</string>
     <string name="reminder_schedule">Schedule</string>
     <string name="schedule_daily">Daily</string>
     <string name="schedule_hourly">Hourly</string>

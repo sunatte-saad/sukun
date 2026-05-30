@@ -289,8 +289,8 @@
     <string name="manage">Yönet</string>
     <string name="add_reminder">+ Ekle</string>
     <string name="no_reminders">Henüz hatırlatıcı yok.\nBir tane oluşturmak için + Ekle\'ye dokun.</string>
-    <string name="reminder_title_hint">Başlık, örn: Kuran zamanı</string>
-    <string name="reminder_message_hint">Mesaj, örn: Kuran okuma zamanı</string>
+    <string name="reminder_title_hint">Başlık</string>
+    <string name="reminder_message_hint">Mesaj</string>
     <string name="reminder_schedule">Zamanlama</string>
     <string name="schedule_daily">Günlük</string>
     <string name="schedule_hourly">Saatlik</string>

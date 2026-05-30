@@ -289,8 +289,8 @@
     <string name="manage">Kelola</string>
     <string name="add_reminder">+ Tambah</string>
     <string name="no_reminders">Belum ada pengingat.\nKetuk + Tambah untuk membuat satu.</string>
-    <string name="reminder_title_hint">Judul, mis: Waktu Al-Quran</string>
-    <string name="reminder_message_hint">Pesan, mis: Waktunya membaca Al-Quran</string>
+    <string name="reminder_title_hint">Judul</string>
+    <string name="reminder_message_hint">Pesan</string>
     <string name="reminder_schedule">Jadwal</string>
     <string name="schedule_daily">Harian</string>
     <string name="schedule_hourly">Per jam</string>

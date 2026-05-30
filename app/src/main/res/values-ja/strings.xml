@@ -289,8 +289,8 @@
     <string name="manage">管理</string>
     <string name="add_reminder">+ 追加</string>
     <string name="no_reminders">まだリマインダーがありません。\n+ 追加をタップして作成してください。</string>
-    <string name="reminder_title_hint">タイトル、例：コーランの時間</string>
-    <string name="reminder_message_hint">メッセージ、例：コーランを読む時間です</string>
+    <string name="reminder_title_hint">タイトル</string>
+    <string name="reminder_message_hint">メッセージ</string>
     <string name="reminder_schedule">スケジュール</string>
     <string name="schedule_daily">毎日</string>
     <string name="schedule_hourly">毎時間</string>

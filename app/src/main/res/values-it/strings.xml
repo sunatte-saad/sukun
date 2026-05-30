@@ -289,8 +289,8 @@
     <string name="manage">Gestisci</string>
     <string name="add_reminder">+ Aggiungi</string>
     <string name="no_reminders">Nessun promemoria ancora.\nTocca + Aggiungi per crearne uno.</string>
-    <string name="reminder_title_hint">Titolo, es: Tempo per il Corano</string>
-    <string name="reminder_message_hint">Messaggio, es: È ora di leggere il Corano</string>
+    <string name="reminder_title_hint">Titolo</string>
+    <string name="reminder_message_hint">Messaggio</string>
     <string name="reminder_schedule">Pianificazione</string>
     <string name="schedule_daily">Giornaliero</string>
     <string name="schedule_hourly">Ogni ora</string>
