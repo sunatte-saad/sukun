@@ -1,237 +1,292 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:padding="20dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/rounded_rect_dialog"
+        android:elevation="8dp"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="24dp">
 
-        <androidx.appcompat.widget.AppCompatEditText
-            android:id="@+id/etReminderTitle"
-            style="@style/TextSmall"
+        <ScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@null"
-            android:hint="@string/reminder_title_hint"
-            android:inputType="textCapSentences"
-            android:maxLines="1"
-            android:paddingVertical="8dp"
-            android:textColorHint="?attr/primaryColorTrans50" />
+            android:fillViewport="true">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.5dp"
-            android:layout_marginVertical="4dp"
-            android:background="?attr/primaryColorTrans50" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-        <androidx.appcompat.widget.AppCompatEditText
-            android:id="@+id/etReminderMessage"
-            style="@style/TextSmall"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@null"
-            android:hint="@string/reminder_message_hint"
-            android:inputType="textCapSentences"
-            android:maxLines="2"
-            android:paddingVertical="8dp"
-            android:textColorHint="?attr/primaryColorTrans50" />
+                <androidx.appcompat.widget.AppCompatEditText
+                    android:id="@+id/etReminderTitle"
+                    style="@style/TextSmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:hint="@string/reminder_title_hint"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1"
+                    android:paddingVertical="8dp"
+                    android:textColorHint="?attr/primaryColorTrans50" />
 
-        <!-- Schedule type -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginVertical="4dp"
+                    android:background="?attr/primaryColorTrans50" />
+
+                <androidx.appcompat.widget.AppCompatEditText
+                    android:id="@+id/etReminderMessage"
+                    style="@style/TextSmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:hint="@string/reminder_message_hint"
+                    android:inputType="textCapSentences"
+                    android:maxLines="2"
+                    android:paddingVertical="8dp"
+                    android:textColorHint="?attr/primaryColorTrans50" />
+
+                <!-- Schedule type -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reminder_schedule"
+                        android:textColor="?attr/primaryColor" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/typeDailyBtn"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="6dp"
+                        android:text="@string/schedule_daily" />
+
+                    <TextView
+                        android:id="@+id/typeHourlyBtn"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="6dp"
+                        android:text="@string/schedule_hourly" />
+
+                    <TextView
+                        android:id="@+id/typeWeeklyBtn"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="6dp"
+                        android:text="@string/schedule_weekly" />
+
+                </LinearLayout>
+
+                <!-- Time row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reminder_time"
+                        android:textColor="?attr/primaryColor" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/tvSelectedTime"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="09:00" />
+
+                </LinearLayout>
+
+                <!-- Interval row (HOURLY only) -->
+                <LinearLayout
+                    android:id="@+id/intervalRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reminder_repeat_every"
+                        android:textColor="?attr/primaryColor" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/tvSelectedInterval"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="@string/reminder_interval_1h" />
+
+                </LinearLayout>
+
+                <!-- Days row (WEEKLY only) -->
+                <LinearLayout
+                    android:id="@+id/daysRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/dayBtnSun"
+                        style="@style/TextSmallBold"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:paddingVertical="8dp"
+                        android:text="@string/day_sun" />
+
+                    <TextView
+                        android:id="@+id/dayBtnMon"
+                        style="@style/TextSmallBold"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:paddingVertical="8dp"
+                        android:text="@string/day_mon" />
+
+                    <TextView
+                        android:id="@+id/dayBtnTue"
+                        style="@style/TextSmallBold"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:paddingVertical="8dp"
+                        android:text="@string/day_tue" />
+
+                    <TextView
+                        android:id="@+id/dayBtnWed"
+                        style="@style/TextSmallBold"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:paddingVertical="8dp"
+                        android:text="@string/day_wed" />
+
+                    <TextView
+                        android:id="@+id/dayBtnThu"
+                        style="@style/TextSmallBold"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:paddingVertical="8dp"
+                        android:text="@string/day_thu" />
+
+                    <TextView
+                        android:id="@+id/dayBtnFri"
+                        style="@style/TextSmallBold"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:paddingVertical="8dp"
+                        android:text="@string/day_fri" />
+
+                    <TextView
+                        android:id="@+id/dayBtnSat"
+                        style="@style/TextSmallBold"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:paddingVertical="8dp"
+                        android:text="@string/day_sat" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </ScrollView>
+
+        <!-- Action buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:gravity="center_vertical"
+            android:baselineAligned="false"
             android:orientation="horizontal">
 
             <TextView
-                style="@style/TextSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/reminder_schedule"
-                android:textColor="?attr/primaryColor" />
-
-            <Space
+                android:id="@+id/btnReminderCancel"
+                style="@style/TextSmallBold"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1" />
-
-            <TextView
-                android:id="@+id/typeDailyBtn"
-                style="@style/TextSmallBold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
                 android:paddingHorizontal="8dp"
-                android:paddingVertical="6dp"
-                android:text="@string/schedule_daily" />
+                android:paddingVertical="14dp"
+                android:text="@string/cancel"
+                android:textColor="?attr/primaryColorTrans80" />
 
             <TextView
-                android:id="@+id/typeHourlyBtn"
+                android:id="@+id/btnReminderSave"
                 style="@style/TextSmallBold"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/focus_mode_dialog_button"
+                android:gravity="center"
                 android:paddingHorizontal="8dp"
-                android:paddingVertical="6dp"
-                android:text="@string/schedule_hourly" />
-
-            <TextView
-                android:id="@+id/typeWeeklyBtn"
-                style="@style/TextSmallBold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="6dp"
-                android:text="@string/schedule_weekly" />
-
-        </LinearLayout>
-
-        <!-- Time row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                style="@style/TextSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/reminder_time"
+                android:paddingVertical="14dp"
+                android:text="@string/save"
                 android:textColor="?attr/primaryColor" />
-
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1" />
-
-            <TextView
-                android:id="@+id/tvSelectedTime"
-                style="@style/TextSmallBold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:text="09:00" />
-
-        </LinearLayout>
-
-        <!-- Interval row (HOURLY only) -->
-        <LinearLayout
-            android:id="@+id/intervalRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <TextView
-                style="@style/TextSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/reminder_repeat_every"
-                android:textColor="?attr/primaryColor" />
-
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1" />
-
-            <TextView
-                android:id="@+id/tvSelectedInterval"
-                style="@style/TextSmallBold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:text="@string/reminder_interval_1h" />
-
-        </LinearLayout>
-
-        <!-- Days row (WEEKLY only) -->
-        <LinearLayout
-            android:id="@+id/daysRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/dayBtnSun"
-                style="@style/TextSmallBold"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:paddingVertical="8dp"
-                android:text="@string/day_sun" />
-
-            <TextView
-                android:id="@+id/dayBtnMon"
-                style="@style/TextSmallBold"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:paddingVertical="8dp"
-                android:text="@string/day_mon" />
-
-            <TextView
-                android:id="@+id/dayBtnTue"
-                style="@style/TextSmallBold"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:paddingVertical="8dp"
-                android:text="@string/day_tue" />
-
-            <TextView
-                android:id="@+id/dayBtnWed"
-                style="@style/TextSmallBold"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:paddingVertical="8dp"
-                android:text="@string/day_wed" />
-
-            <TextView
-                android:id="@+id/dayBtnThu"
-                style="@style/TextSmallBold"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:paddingVertical="8dp"
-                android:text="@string/day_thu" />
-
-            <TextView
-                android:id="@+id/dayBtnFri"
-                style="@style/TextSmallBold"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:paddingVertical="8dp"
-                android:text="@string/day_fri" />
-
-            <TextView
-                android:id="@+id/dayBtnSat"
-                style="@style/TextSmallBold"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:paddingVertical="8dp"
-                android:text="@string/day_sat" />
 
         </LinearLayout>
 
     </LinearLayout>
 
-</ScrollView>
+</FrameLayout>

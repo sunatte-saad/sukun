@@ -92,6 +92,8 @@ class Prefs(context: Context) {
     private val HOURLY_CHIME_ENABLED = "HOURLY_CHIME_ENABLED"
     private val HOURLY_CHIME_START_HOUR = "HOURLY_CHIME_START_HOUR"
     private val HOURLY_CHIME_END_HOUR = "HOURLY_CHIME_END_HOUR"
+    private val HOURLY_CHIME_SOUND = "HOURLY_CHIME_SOUND"
+    private val HOURLY_CHIME_CUSTOM_URI = "HOURLY_CHIME_CUSTOM_URI"
     private val RECENT_APPS = "RECENT_APPS"
     private val REMINDERS_JSON = "REMINDERS_JSON"
     private val PRAYER_LOGS = "PRAYER_LOGS"
@@ -479,6 +481,14 @@ class Prefs(context: Context) {
     var hourlyChimeEndHour: Int
         get() = prefs.getInt(HOURLY_CHIME_END_HOUR, Constants.HourlyChime.DEFAULT_END_HOUR)
         set(value) = prefs.edit { putInt(HOURLY_CHIME_END_HOUR, value).apply() }
+
+    var hourlyChimeSound: String
+        get() = prefs.getString(HOURLY_CHIME_SOUND, Constants.ChimeSound.BUNDLED).toString()
+        set(value) = prefs.edit { putString(HOURLY_CHIME_SOUND, value).apply() }
+
+    var hourlyChimeCustomUri: String
+        get() = prefs.getString(HOURLY_CHIME_CUSTOM_URI, "").toString()
+        set(value) = prefs.edit { putString(HOURLY_CHIME_CUSTOM_URI, value).apply() }
 
     var remindersJson: String
         get() = prefs.getString(REMINDERS_JSON, "").toString()

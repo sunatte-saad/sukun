@@ -183,6 +183,12 @@ object Constants {
         const val REQUEST_CODE = 7501
     }
 
+    object ChimeSound {
+        const val BUNDLED = "bundled"
+        const val DEFAULT = "default"
+        const val CUSTOM = "custom"
+    }
+
     object Reminder {
         const val NOTIFICATION_CHANNEL_ID = "custom_reminders"
         const val ACTION = "app.sukun.REMINDER_FIRE"

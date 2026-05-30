@@ -109,6 +109,21 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             refreshPrayerIfConfigured()
             requireContext().showToast(R.string.prayer_azan_saved)
         }
+    private val customChimePickerLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri == null) return@registerForActivityResult
+            try {
+                requireContext().contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: SecurityException) {
+            }
+            prefs.hourlyChimeSound = Constants.ChimeSound.CUSTOM
+            prefs.hourlyChimeCustomUri = uri.toString()
+            populateHourlyChime()
+            requireContext().showToast(R.string.chime_sound_saved)
+        }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
@@ -304,6 +319,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.hourlyChimeOnOff -> toggleHourlyChime()
             R.id.hourlyChimeStartHour -> showHourPicker(isStart = true)
             R.id.hourlyChimeEndHour -> showHourPicker(isStart = false)
+            R.id.hourlyChimeSound -> binding.chimeSoundSelectLayout?.visibility = View.VISIBLE
+            R.id.chimeSoundBundled -> updateChimeSound(Constants.ChimeSound.BUNDLED)
+            R.id.chimeSoundDefault -> updateChimeSound(Constants.ChimeSound.DEFAULT)
+            R.id.chimeSoundCustom -> customChimePickerLauncher.launch(arrayOf("audio/*"))
             R.id.statusBar -> toggleStatusBar()
             R.id.dateTime -> binding.dateTimeSelectLayout.visibility = View.VISIBLE
             R.id.dateTimeOn -> toggleDateTime(Constants.DateTime.ON)
@@ -446,6 +465,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.hourlyChimeOnOff?.setOnClickListener(this)
         binding.hourlyChimeStartHour?.setOnClickListener(this)
         binding.hourlyChimeEndHour?.setOnClickListener(this)
+        binding.hourlyChimeSound?.setOnClickListener(this)
+        binding.chimeSoundBundled?.setOnClickListener(this)
+        binding.chimeSoundDefault?.setOnClickListener(this)
+        binding.chimeSoundCustom?.setOnClickListener(this)
         binding.statusBar.setOnClickListener(this)
         binding.dateTime.setOnClickListener(this)
         binding.dateTimeOn.setOnClickListener(this)
@@ -1301,7 +1324,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         if (!canUsePremiumFeature()) return
         prefs.dailyWallpaper = true
         populateWallpaperText()
-        setPlainWallpaper(requireContext(), android.R.color.black)
         viewModel.refreshWallpaperNow()
         requireContext().showToast(R.string.your_wallpaper_will_update_shortly)
     }
@@ -1587,8 +1609,17 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         val enabled = prefs.hourlyChimeEnabled
         binding.hourlyChimeOnOff?.text = getString(if (enabled) R.string.on else R.string.off)
         binding.hourlyChimeTimeLayout?.isVisible = enabled
+        binding.hourlyChimeSoundLayout?.isVisible = enabled
+        binding.chimeSoundSelectLayout?.visibility = View.GONE
         binding.hourlyChimeStartHour?.text = formatHourLabel(prefs.hourlyChimeStartHour)
         binding.hourlyChimeEndHour?.text = formatHourLabel(prefs.hourlyChimeEndHour)
+        binding.hourlyChimeSound?.text = getString(
+            when (prefs.hourlyChimeSound) {
+                Constants.ChimeSound.DEFAULT -> R.string.chime_sound_default
+                Constants.ChimeSound.CUSTOM -> R.string.custom
+                else -> R.string.chime_sound_bundled
+            }
+        )
     }
 
     private fun toggleHourlyChime() {
@@ -1598,6 +1629,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         } else {
             HourlyChimeScheduler.cancel(requireContext())
         }
+        populateHourlyChime()
+    }
+
+    private fun updateChimeSound(sound: String) {
+        prefs.hourlyChimeSound = sound
+        binding.chimeSoundSelectLayout?.visibility = View.GONE
         populateHourlyChime()
     }
 

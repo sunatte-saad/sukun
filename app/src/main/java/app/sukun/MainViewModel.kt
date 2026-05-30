@@ -493,7 +493,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             prefs.dailyWallpaperUrl = ""
-            setPlainWallpaper(appContext, android.R.color.black)
             WorkManager.getInstance(appContext).enqueue(OneTimeWorkRequestBuilder<WallpaperWorker>().build())
             setWallpaperWorker()
         }

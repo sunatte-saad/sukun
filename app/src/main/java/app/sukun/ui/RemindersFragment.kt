@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -87,6 +89,7 @@ class RemindersFragment : Fragment() {
                 itemBinding.tvReminderSchedule.text = reminder.scheduleDescription()
                 itemBinding.tvReminderEnabled.text =
                     if (reminder.enabled) getString(R.string.on) else getString(R.string.off)
+                itemBinding.tvReminderEnabled.alpha = if (reminder.enabled) 1f else 0.4f
                 if (reminder.fireCount > 0) {
                     itemBinding.tvReminderStats.visibility = View.VISIBLE
                     val pct = (reminder.doneCount * 100) / reminder.fireCount
@@ -96,10 +99,7 @@ class RemindersFragment : Fragment() {
                     itemBinding.tvReminderStats.visibility = View.GONE
                 }
                 itemBinding.root.setOnClickListener { showReminderDialog(reminder) }
-                itemBinding.root.setOnLongClickListener {
-                    showDeleteConfirmation(reminder)
-                    true
-                }
+                itemBinding.ivReminderDelete.setOnClickListener { showDeleteConfirmation(reminder) }
                 itemBinding.tvReminderEnabled.setOnClickListener { toggleReminder(reminder) }
             }
         }
@@ -113,6 +113,7 @@ class RemindersFragment : Fragment() {
         } else {
             ReminderScheduler.cancel(requireContext(), updated.id)
         }
+        refreshList()
     }
 
     private fun showDeleteConfirmation(reminder: Reminder) {
@@ -224,57 +225,56 @@ class RemindersFragment : Fragment() {
 
         val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogBinding.root)
-            .setPositiveButton(R.string.save, null)
-            .setNegativeButton(R.string.cancel, null)
             .create()
 
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val title = dialogBinding.etReminderTitle.text.toString().trim()
-                val message = dialogBinding.etReminderMessage.text.toString().trim()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
-                if (title.isEmpty()) {
-                    requireContext().showToast(R.string.reminder_title_required)
-                    return@setOnClickListener
-                }
-                if (selectedType == Reminder.Type.WEEKLY && selectedDays.isEmpty()) {
-                    requireContext().showToast(R.string.reminder_days_required)
-                    return@setOnClickListener
-                }
-                if (!ReminderScheduler.canScheduleExact(requireContext())) {
-                    requireContext().showToast(R.string.reminder_exact_alarm_needed)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
-                    }
-                }
+        dialogBinding.btnReminderCancel.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnReminderSave.setOnClickListener {
+            val title = dialogBinding.etReminderTitle.text.toString().trim()
+            val message = dialogBinding.etReminderMessage.text.toString().trim()
 
-                val id = existing?.id ?: ((reminders.maxOfOrNull { it.id } ?: 0) + 1)
-                val reminder = Reminder(
-                    id = id,
-                    title = title,
-                    message = message,
-                    type = selectedType,
-                    hour = selectedHour,
-                    minute = selectedMinute,
-                    intervalHours = selectedInterval,
-                    days = selectedDays.toSet(),
-                    enabled = existing?.enabled ?: true,
-                    fireCount = existing?.fireCount ?: 0,
-                    doneCount = existing?.doneCount ?: 0
-                )
-
-                if (isEdit) {
-                    updateReminder(reminder)
-                } else {
-                    reminders.add(reminder)
-                    saveAll()
-                }
-
-                ReminderScheduler.schedule(requireContext(), reminder)
-                refreshList()
-                requireContext().showToast(if (isEdit) R.string.reminder_updated else R.string.reminder_added)
-                dialog.dismiss()
+            if (title.isEmpty()) {
+                requireContext().showToast(R.string.reminder_title_required)
+                return@setOnClickListener
             }
+            if (selectedType == Reminder.Type.WEEKLY && selectedDays.isEmpty()) {
+                requireContext().showToast(R.string.reminder_days_required)
+                return@setOnClickListener
+            }
+            if (!ReminderScheduler.canScheduleExact(requireContext())) {
+                requireContext().showToast(R.string.reminder_exact_alarm_needed)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+                }
+            }
+
+            val id = existing?.id ?: ((reminders.maxOfOrNull { it.id } ?: 0) + 1)
+            val reminder = Reminder(
+                id = id,
+                title = title,
+                message = message,
+                type = selectedType,
+                hour = selectedHour,
+                minute = selectedMinute,
+                intervalHours = selectedInterval,
+                days = selectedDays.toSet(),
+                enabled = existing?.enabled ?: true,
+                fireCount = existing?.fireCount ?: 0,
+                doneCount = existing?.doneCount ?: 0
+            )
+
+            if (isEdit) {
+                updateReminder(reminder)
+            } else {
+                reminders.add(reminder)
+                saveAll()
+            }
+
+            ReminderScheduler.schedule(requireContext(), reminder)
+            refreshList()
+            requireContext().showToast(if (isEdit) R.string.reminder_updated else R.string.reminder_added)
+            dialog.dismiss()
         }
 
         dialog.show()

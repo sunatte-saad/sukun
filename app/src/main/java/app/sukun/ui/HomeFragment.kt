@@ -877,7 +877,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.tvScreenTime?.visibility = View.VISIBLE
 
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val horizontalMargin = if (isLandscape) 64.dpToPx() else 10.dpToPx()
+        val screenTimeOnRight = prefs.homeAlignment != Gravity.END
+        // When on the right, use 64dp end margin so the screen time sits to the left of the bell
+        // (bell is at 14dp end margin, ~44dp wide, so it occupies ~14–58dp from the right edge).
+        val horizontalMargin = if (screenTimeOnRight) 64.dpToPx() else 14.dpToPx()
         val marginTop = if (isLandscape) {
             if (prefs.dateTimeVisibility == Constants.DateTime.DATE_ONLY) 36.dpToPx() else 56.dpToPx()
         } else {
@@ -1444,7 +1447,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val showReminders = prefs.showRemindersOnHome
         binding.remindersBellContainer.isVisible = showReminders
         if (!showReminders) return
-        val count = prefs.remindersJson.toReminderList().size
+        val count = prefs.remindersJson.toReminderList().count { it.enabled }
         binding.remindersBellCount.isVisible = count > 0
         if (count > 0) {
             binding.remindersBellCount.text = count.toString()

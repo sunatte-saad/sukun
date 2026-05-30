@@ -163,6 +163,10 @@
     <string name="hourly_chime">Hourly chime</string>
     <string name="hourly_chime_from">From</string>
     <string name="hourly_chime_to">to</string>
+    <string name="hourly_chime_sound">Sound</string>
+    <string name="chime_sound_bundled">Chime</string>
+    <string name="chime_sound_default">Default</string>
+    <string name="chime_sound_saved">Custom chime updated</string>
     <string name="rename">Rename</string>
     <string name="show_date_time">Show date time</string>
     <string name="appearance">Appearance</string>
