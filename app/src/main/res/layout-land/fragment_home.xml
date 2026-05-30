@@ -103,7 +103,7 @@
                     android:format24Hour="HH:mm"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:textSize="34sp"
+                    android:textSize="44sp"
                     tools:text="19:24" />
 
                 <TextView

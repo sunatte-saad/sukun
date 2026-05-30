@@ -56,6 +56,9 @@
     <string name="todo_empty_hint">No tasks yet</string>
     <string name="todo_clear_completed">Clear done</string>
     <string name="todo_list_title_count">Todo (%1$d pending)</string>
+    <string name="todo_added">Task added</string>
+    <string name="todo_deleted">Task deleted</string>
+    <string name="todo_cleared">Completed tasks cleared</string>
     <string name="add">Add</string>
     <string name="focus_mode">Focus mode</string>
     <string name="focus_mode_status">Focus mode active</string>

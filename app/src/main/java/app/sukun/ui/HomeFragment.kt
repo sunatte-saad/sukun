@@ -411,6 +411,13 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.homeApp6.gravity = horizontalGravity
         binding.homeApp7.gravity = horizontalGravity
         binding.homeApp8.gravity = horizontalGravity
+        val iconsAlignment = if (horizontalGravity == Gravity.END) Gravity.START else Gravity.END
+        safeBinding?.remindersBellContainer?.layoutParams = (safeBinding?.remindersBellContainer?.layoutParams as? FrameLayout.LayoutParams)?.apply {
+            gravity = iconsAlignment
+        }
+        safeBinding?.todoIconContainer?.layoutParams = (safeBinding?.todoIconContainer?.layoutParams as? FrameLayout.LayoutParams)?.apply {
+            gravity = iconsAlignment
+        }
         positionOverlayText(horizontalGravity)
         adjustHomeAppsLayoutForTextScale()
     }
@@ -545,149 +552,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private fun openTodoList() {
         if (!prefs.showTodoOnHome) return
-        val context = requireContext()
-        val todos = prefs.todoItemsJson.toTodoList().toMutableList()
-
-        val rootLayout = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(20.dpToPx(), 8.dpToPx(), 20.dpToPx(), 4.dpToPx())
-        }
-
-        val scrollView = ScrollView(context)
-        val itemsLayout = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
-        scrollView.addView(itemsLayout)
-        rootLayout.addView(scrollView, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 320.dpToPx()
-        ))
-
-        val inputRow = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.topMargin = 8.dpToPx() }
-        }
-        val addInput = EditText(context).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-            hint = getString(R.string.todo_add_hint)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        }
-        val addButton = TextView(context).apply {
-            text = getString(R.string.add)
-            setPadding(12.dpToPx(), 8.dpToPx(), 4.dpToPx(), 8.dpToPx())
-            setTextColor(context.getColorFromAttr(R.attr.primaryColor))
-        }
-        inputRow.addView(addInput)
-        inputRow.addView(addButton)
-        rootLayout.addView(inputRow)
-
-        var dialogRef: AlertDialog? = null
-
-        fun saveTodos() {
-            prefs.todoItemsJson = todos.toTodoJson()
-            updateTodoIconCount()
-        }
-
-        fun rebuildList() {
-            itemsLayout.removeAllViews()
-            if (todos.isEmpty()) {
-                itemsLayout.addView(TextView(context).apply {
-                    text = getString(R.string.todo_empty_hint)
-                    alpha = 0.6f
-                    textSize = 14f
-                    gravity = Gravity.CENTER
-                    setPadding(0, 24.dpToPx(), 0, 24.dpToPx())
-                })
-                return
-            }
-            todos.toList().forEachIndexed { index, item ->
-                itemsLayout.addView(buildTodoRow(context, item, onToggle = { checked ->
-                    todos[index] = item.copy(completed = checked)
-                    saveTodos()
-                    dialogRef?.setTitle(todoDialogTitle(todos))
-                }, onDelete = {
-                    todos.removeAt(index)
-                    saveTodos()
-                    rebuildList()
-                    dialogRef?.setTitle(todoDialogTitle(todos))
-                }))
-            }
-            if (todos.any { it.completed }) {
-                itemsLayout.addView(TextView(context).apply {
-                    text = getString(R.string.todo_clear_completed)
-                    textSize = 13f
-                    alpha = 0.7f
-                    gravity = Gravity.END
-                    setPadding(0, 12.dpToPx(), 4.dpToPx(), 8.dpToPx())
-                    setTextColor(context.getColorFromAttr(R.attr.primaryColor))
-                    setOnClickListener {
-                        todos.removeAll { it.completed }
-                        saveTodos()
-                        rebuildList()
-                        dialogRef?.setTitle(todoDialogTitle(todos))
-                    }
-                })
-            }
-        }
-
-        fun addItem() {
-            val text = addInput.text?.toString()?.trim() ?: return
-            if (text.isBlank()) return
-            todos.add(0, TodoItem(id = System.currentTimeMillis(), text = text))
-            saveTodos()
-            addInput.text?.clear()
-            rebuildList()
-            dialogRef?.setTitle(todoDialogTitle(todos))
-        }
-
-        addButton.setOnClickListener { addItem() }
-        addInput.setOnEditorActionListener { _, _, _ -> addItem(); true }
-
-        rebuildList()
-
-        dialogRef = AlertDialog.Builder(context)
-            .setTitle(todoDialogTitle(todos))
-            .setView(rootLayout)
-            .setPositiveButton(R.string.close, null)
-            .show()
-    }
-
-    private fun buildTodoRow(
-        context: Context,
-        item: TodoItem,
-        onToggle: (Boolean) -> Unit,
-        onDelete: () -> Unit
-    ): View = LinearLayout(context).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
-        setPadding(0, 4.dpToPx(), 0, 4.dpToPx())
-        addView(CheckBox(context).apply {
-            isChecked = item.completed
-            setOnCheckedChangeListener { _, checked -> onToggle(checked) }
-        })
-        addView(TextView(context).apply {
-            text = item.text
-            textSize = 15f
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            if (item.completed) {
-                paintFlags = paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
-                alpha = 0.5f
-            }
-        })
-        addView(TextView(context).apply {
-            text = "×"
-            textSize = 20f
-            setPadding(12.dpToPx(), 4.dpToPx(), 4.dpToPx(), 4.dpToPx())
-            alpha = 0.5f
-            setOnClickListener { onDelete() }
-        })
-    }
-
-    private fun todoDialogTitle(todos: List<TodoItem>): String {
-        val pending = todos.count { !it.completed }
-        return if (pending > 0) getString(R.string.todo_list_title_count, pending)
-        else getString(R.string.todo_list)
+        findNavController().navigate(R.id.action_mainFragment_to_todoFragment)
     }
 
     private fun updateWeatherLayout(horizontalGravity: Int = prefs.homeAlignment) {
