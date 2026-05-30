@@ -94,7 +94,7 @@ class WeatherSettingsSheet : DialogFragment() {
 
     private fun setupClickListeners() {
         binding.weatherToggleRow.setOnClickListener { toggleWeather() }
-        binding.chipManual.setOnClickListener { selectSource(Constants.WeatherSource.MANUAL) }
+        binding.chipManual.setOnClickListener { selectManualSource() }
         binding.chipDevice.setOnClickListener { selectDeviceSource() }
         binding.chipGoogle.setOnClickListener { selectSource(Constants.WeatherSource.GOOGLE) }
         binding.locationRow.setOnClickListener { openLocationEditor() }
@@ -189,6 +189,10 @@ class WeatherSettingsSheet : DialogFragment() {
     }
 
     private fun selectSource(source: String) {
+        if (source == Constants.WeatherSource.MANUAL) {
+            selectManualSource()
+            return
+        }
         if (prefs.weatherSourceMode == source) return
         prefs.weatherSourceMode = source
         prefs.clearWeatherCache()
@@ -200,6 +204,16 @@ class WeatherSettingsSheet : DialogFragment() {
             binding.etLocation.setText(prefs.weatherLocationLabel)
             binding.etLocation.showKeyboard()
         }
+    }
+
+    private fun selectManualSource() {
+        if (prefs.weatherSourceMode != Constants.WeatherSource.MANUAL) {
+            prefs.weatherSourceMode = Constants.WeatherSource.MANUAL
+            prefs.clearWeatherCache()
+            updateUI()
+            listener?.onWeatherSettingsChanged()
+        }
+        openLocationEditor()
     }
 
     private fun selectDeviceSource() {
@@ -232,7 +246,9 @@ class WeatherSettingsSheet : DialogFragment() {
             }
             Constants.WeatherSource.MANUAL -> {
                 binding.locationEditLayout.isVisible = true
-                binding.etLocation.setText(prefs.weatherLocationQuery)
+                val prefill = prefs.weatherLocationQuery.ifBlank { prefs.weatherLocationLabel }
+                binding.etLocation.setText(prefill)
+                binding.etLocation.setSelection(binding.etLocation.text?.length ?: 0)
                 binding.etLocation.showKeyboard()
             }
         }
@@ -291,6 +307,16 @@ class WeatherSettingsSheet : DialogFragment() {
         if (prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE) {
             viewModel.cancelWeatherWorker(clearCachedWeather = true)
             viewModel.loadWeather()
+            return
+        }
+        if (prefs.weatherSourceMode == Constants.WeatherSource.MANUAL) {
+            if (prefs.weatherLocationQuery.isBlank()) {
+                viewModel.cancelWeatherWorker(clearCachedWeather = true)
+                viewModel.loadWeather()
+                return
+            }
+            viewModel.setWeatherWorker()
+            viewModel.loadWeather(true)
             return
         }
         val canRefresh = when (prefs.weatherSourceMode) {

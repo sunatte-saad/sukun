@@ -142,7 +142,7 @@ class PrayerSettingsSheet : DialogFragment() {
 
     private fun setupClickListeners() {
         binding.prayerToggleRow.setOnClickListener { togglePrayer() }
-        binding.chipManual.setOnClickListener { selectSource(Constants.PrayerSource.MANUAL) }
+        binding.chipManual.setOnClickListener { selectManualSource() }
         binding.chipDevice.setOnClickListener { selectDeviceSource() }
         binding.locationValueLabel.setOnClickListener { openLocationEditor() }
         binding.btnSaveLocation.setOnClickListener { saveLocation() }
@@ -257,6 +257,10 @@ class PrayerSettingsSheet : DialogFragment() {
     }
 
     private fun selectSource(source: String) {
+        if (source == Constants.PrayerSource.MANUAL) {
+            selectManualSource()
+            return
+        }
         if (prefs.prayerSourceMode == source) return
         prefs.prayerSourceMode = source
         prefs.clearPrayerCache()
@@ -264,6 +268,17 @@ class PrayerSettingsSheet : DialogFragment() {
         updateSourceChips()
         updateLocationSection()
         listener?.onPrayerSettingsChanged()
+    }
+
+    private fun selectManualSource() {
+        if (prefs.prayerSourceMode != Constants.PrayerSource.MANUAL) {
+            prefs.prayerSourceMode = Constants.PrayerSource.MANUAL
+            prefs.clearPrayerCache()
+            updateSourceChips()
+            updateLocationSection()
+            listener?.onPrayerSettingsChanged()
+        }
+        openLocationEditor()
     }
 
     private fun selectDeviceSource() {
@@ -296,7 +311,9 @@ class PrayerSettingsSheet : DialogFragment() {
             }
             Constants.PrayerSource.MANUAL -> {
                 binding.locationEditLayout.isVisible = true
-                binding.etLocation.setText(prefs.prayerLocationQuery)
+                val prefill = prefs.prayerLocationQuery.ifBlank { prefs.prayerLocationLabel }
+                binding.etLocation.setText(prefill)
+                binding.etLocation.setSelection(binding.etLocation.text?.length ?: 0)
                 binding.etLocation.showKeyboard()
             }
         }
@@ -357,6 +374,10 @@ class PrayerSettingsSheet : DialogFragment() {
         promptForAlarmPermission: Boolean = false,
     ) {
         if (!prefs.showPrayerOnHome) {
+            viewModel.cancelPrayerReminder(clearCachedPrayer = true)
+            return
+        }
+        if (prefs.prayerSourceMode == Constants.PrayerSource.MANUAL && prefs.prayerLocationQuery.isBlank()) {
             viewModel.cancelPrayerReminder(clearCachedPrayer = true)
             return
         }
