@@ -692,15 +692,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             else
                 R.string.manual_location
         )
-        val azan = getString(
-            when (prefs.azanSound) {
-                Constants.AzanSound.OFF -> R.string.off
-                Constants.AzanSound.MARYLEBONE -> R.string.azan_sound_marylebone
-                Constants.AzanSound.CUSTOM -> R.string.custom
-                else -> R.string.azan_sound_makkah
-            }
-        )
-        return "$source · $azan"
+        val azan = when (prefs.azanSound) {
+            Constants.AzanSound.OFF -> null
+            Constants.AzanSound.MARYLEBONE -> getString(R.string.azan_sound_marylebone)
+            Constants.AzanSound.CUSTOM -> getString(R.string.custom)
+            else -> getString(R.string.azan_sound_makkah)
+        }
+        return if (azan != null) "$source · $azan" else source
     }
 
     private fun showPrayerSettingsSheet() {
