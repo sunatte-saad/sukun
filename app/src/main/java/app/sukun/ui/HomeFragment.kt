@@ -289,6 +289,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             if (it != null) {
                 binding.tvScreenTime?.text = it
                 binding.tvScreenTime?.visibility = View.VISIBLE
+                positionTopCornerStack()
             }
         }
         viewModel.weatherData.observe(viewLifecycleOwner) {
@@ -418,6 +419,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         safeBinding?.todoIconContainer?.layoutParams = (safeBinding?.todoIconContainer?.layoutParams as? FrameLayout.LayoutParams)?.apply {
             gravity = iconsAlignment
         }
+        positionTopCornerStack()
         positionOverlayText(horizontalGravity)
         adjustHomeAppsLayoutForTextScale()
     }
@@ -548,6 +550,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val pending = prefs.todoItemsJson.toTodoList().count { !it.completed }
         binding.todoIconCount.isVisible = pending > 0
         if (pending > 0) binding.todoIconCount.text = pending.toString()
+        positionTopCornerStack()
     }
 
     private fun openTodoList() {
@@ -836,29 +839,100 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (requireContext().appUsagePermissionGranted().not()) return
 
         viewModel.getTodaysScreenTime()
+        positionTopCornerStack()
+    }
 
+    private fun topCornerHorizontalGravity(): Int =
+        if (prefs.homeAlignment == Gravity.END) Gravity.START else Gravity.END
+
+    private fun screenTimeFallbackTopMargin(): Int {
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val screenTimeOnRight = prefs.homeAlignment != Gravity.END
-        // When on the right, use 64dp end margin so the screen time sits to the left of the bell
-        // (bell is at 14dp end margin, ~44dp wide, so it occupies ~14–58dp from the right edge).
-        val horizontalMargin = if (screenTimeOnRight) 64.dpToPx() else 14.dpToPx()
-        val marginTop = if (isLandscape) {
+        return if (isLandscape) {
             if (prefs.dateTimeVisibility == Constants.DateTime.DATE_ONLY) 36.dpToPx() else 56.dpToPx()
         } else {
             if (prefs.dateTimeVisibility == Constants.DateTime.DATE_ONLY) 45.dpToPx() else 72.dpToPx()
         }
-        val params = FrameLayout.LayoutParams(
+    }
+
+    private fun positionTopCornerStack() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val binding = safeBinding ?: return
+        val horizontalMargin = 14.dpToPx()
+        val spacing = 6.dpToPx()
+        val iconsGravity = topCornerHorizontalGravity()
+
+        fun applyPositions() {
+            val currentBinding = safeBinding ?: return
+            try {
+                positionScreenTimeBelowBell(currentBinding, iconsGravity, horizontalMargin, spacing)
+                positionTodoBelowStack(currentBinding, iconsGravity, horizontalMargin, spacing)
+                positionOverlayText()
+            } catch (_: Throwable) {
+            }
+        }
+
+        if (binding.remindersBellContainer.isVisible) {
+            binding.remindersBellContainer.doOnLayout { applyPositions() }
+        } else {
+            binding.mainLayout.post { applyPositions() }
+        }
+    }
+
+    private fun positionScreenTimeBelowBell(
+        binding: FragmentHomeBinding,
+        iconsGravity: Int,
+        horizontalMargin: Int,
+        spacing: Int,
+    ) {
+        val screenTime = binding.tvScreenTime
+        if (screenTime == null || !screenTime.isVisible) return
+
+        val topMargin = if (binding.remindersBellContainer.isVisible) {
+            binding.remindersBellContainer.top + binding.remindersBellContainer.height + spacing
+        } else {
+            screenTimeFallbackTopMargin()
+        }
+        screenTime.layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT
+            FrameLayout.LayoutParams.WRAP_CONTENT,
         ).apply {
-            topMargin = marginTop
+            this.topMargin = topMargin
             marginStart = horizontalMargin
             marginEnd = horizontalMargin
-            gravity = if (prefs.homeAlignment == Gravity.END) Gravity.START else Gravity.END
+            gravity = iconsGravity or Gravity.TOP
         }
-        binding.tvScreenTime?.layoutParams = params
-        binding.tvScreenTime?.setPadding(10.dpToPx())
-        positionOverlayText()
+        screenTime.setPadding(10.dpToPx())
+    }
+
+    private fun positionTodoBelowStack(
+        binding: FragmentHomeBinding,
+        iconsGravity: Int,
+        horizontalMargin: Int,
+        spacing: Int,
+    ) {
+        val todo = binding.todoIconContainer
+        if (!todo.isVisible) return
+
+        val anchor = when {
+            binding.tvScreenTime?.isVisible == true -> binding.tvScreenTime
+            binding.remindersBellContainer.isVisible -> binding.remindersBellContainer
+            else -> null
+        }
+        val topMargin = anchor?.let { it.top + it.height + spacing } ?: 126.dpToPx()
+        todo.layoutParams = (todo.layoutParams as? FrameLayout.LayoutParams)?.apply {
+            this.topMargin = topMargin
+            marginStart = horizontalMargin
+            marginEnd = horizontalMargin
+            gravity = iconsGravity or Gravity.TOP
+        } ?: FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            this.topMargin = topMargin
+            marginStart = horizontalMargin
+            marginEnd = horizontalMargin
+            gravity = iconsGravity or Gravity.TOP
+        }
     }
 
     private fun populateHomeScreen(appCountUpdated: Boolean) {
@@ -1446,12 +1520,16 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private fun updateRemindersBellCount() {
         val showReminders = prefs.showRemindersOnHome
         binding.remindersBellContainer.isVisible = showReminders
-        if (!showReminders) return
+        if (!showReminders) {
+            positionTopCornerStack()
+            return
+        }
         val count = prefs.remindersJson.toReminderList().count { it.enabled }
         binding.remindersBellCount.isVisible = count > 0
         if (count > 0) {
             binding.remindersBellCount.text = count.toString()
         }
+        positionTopCornerStack()
     }
 
     private fun openReminders() {
