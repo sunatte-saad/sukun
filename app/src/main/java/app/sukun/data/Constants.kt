@@ -53,6 +53,7 @@ object Constants {
     object WeatherSource {
         const val MANUAL = "manual"
         const val DEVICE = "device"
+        const val GOOGLE = "google"
     }
 
     object PrayerSource {
@@ -75,6 +76,8 @@ object Constants {
         const val REMINDER_WINDOW_MILLIS = 600000L
         const val NOTIFICATION_CHANNEL_ID = "prayer_reminders"
         const val NOTIFICATION_ID = 3011
+        const val MARK_NOTIFICATION_ID = 3012
+        const val MARK_REQUEST_CODE = 6402
         const val REMINDER_REQUEST_CODE = 6401
     }
 
@@ -84,6 +87,7 @@ object Constants {
     }
 
     object AzanSound {
+        const val OFF = "off"
         const val MAKKAH = "makkah"
         const val MARYLEBONE = "marylebone"
         const val CUSTOM = "custom"
@@ -97,6 +101,7 @@ object Constants {
     }
 
     object DoubleTapAction {
+        const val OFF = "off"
         const val LOCK = "lock"
         const val FOCUS = "focus"
     }
@@ -116,9 +121,8 @@ object Constants {
     const val WALL_TYPE_LIGHT = "light"
     const val WALL_TYPE_DARK = "dark"
 
-//    const val THEME_MODE_DARK = 0
-//    const val THEME_MODE_LIGHT = 1
-//    const val THEME_MODE_SYSTEM = 2
+    /** Premium: switch light/dark from ambient light sensor (stored in prefs, not AppCompat mode). */
+    const val THEME_MODE_AMBIENT_LIGHT = 3
 
     const val FLAG_LAUNCH_APP = 100
     const val FLAG_HIDDEN_APPS = 101
@@ -156,10 +160,11 @@ object Constants {
 
     const val URL_DOUBLE_TAP = ""
     const val URL_SUKUN_PLAY_STORE = ""
-    const val URL_WALLPAPERS = ""
+    const val URL_WALLPAPERS = "https://unsplash.com/s/photos/phone-wallpaper"
     const val URL_DEFAULT_DARK_WALLPAPER = "https://images.unsplash.com/photo-1512551980832-13df02babc9e"
     const val URL_DEFAULT_LIGHT_WALLPAPER = "https://images.unsplash.com/photo-1515549832467-8783363e19b6"
     const val URL_DUCK_SEARCH = "https://duck.co/?q="
+    const val URL_GOOGLE_WEATHER = "https://www.google.com/search?q=weather"
     const val URL_WEATHER_GEOCODING = "https://geocoding-api.open-meteo.com/v1/search"
     const val URL_WEATHER_FORECAST = "https://api.open-meteo.com/v1/forecast"
 
@@ -178,7 +183,26 @@ object Constants {
         const val REQUEST_CODE = 7501
     }
 
+    object ChimeSound {
+        const val BUNDLED = "bundled"
+        const val DEFAULT = "default"
+        const val CUSTOM = "custom"
+    }
+
+    object Reminder {
+        const val NOTIFICATION_CHANNEL_ID = "custom_reminders"
+        const val ACTION = "app.sukun.REMINDER_FIRE"
+        const val ACTION_DONE = "app.sukun.REMINDER_DONE"
+        const val EXTRA_ID = "extra_reminder_id"
+        const val EXTRA_TITLE = "extra_reminder_title"
+        const val EXTRA_MESSAGE = "extra_reminder_message"
+        const val BASE_REQUEST_CODE = 9000
+        const val BASE_NOTIFICATION_ID = 9000
+        const val BASE_DONE_REQUEST_CODE = 10000
+    }
+
     const val PRAYER_REMINDER_ACTION = "app.sukun.PRAYER_REMINDER"
+    const val PRAYER_MARK_ACTION = "app.sukun.PRAYER_MARK"
     const val PRAYER_BOOT_ACTION = "app.sukun.PRAYER_BOOT"
     const val PRAYER_STOP_ACTION = "app.sukun.PRAYER_STOP"
     const val EXTRA_PRAYER_KEY = "extra_prayer_key"

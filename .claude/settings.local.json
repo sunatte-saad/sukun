@@ -6,7 +6,12 @@
       "Bash(cmd.exe /c \"gradlew.bat :app:assembleDebug\")",
       "Bash(cmd.exe *)",
       "Bash(adb install *)",
-      "Bash(adb logcat *)"
+      "Bash(adb logcat *)",
+      "Bash(git rm *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\SaadRehman\\\\Desktop\\\\github\\\\launcher\\\\Olauncher\" -Recurse -Directory)",
+      "Bash(Select-Object -First 20)",
+      "Bash(Format-Table FullName)",
+      "Bash(git show *)"
     ]
   }
 }

@@ -24,6 +24,20 @@
             app:exitAnim="@anim/fade_exit"
             app:popEnterAnim="@anim/fade_enter"
             app:popExitAnim="@anim/fade_exit" />
+        <action
+            android:id="@+id/action_mainFragment_to_remindersFragment"
+            app:destination="@id/remindersFragment"
+            app:enterAnim="@anim/fade_enter"
+            app:exitAnim="@anim/fade_exit"
+            app:popEnterAnim="@anim/fade_enter"
+            app:popExitAnim="@anim/fade_exit" />
+        <action
+            android:id="@+id/action_mainFragment_to_todoFragment"
+            app:destination="@id/todoFragment"
+            app:enterAnim="@anim/fade_enter"
+            app:exitAnim="@anim/fade_exit"
+            app:popEnterAnim="@anim/fade_enter"
+            app:popExitAnim="@anim/fade_exit" />
     </fragment>
 
     <fragment
@@ -45,7 +59,7 @@
         android:id="@+id/settingsFragment"
         android:name="app.sukun.ui.SettingsFragment"
         android:label="SettingsFragment"
-        android:layout="@layout/fragment_settings">
+        tools:layout="@layout/fragment_settings">
         <action
             android:id="@+id/action_settingsFragment_to_appListFragment"
             app:destination="@id/appListFragment"
@@ -53,6 +67,38 @@
             app:exitAnim="@anim/fade_exit"
             app:popEnterAnim="@anim/fade_enter"
             app:popExitAnim="@anim/fade_exit" />
+        <action
+            android:id="@+id/action_settingsFragment_to_remindersFragment"
+            app:destination="@id/remindersFragment"
+            app:enterAnim="@anim/fade_enter"
+            app:exitAnim="@anim/fade_exit"
+            app:popEnterAnim="@anim/fade_enter"
+            app:popExitAnim="@anim/fade_exit" />
+        <action
+            android:id="@+id/action_settingsFragment_to_prayerAnalyticsFragment"
+            app:destination="@id/prayerAnalyticsFragment"
+            app:enterAnim="@anim/fade_enter"
+            app:exitAnim="@anim/fade_exit"
+            app:popEnterAnim="@anim/fade_enter"
+            app:popExitAnim="@anim/fade_exit" />
     </fragment>
+
+    <fragment
+        android:id="@+id/prayerAnalyticsFragment"
+        android:name="app.sukun.ui.PrayerAnalyticsFragment"
+        android:label="PrayerAnalyticsFragment"
+        tools:layout="@layout/fragment_prayer_analytics" />
+
+    <fragment
+        android:id="@+id/remindersFragment"
+        android:name="app.sukun.ui.RemindersFragment"
+        android:label="RemindersFragment"
+        tools:layout="@layout/fragment_reminders" />
+
+    <fragment
+        android:id="@+id/todoFragment"
+        android:name="app.sukun.ui.TodoFragment"
+        android:label="TodoFragment"
+        tools:layout="@layout/fragment_todo" />
 
 </navigation>

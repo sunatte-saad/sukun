@@ -23,6 +23,9 @@ import androidx.navigation.findNavController
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.databinding.ActivityMainBinding
+import app.sukun.helper.AmbientThemeController
+import app.sukun.helper.applyLauncherBrightnessForTheme
+import app.sukun.helper.clearLauncherBrightnessOverride
 import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hasBeenDays
 import app.sukun.helper.hasBeenHours
@@ -33,6 +36,7 @@ import app.sukun.helper.isDefaultLauncher
 import app.sukun.helper.isEinkDisplay
 import app.sukun.helper.isSukunDefault
 import app.sukun.helper.isTablet
+import app.sukun.helper.LocaleHelper
 import app.sukun.helper.openUrl
 import app.sukun.helper.rateApp
 import app.sukun.helper.resetLauncherViaFakeActivity
@@ -40,6 +44,7 @@ import app.sukun.helper.setPlainWallpaper
 import app.sukun.helper.shareApp
 import app.sukun.helper.showLauncherSelector
 import app.sukun.helper.showToast
+import app.sukun.helper.turnOffSukunLauncher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     private var timerJob: Job? = null
     private var isResumed = false
     private var profileReceiver: BroadcastReceiver? = null
+    private var ambientThemeController: AmbientThemeController? = null
 
 //    override fun onBackPressed() {
 //        if (navController.currentDestination?.id != R.id.mainFragment)
@@ -62,7 +68,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun attachBaseContext(context: Context) {
         val newConfig = Configuration(context.resources.configuration)
-        newConfig.fontScale = Prefs(context).textSizeScale
+        newConfig.fontScale = Prefs(context).textSizeScale.coerceIn(0.5f, 2.0f)
+        
+        // Apply language preference
+        val prefs = Prefs(context)
+        val languageCode = prefs.appLanguage
+        if (languageCode.isNotEmpty()) {
+            val locale = java.util.Locale(languageCode)
+            newConfig.setLocale(locale)
+        }
+        
         applyOverrideConfiguration(newConfig)
         super.attachBaseContext(context)
     }
@@ -70,10 +85,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = Prefs(this)
         if (isEinkDisplay()) prefs.appTheme = AppCompatDelegate.MODE_NIGHT_NO
-        AppCompatDelegate.setDefaultNightMode(prefs.appTheme)
+        AppCompatDelegate.setDefaultNightMode(prefs.resolveLaunchNightMode())
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Clear cached weather location
+        prefs.clearWeatherLocation()
 
         navController = this.findNavController(R.id.nav_host_fragment)
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
@@ -129,22 +147,37 @@ class MainActivity : AppCompatActivity() {
                 profileReceiver = null
             }
         }
+        setupAmbientThemeController()
     }
 
     override fun onStart() {
         super.onStart()
-        restartLauncherOrCheckTheme()
+        checkTheme()
     }
 
     override fun onResume() {
         super.onResume()
         isResumed = true
+        ambientThemeController?.start()
+        applyLauncherBrightnessForTheme()
         viewModel.isPrivateSpaceToggling = false
+        viewModel.onReturnedToLauncher()
+        if (viewModel.appList.value.isNullOrEmpty()) {
+            viewModel.getAppList()
+        }
+    }
+
+    override fun onPause() {
+        ambientThemeController?.stop()
+        clearLauncherBrightnessOverride()
+        super.onPause()
     }
 
     override fun onStop() {
         isResumed = false
-        backToHomeScreen()
+        if (!isRecreating && !isChangingConfigurations) {
+            backToHomeScreen()
+        }
         super.onStop()
     }
 
@@ -163,7 +196,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        AppCompatDelegate.setDefaultNightMode(prefs.appTheme)
+        AppCompatDelegate.setDefaultNightMode(prefs.resolveLaunchNightMode())
         if (prefs.dailyWallpaper && AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
             setPlainWallpaper()
             viewModel.setWallpaperWorker()
@@ -182,10 +215,12 @@ class MainActivity : AppCompatActivity() {
             openLauncherChooser(it)
         }
         viewModel.resetLauncherLiveData.observe(this) {
-            if (isDefaultLauncher() || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-                resetLauncherViaFakeActivity()
-            else
-                showLauncherSelector(Constants.REQUEST_CODE_LAUNCHER_SELECTOR)
+            when {
+                isDefaultLauncher() -> turnOffSukunLauncher()
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
+                    showLauncherSelector(Constants.REQUEST_CODE_LAUNCHER_SELECTOR)
+                else -> resetLauncherViaFakeActivity()
+            }
         }
         viewModel.checkForMessages.observe(this) {
             checkForMessages()
@@ -335,9 +370,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setPlainWallpaper() {
-        if (this.isDarkThemeOn())
-            setPlainWallpaper(this, android.R.color.black)
-        else setPlainWallpaper(this, android.R.color.white)
+        setPlainWallpaper(this, android.R.color.black)
     }
 
     private fun openLauncherChooser(resetFailed: Boolean) {
@@ -347,27 +380,69 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun restartLauncherOrCheckTheme(forceRestart: Boolean = false) {
-        if (forceRestart || prefs.launcherRestartTimestamp.hasBeenHours(4)) {
-            prefs.launcherRestartTimestamp = System.currentTimeMillis()
-            cacheDir.deleteRecursively()
-            recreate()
-        } else
-            checkTheme()
-    }
+    private var isRecreating = false
 
     private fun checkTheme() {
+        if (isRecreating) return
         timerJob?.cancel()
         timerJob = lifecycleScope.launch {
-            delay(200)
-            if ((prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES && getColorFromAttr(R.attr.primaryColor) != getColor(R.color.white))
-                || (prefs.appTheme == AppCompatDelegate.MODE_NIGHT_NO && getColorFromAttr(R.attr.primaryColor) != getColor(R.color.black))
-            )
-                restartLauncherOrCheckTheme(true)
+            delay(500)
+            if (!isResumed) return@launch
+            
+            val isDark = isDarkThemeOn()
+            val themeMode = prefs.appTheme
+            
+            val mismatch = when (themeMode) {
+                AppCompatDelegate.MODE_NIGHT_YES -> !isDark
+                AppCompatDelegate.MODE_NIGHT_NO -> isDark
+                Constants.THEME_MODE_AMBIENT_LIGHT -> false
+                else -> false
+            }
+
+            if (mismatch) {
+                isRecreating = true
+                AppCompatDelegate.setDefaultNightMode(themeMode)
+            } else {
+                // Check if attributes are correctly applied
+                val primaryColor = try { getColorFromAttr(R.attr.primaryColor) } catch (_: Exception) { 0 }
+                val expected = if (isDark) getColor(R.color.white) else getColor(R.color.black)
+                
+                if (primaryColor != 0 && primaryColor != expected) {
+                    isRecreating = true
+                    recreate()
+                }
+            }
         }
     }
 
+    private fun setupAmbientThemeController() {
+        ambientThemeController?.stop()
+        ambientThemeController = null
+        if (!prefs.isAmbientLightTheme() || !prefs.isProUser) return
+
+        ambientThemeController = AmbientThemeController(
+            context = this,
+            initialDark = prefs.ambientThemeDark,
+        ) { dark ->
+            val nightMode = AmbientThemeController.nightModeForDark(dark)
+            if (prefs.ambientThemeDark == dark &&
+                AppCompatDelegate.getDefaultNightMode() == nightMode
+            ) {
+                return@AmbientThemeController
+            }
+            prefs.ambientThemeDark = dark
+            AppCompatDelegate.setDefaultNightMode(nightMode)
+            applyLauncherBrightnessForTheme()
+            if (isResumed && !isRecreating) {
+                isRecreating = true
+                recreate()
+            }
+        }.also { it.start() }
+    }
+
     override fun onDestroy() {
+        ambientThemeController?.stop()
+        ambientThemeController = null
         profileReceiver?.let {
             try {
                 unregisterReceiver(it)
@@ -382,8 +457,10 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             Constants.REQUEST_CODE_ENABLE_ADMIN -> {
-                if (resultCode == Activity.RESULT_OK)
+                if (resultCode == Activity.RESULT_OK) {
                     prefs.lockModeOn = true
+                    prefs.doubleTapAction = app.sukun.data.Constants.DoubleTapAction.LOCK
+                }
             }
 
             Constants.REQUEST_CODE_LAUNCHER_SELECTOR -> {

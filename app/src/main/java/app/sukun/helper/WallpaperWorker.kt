@@ -14,18 +14,33 @@ class WallpaperWorker(appContext: Context, workerParams: WorkerParameters) : Cor
 
     override suspend fun doWork(): Result = coroutineScope {
         if (prefs.dailyWallpaper.not()) return@coroutineScope Result.success()
-        if (prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES && !isSukunDefault(applicationContext))
+        if (prefs.isEffectivelyDarkTheme() && !isSukunDefault(applicationContext))
             return@coroutineScope Result.retry()
 
         val success =
             run {
                 val wallType = checkWallpaperType()
-                val wallpaperUrl = getTodaysWallpaper(wallType, prefs.firstOpenTime)
-                if (prefs.dailyWallpaperUrl == wallpaperUrl)
-                    true
-                else {
-                    prefs.dailyWallpaperUrl = wallpaperUrl
-                    setWallpaper(applicationContext, wallpaperUrl)
+                val localWallpaper = getRandomLocalWallpaperAsset(applicationContext, prefs.dailyWallpaperUrl)
+                if (localWallpaper != null) {
+                    val (assetName, wallpaperKey) = localWallpaper
+                    prefs.dailyWallpaperUrl = wallpaperKey
+                    setWallpaperFromAsset(
+                        appContext = applicationContext,
+                        assetName = assetName,
+                        darkWallpaper = wallType == Constants.WALL_TYPE_DARK
+                    )
+                } else {
+                    val wallpaperUrl = getTodaysWallpaper(wallType, prefs.firstOpenTime)
+                    if (prefs.dailyWallpaperUrl == wallpaperUrl)
+                        true
+                    else {
+                        prefs.dailyWallpaperUrl = wallpaperUrl
+                        setWallpaper(
+                            appContext = applicationContext,
+                            url = wallpaperUrl,
+                            darkWallpaper = wallType == Constants.WALL_TYPE_DARK
+                        )
+                    }
                 }
             }
 
@@ -39,10 +54,16 @@ class WallpaperWorker(appContext: Context, workerParams: WorkerParameters) : Cor
         return when (prefs.appTheme) {
             AppCompatDelegate.MODE_NIGHT_YES -> Constants.WALL_TYPE_DARK
             AppCompatDelegate.MODE_NIGHT_NO -> Constants.WALL_TYPE_LIGHT
-            else -> if (applicationContext.isDarkThemeOn())
+            Constants.THEME_MODE_AMBIENT_LIGHT -> if (prefs.ambientThemeDark) {
                 Constants.WALL_TYPE_DARK
-            else
+            } else {
                 Constants.WALL_TYPE_LIGHT
+            }
+            else -> if (applicationContext.isDarkThemeOn()) {
+                Constants.WALL_TYPE_DARK
+            } else {
+                Constants.WALL_TYPE_LIGHT
+            }
         }
     }
 }

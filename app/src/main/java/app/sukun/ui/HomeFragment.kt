@@ -1,10 +1,13 @@
 package app.sukun.ui
 
 import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.LauncherApps
 import android.content.res.Configuration
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.ColorDrawable
@@ -13,19 +16,24 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsets
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextClock
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
@@ -33,6 +41,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import app.sukun.MainViewModel
 import app.sukun.R
 import app.sukun.data.AppModel
@@ -40,13 +49,20 @@ import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.data.PrayerState
 import app.sukun.data.WeatherData
+import app.sukun.data.TodoItem
+import app.sukun.data.toReminderList
+import app.sukun.data.toTodoJson
+import app.sukun.data.toTodoList
 import app.sukun.databinding.FragmentHomeBinding
 import app.sukun.helper.appUsagePermissionGranted
 import app.sukun.helper.canOpenNotificationsInFocusMode
 import app.sukun.helper.dpToPx
+import app.sukun.helper.applyLauncherStatusBarVisibility
 import app.sukun.helper.expandNotificationDrawer
 import app.sukun.helper.getFocusModeStatus
 import app.sukun.helper.getChangedAppTheme
+import app.sukun.helper.getColorFromAttr
+import app.sukun.helper.isDarkThemeOn
 import app.sukun.helper.getUserHandleFromString
 import app.sukun.helper.isAccessServiceEnabled
 import app.sukun.helper.isPackageInstalled
@@ -78,12 +94,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private var focusModeJob: Job? = null
     private var prayerJob: Job? = null
     private var dateTimeJob: Job? = null
+    private var systemTimeReceiver: BroadcastReceiver? = null
     private var currentPrayerState: PrayerState? = null
     private var defaultHomeAppsPaddingTop = 0
     private var defaultHomeAppsPaddingBottom = 0
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+    private val safeBinding get() = _binding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
@@ -105,12 +123,21 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         setHomeAlignment(prefs.homeAlignment)
         initSwipeTouchListener()
         initClickListeners()
+        applyReadableHomeTextColors()
+        binding.remindersBellContainer.bringToFront()
+        binding.todoIconContainer.bringToFront()
+        updateRemindersBellCount()
+        updateTodoIconCount()
     }
 
     override fun onResume() {
         super.onResume()
+        applyReadableHomeTextColors()
         syncFocusModeState()
+        updateRemindersBellCount()
+        updateTodoIconCount()
         populateHomeScreen(false)
+        registerSystemTimeReceiver()
         viewModel.loadWeather()
         viewModel.loadPrayerState()
         viewModel.isSukunDefault()
@@ -120,6 +147,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         stopFocusModeTicker()
         stopPrayerTicker()
         stopDateTimeTicker()
+        unregisterSystemTimeReceiver()
         super.onPause()
     }
 
@@ -131,9 +159,11 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             R.id.date -> openCalendarApp()
             R.id.ringClock -> openClockApp()
             R.id.ringDate -> openCalendarApp()
+            R.id.prayerText -> { /* mark on long-press only */ }
+            R.id.remindersBellContainer -> openReminders()
+            R.id.todoIconContainer -> openTodoList()
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
             R.id.tvScreenTime -> openScreenTimeDigitalWellbeing()
-            R.id.dailyNotesCard -> showDailyNotesEditor()
 
             else -> {
                 try { // Launch app
@@ -212,20 +242,13 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 prefs.calendarAppUser = ""
             }
 
+            R.id.prayerText -> promptMarkPrayerDone()
+
             R.id.tvScreenTime -> {
                 showAppList(Constants.FLAG_SET_SCREEN_TIME_APP)
                 prefs.screenTimeAppPackage = ""
                 prefs.screenTimeAppClassName = ""
                 prefs.screenTimeAppUser = ""
-            }
-
-            R.id.setDefaultLauncher -> {
-                prefs.hideSetDefaultLauncher = true
-                binding.setDefaultLauncher.visibility = View.GONE
-                if (viewModel.isSukunDefault.value != true) {
-                    requireContext().showToast(R.string.set_as_default_launcher)
-                    findNavController().navigate(R.id.action_mainFragment_to_settingsFragment)
-                }
             }
         }
         return true
@@ -245,7 +268,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 // Reset so the button reappears if the app later loses default status
                 prefs.hideSetDefaultLauncher = false
             } else {
-                if (prefs.dailyWallpaper && prefs.appTheme == AppCompatDelegate.MODE_NIGHT_YES) {
+                if (prefs.dailyWallpaper && prefs.isEffectivelyDarkTheme()) {
                     prefs.dailyWallpaper = false
                     viewModel.cancelWallpaperWorker()
                 }
@@ -263,7 +286,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             updateWeatherLayout()
         }
         viewModel.screenTimeValue.observe(viewLifecycleOwner) {
-            it?.let { binding.tvScreenTime?.text = it }
+            if (it != null) {
+                binding.tvScreenTime?.text = it
+                binding.tvScreenTime?.visibility = View.VISIBLE
+            }
         }
         viewModel.weatherData.observe(viewLifecycleOwner) {
             populateWeather(it)
@@ -279,7 +305,21 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private fun initSwipeTouchListener() {
         val context = requireContext()
-        binding.mainLayout.setOnTouchListener(getSwipeGestureListener(context))
+        val swipeListener = getSwipeGestureListener(context)
+        binding.mainLayout.setOnTouchListener(swipeListener)
+        // homeAppsLayout is match_parent and sits above the wallpaper; empty-area long-presses land here.
+        binding.homeAppsLayout.setOnTouchListener(swipeListener)
+        binding.clock.setOnTouchListener(getViewSwipeTouchListener(context, binding.clock))
+        binding.date.setOnTouchListener(getViewSwipeTouchListener(context, binding.date))
+        binding.ringClock.setOnTouchListener(getViewSwipeTouchListener(context, binding.ringClock))
+        binding.ringDate.setOnTouchListener(getViewSwipeTouchListener(context, binding.ringDate))
+        binding.prayerText?.let { prayerText ->
+            prayerText.setOnTouchListener(getViewSwipeTouchListener(context, prayerText))
+        }
+        binding.remindersBellContainer.setOnTouchListener(
+            getViewSwipeTouchListener(context, binding.remindersBellContainer)
+        )
+        binding.todoIconContainer.setOnTouchListener(getViewSwipeTouchListener(context, binding.todoIconContainer))
         binding.homeApp1.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp1))
         binding.homeApp2.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp2))
         binding.homeApp3.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp3))
@@ -301,15 +341,63 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.date.setOnLongClickListener(this)
         binding.ringClock.setOnLongClickListener(this)
         binding.ringDate.setOnLongClickListener(this)
-        binding.setDefaultLauncher.setOnClickListener(this)
-        binding.setDefaultLauncher.setOnLongClickListener(this)
+        binding.setDefaultLauncher.setOnClickListener { viewModel.resetLauncherLiveData.call() }
+        binding.setDefaultLauncher.setOnLongClickListener {
+            openHomeSettings()
+            true
+        }
+        binding.weatherText?.setOnClickListener { openGoogleWeather() }
+        binding.remindersBellContainer.setOnClickListener(this)
+        binding.todoIconContainer.setOnClickListener(this)
         binding.tvScreenTime?.setOnClickListener(this)
         binding.tvScreenTime?.setOnLongClickListener(this)
-        binding.dailyNotesCard.setOnClickListener(this)
     }
 
+    private fun applyReadableHomeTextColors() {
+        val context = requireContext()
+        val isLight = !context.isDarkThemeOn()
+        val primaryTextColor = context.getColorFromAttr(R.attr.primaryColor)
+        val hintTextColor = context.getColorFromAttr(R.attr.primaryColorTrans80)
+        val shadowColor = context.getColorFromAttr(R.attr.primaryTextShadowColor)
+        val shadowRadius = if (isLight) 3f else 7f
+        readableTextViews().forEach { textView ->
+            textView.setTextColor(primaryTextColor)
+            textView.setHintTextColor(hintTextColor)
+            if (shadowColor == Color.TRANSPARENT) {
+                textView.setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT)
+            } else {
+                textView.setShadowLayer(shadowRadius, 0f, 2f, shadowColor)
+            }
+        }
+        binding.remindersBell.imageTintList = ColorStateList.valueOf(primaryTextColor)
+        binding.todoIcon.imageTintList = ColorStateList.valueOf(primaryTextColor)
+        binding.readabilityScrim.alpha = if (isLight) 1f else 0.55f
+        binding.dayProgressRingView.invalidate()
+    }
+
+    private fun readableTextViews(): List<TextView> = listOfNotNull(
+        binding.clock,
+        binding.date,
+        binding.ringClock,
+        binding.ringDate,
+        binding.weatherText,
+        binding.prayerText,
+        binding.focusModeStatus,
+        binding.tvScreenTime,
+        binding.homeApp1,
+        binding.homeApp2,
+        binding.homeApp3,
+        binding.homeApp4,
+        binding.homeApp5,
+        binding.homeApp6,
+        binding.homeApp7,
+        binding.homeApp8,
+        binding.firstRunTips,
+        binding.setDefaultLauncher,
+    )
+
     private fun setHomeAlignment(horizontalGravity: Int = prefs.homeAlignment) {
-        val verticalGravity = if (prefs.homeBottomAlignment) Gravity.BOTTOM else Gravity.CENTER_VERTICAL
+        val verticalGravity = if (prefs.homeBottomAlignment) Gravity.BOTTOM else Gravity.TOP
         binding.homeAppsLayout.gravity = horizontalGravity or verticalGravity
         binding.dateTimeLayout.gravity = horizontalGravity
         binding.weatherText.gravity = horizontalGravity
@@ -323,7 +411,15 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.homeApp6.gravity = horizontalGravity
         binding.homeApp7.gravity = horizontalGravity
         binding.homeApp8.gravity = horizontalGravity
+        val iconsAlignment = if (horizontalGravity == Gravity.END) Gravity.START else Gravity.END
+        safeBinding?.remindersBellContainer?.layoutParams = (safeBinding?.remindersBellContainer?.layoutParams as? FrameLayout.LayoutParams)?.apply {
+            gravity = iconsAlignment
+        }
+        safeBinding?.todoIconContainer?.layoutParams = (safeBinding?.todoIconContainer?.layoutParams as? FrameLayout.LayoutParams)?.apply {
+            gravity = iconsAlignment
+        }
         positionOverlayText(horizontalGravity)
+        adjustHomeAppsLayoutForTextScale()
     }
 
     private fun populateDateTime() {
@@ -336,28 +432,33 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.date?.isVisible = Constants.DateTime.isDateVisible(prefs.dateTimeVisibility) && !showRingClock
         binding.ringClock.isVisible = showRingClock
         binding.ringDate.isVisible = showRingClock
+        if (binding.clock.isVisible) resetTextClockToSystem(binding.clock)
+        if (binding.ringClock.isVisible) resetTextClockToSystem(binding.ringClock)
         updateDateTimeDisplay()
         if (binding.dateTimeLayout.isVisible) startDateTimeTicker()
         else stopDateTimeTicker()
         positionOverlayText()
+        binding.dateTimeLayout.doOnLayout {
+            if (safeBinding == null) return@doOnLayout
+            positionOverlayText()
+        }
     }
 
     private fun updateDateTimeDisplay() {
         if (!binding.dateTimeLayout.isVisible) return
         val defaultDateFormat = SimpleDateFormat("EEE, d MMM", Locale.getDefault())
         var defaultDateText = defaultDateFormat.format(Date())
+        var ringDateText = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
 
-        if (!prefs.showStatusBar && prefs.clockStyle != Constants.ClockStyle.DAY_RING) {
-            val battery = (requireContext().getSystemService(Context.BATTERY_SERVICE) as BatteryManager)
-                .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            if (battery > 0) {
+        if (!prefs.showStatusBar) {
+            currentBatteryLevel()?.let { battery ->
                 defaultDateText = getString(R.string.day_battery, defaultDateText, battery)
+                ringDateText = getString(R.string.day_battery, ringDateText, battery)
             }
         }
 
         binding.date?.text = defaultDateText.replace(".,", ",")
-        binding.ringDate.text = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
-            .replace(".,", ",")
+        binding.ringDate.text = ringDateText.replace(".,", ",")
         updateDayProgressClock()
     }
 
@@ -375,14 +476,32 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun populateWeather(weather: WeatherData?) {
-        if (!prefs.showWeatherOnHome || weather == null) {
+        if (!prefs.showWeatherOnHome) {
             binding.weatherText?.visibility = View.GONE
+            positionOverlayText()
+            return
+        }
+        if (weather == null) {
+            binding.weatherText?.text = getString(R.string.google_weather_card)
+            binding.weatherText?.visibility = View.VISIBLE
             positionOverlayText()
             return
         }
         binding.weatherText?.text = weather.displayText
         binding.weatherText?.visibility = View.VISIBLE
         positionOverlayText()
+    }
+
+    private fun openGoogleWeather() {
+        val location = prefs.weatherLocationLabel
+            .ifBlank { prefs.weatherLocationQuery }
+            .trim()
+        val query = if (location.isBlank()) "weather" else "weather $location"
+        val uri = android.net.Uri.parse("https://www.google.com/search")
+            .buildUpon()
+            .appendQueryParameter("q", query)
+            .build()
+        startActivity(Intent(Intent.ACTION_VIEW, uri))
     }
 
     private fun populatePrayer(prayerState: PrayerState?) {
@@ -395,66 +514,49 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
         binding.prayerText?.text = prayerState.toOverlayText(requireContext())
         binding.prayerText?.visibility = View.VISIBLE
+        binding.prayerText?.bringToFront()
         positionOverlayText()
         startPrayerTicker()
     }
 
-    private fun populateDailyNotes() {
-        val formattedNotes = formatDailyNotes(prefs.dailyNotesList)
-        val showNotes = prefs.showDailyNotesOnHome
-        binding.dailyNotesCard.isVisible = showNotes
-        if (showNotes) {
-            val isEmpty = formattedNotes.isBlank()
-            binding.dailyNotesText.text = if (isEmpty) {
-                getString(R.string.daily_notes_empty_hint)
-            } else {
-                formattedNotes
-            }
-            binding.dailyNotesText.alpha = if (isEmpty) 0.75f else 1f
-        }
-        positionOverlayText()
-    }
-
-    private fun formatDailyNotes(rawNotes: String): String {
-        return rawNotes
-            .lineSequence()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .joinToString("\n") { note ->
-                if (note.startsWith("- ") || note.startsWith("* ") || note.matches(Regex("\\d+\\..*"))) {
-                    note
+    private fun promptMarkPrayerDone() {
+        val state = currentPrayerState ?: return
+        val prayerName = app.sukun.helper.getPrayerName(requireContext(), state.prayerKey)
+        AlertDialog.Builder(requireContext())
+            .setTitle(prayerName)
+            .setItems(
+                arrayOf(
+                    getString(R.string.prayer_mark_done),
+                    getString(R.string.prayer_mark_missed)
+                )
+            ) { _, which ->
+                if (which == 0) {
+                    prefs.logPrayer(state.prayerKey)
+                    requireContext().showToast(R.string.prayer_marked_prayed)
                 } else {
-                    "- $note"
+                    prefs.unmarkPrayer(state.prayerKey)
+                    requireContext().showToast(R.string.prayer_marked_missed)
                 }
             }
+            .show()
+    }
+
+    private fun updateTodoIconCount() {
+        val show = prefs.showTodoOnHome
+        binding.todoIconContainer.isVisible = show
+        if (!show) return
+        val pending = prefs.todoItemsJson.toTodoList().count { !it.completed }
+        binding.todoIconCount.isVisible = pending > 0
+        if (pending > 0) binding.todoIconCount.text = pending.toString()
+    }
+
+    private fun openTodoList() {
+        if (!prefs.showTodoOnHome) return
+        findNavController().navigate(R.id.action_mainFragment_to_todoFragment)
     }
 
     private fun updateWeatherLayout(horizontalGravity: Int = prefs.homeAlignment) {
         positionOverlayText(horizontalGravity)
-    }
-
-    private fun showDailyNotesEditor() {
-        if (!prefs.showDailyNotesOnHome) return
-        val input = EditText(requireContext()).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or
-                    InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
-                    InputType.TYPE_TEXT_FLAG_MULTI_LINE
-            minLines = 4
-            gravity = Gravity.TOP or Gravity.START
-            setText(prefs.dailyNotesList)
-            setSelection(text?.length ?: 0)
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.daily_notes_list)
-            .setMessage(R.string.daily_notes_hint)
-            .setView(input)
-            .setPositiveButton(R.string.save) { _, _ ->
-                prefs.dailyNotesList = input.text?.toString()?.trim().orEmpty()
-                populateDailyNotes()
-                requireContext().showToast(R.string.daily_notes_saved)
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
     }
 
     private fun updatePrayerLayout(horizontalGravity: Int = prefs.homeAlignment) {
@@ -480,51 +582,65 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun positionOverlayText(horizontalGravity: Int = prefs.homeAlignment) {
-        binding.mainLayout.post {
-            val spacing = 12.dpToPx()
-            val weatherTopMargin = getDateTimeBottom()
-                ?.plus(spacing)
-                ?: 56.dpToPx()
-            updateOverlayLayout(binding.weatherText, horizontalGravity, weatherTopMargin)
+        safeBinding?.mainLayout?.post {
+            val binding = safeBinding ?: return@post
+            try {
+                val spacing = 12.dpToPx()
+                val weatherTopMargin = getDateTimeBottom()
+                    ?.plus(spacing)
+                    ?: 56.dpToPx()
+                updateOverlayLayout(binding.weatherText, horizontalGravity, weatherTopMargin)
 
-            val prayerTopMargin = if (binding.weatherText?.isVisible == true) {
-                val weatherHeight = binding.weatherText?.height ?: 0
-                weatherTopMargin + weatherHeight + spacing
-            } else {
-                weatherTopMargin
-            }
-            updateOverlayLayout(binding.prayerText, horizontalGravity, prayerTopMargin)
+                val prayerTopMargin = if (binding.weatherText?.isVisible == true) {
+                    val weatherHeight = binding.weatherText?.height ?: 0
+                    weatherTopMargin + weatherHeight + spacing
+                } else {
+                    weatherTopMargin
+                }
+                updateOverlayLayout(binding.prayerText, horizontalGravity, prayerTopMargin)
 
-            val focusTopMargin = if (binding.prayerText?.isVisible == true) {
-                val prayerHeight = binding.prayerText?.height ?: 0
-                prayerTopMargin + prayerHeight + spacing
-            } else if (binding.weatherText?.isVisible == true) {
-                val weatherHeight = binding.weatherText?.height ?: 0
-                weatherTopMargin + weatherHeight + spacing
-            } else {
-                weatherTopMargin
-            }
-            updateOverlayLayout(binding.focusModeStatus, horizontalGravity, focusTopMargin)
+                val focusTopMargin = if (binding.prayerText?.isVisible == true) {
+                    val prayerHeight = binding.prayerText?.height ?: 0
+                    prayerTopMargin + prayerHeight + spacing
+                } else if (binding.weatherText?.isVisible == true) {
+                    val weatherHeight = binding.weatherText?.height ?: 0
+                    weatherTopMargin + weatherHeight + spacing
+                } else {
+                    weatherTopMargin
+                }
+                updateOverlayLayout(binding.focusModeStatus, horizontalGravity, focusTopMargin)
 
-            val overlayBottom = when {
-                binding.focusModeStatus.isVisible -> focusTopMargin + binding.focusModeStatus.height
-                binding.prayerText.isVisible -> prayerTopMargin + binding.prayerText.height
-                binding.weatherText.isVisible -> weatherTopMargin + binding.weatherText.height
-                else -> getDateTimeBottom() ?: 0
+                val overlayBottom = when {
+                    binding.focusModeStatus.isVisible -> focusTopMargin + binding.focusModeStatus.height
+                    binding.prayerText.isVisible -> prayerTopMargin + binding.prayerText.height
+                    binding.weatherText.isVisible -> weatherTopMargin + binding.weatherText.height
+                    else -> getDateTimeBottom() ?: 0
+                }
+                val screenTimeBottom = if (binding.tvScreenTime?.isVisible == true) {
+                    binding.tvScreenTime.top + binding.tvScreenTime.height
+                } else {
+                    0
+                }
+                val topOverlayBottom = max(overlayBottom, screenTimeBottom)
+                updateHomeAppsTopPadding(topOverlayBottom + spacing)
+            } catch (_: Throwable) {
+                // View was likely destroyed while this runnable executed; safely ignore
             }
-            val screenTimeBottom = if (binding.tvScreenTime?.isVisible == true) {
-                binding.tvScreenTime.top + binding.tvScreenTime.height
-            } else {
-                0
-            }
-            val notesTopMargin = max(max(overlayBottom, screenTimeBottom) + spacing, 56.dpToPx())
-            updateDailyNotesLayout(notesTopMargin)
         }
     }
 
     private fun getDateTimeBottom(): Int? {
+        val binding = safeBinding ?: return null
         if (!binding.dateTimeLayout.isVisible) return null
-        return binding.dateTimeLayout.top + binding.dateTimeLayout.height
+        val layoutBottom = binding.dateTimeLayout.top + binding.dateTimeLayout.height
+        val visibleClockBottom = when {
+            binding.ringClockLayout.isVisible ->
+                binding.dateTimeLayout.top + binding.ringClockLayout.top + binding.ringClockLayout.height
+            binding.dateTimeStandardLayout.isVisible ->
+                binding.dateTimeLayout.top + binding.dateTimeStandardLayout.top + binding.dateTimeStandardLayout.height
+            else -> layoutBottom
+        }
+        return max(layoutBottom, visibleClockBottom)
     }
 
     private fun updateOverlayLayout(
@@ -539,25 +655,54 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         overlayView.layoutParams = params
     }
 
-    private fun updateDailyNotesLayout(topMargin: Int) {
-        val params = binding.dailyNotesCard.layoutParams as? FrameLayout.LayoutParams ?: return
-        params.gravity = Gravity.TOP or Gravity.END
-        params.topMargin = topMargin
-        binding.dailyNotesCard.layoutParams = params
-        updateHomeAppsTopPadding(topMargin)
+    private fun updateHomeAppsTopPadding(homeAppsMinTop: Int) {
+        binding.homeAppsLayout.setPadding(
+            binding.homeAppsLayout.paddingLeft,
+            max(defaultHomeAppsPaddingTop, homeAppsMinTop),
+            binding.homeAppsLayout.paddingRight,
+            homeAppsBottomPadding(),
+        )
+        adjustHomeAppsLayoutForTextScale()
     }
 
-    private fun updateHomeAppsTopPadding(notesTopMargin: Int) {
-        val notesBottom = if (binding.dailyNotesCard.isVisible) {
-            notesTopMargin + binding.dailyNotesCard.height + 12.dpToPx()
-        } else {
-            defaultHomeAppsPaddingTop
+    private fun homeAppTextViews(): List<TextView> = listOf(
+        binding.homeApp1,
+        binding.homeApp2,
+        binding.homeApp3,
+        binding.homeApp4,
+        binding.homeApp5,
+        binding.homeApp6,
+        binding.homeApp7,
+        binding.homeApp8,
+    )
+
+    private fun homeAppsBottomPadding(): Int = defaultHomeAppsPaddingBottom
+
+    private fun adjustHomeAppsLayoutForTextScale() {
+        if (_binding == null) return
+        val scale = prefs.textSizeScale
+        val defaultItemPadding = resources.getDimensionPixelSize(R.dimen.home_app_padding_vertical)
+        val itemPadding = when {
+            scale >= 1.2f -> (defaultItemPadding * 1.1f).toInt()
+            scale >= 1.1f -> defaultItemPadding
+            else -> defaultItemPadding
+        }
+        val horizontalGravity = prefs.homeAlignment
+        homeAppTextViews().forEach { textView ->
+            textView.maxLines = 1
+            textView.ellipsize = TextUtils.TruncateAt.END
+            textView.gravity = horizontalGravity
+            textView.setPadding(textView.paddingLeft, itemPadding, textView.paddingRight, itemPadding)
+            val lp = textView.layoutParams as? LinearLayout.LayoutParams ?: return@forEach
+            lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
+            lp.weight = 0f
+            textView.layoutParams = lp
         }
         binding.homeAppsLayout.setPadding(
             binding.homeAppsLayout.paddingLeft,
-            max(defaultHomeAppsPaddingTop, notesBottom),
+            binding.homeAppsLayout.paddingTop,
             binding.homeAppsLayout.paddingRight,
-            defaultHomeAppsPaddingBottom
+            homeAppsBottomPadding(),
         )
     }
 
@@ -591,10 +736,64 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             while (isActive) {
                 if (!binding.dateTimeLayout.isVisible) break
                 updateDateTimeDisplay()
-                delay(30000)
+                delay(if (prefs.showStatusBar) 60_000L else 15_000L)
             }
             dateTimeJob = null
         }
+    }
+
+    private fun resetTextClockToSystem(clock: TextClock) {
+        clock.timeZone = java.util.TimeZone.getDefault().id
+    }
+
+    private fun currentBatteryLevel(): Int? {
+        val batteryIntent = requireContext().registerReceiver(
+            null,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+        )
+        if (batteryIntent != null) {
+            val level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+            if (level >= 0 && scale > 0) {
+                return ((level * 100f) / scale).toInt().coerceIn(0, 100)
+            }
+        }
+        val capacity = (requireContext().getSystemService(Context.BATTERY_SERVICE) as BatteryManager)
+            .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        return capacity.takeIf { it in 1..100 }
+    }
+
+    private fun registerSystemTimeReceiver() {
+        unregisterSystemTimeReceiver()
+        if (prefs.showStatusBar || !binding.dateTimeLayout.isVisible) return
+
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_TIME_TICK)
+            addAction(Intent.ACTION_TIME_CHANGED)
+            addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            addAction(Intent.ACTION_BATTERY_CHANGED)
+        }
+        systemTimeReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                updateDateTimeDisplay()
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(systemTimeReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            requireContext().registerReceiver(systemTimeReceiver, filter)
+        }
+    }
+
+    private fun unregisterSystemTimeReceiver() {
+        systemTimeReceiver?.let { receiver ->
+            try {
+                requireContext().unregisterReceiver(receiver)
+            } catch (_: IllegalArgumentException) {
+            }
+        }
+        systemTimeReceiver = null
     }
 
     private fun stopDateTimeTicker() {
@@ -619,6 +818,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 }
                 binding.prayerText?.text = prayerState.toOverlayText(requireContext())
                 binding.prayerText?.isVisible = true
+                binding.prayerText?.bringToFront()
                 positionOverlayText()
                 delay(1000)
             }
@@ -636,10 +836,12 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (requireContext().appUsagePermissionGranted().not()) return
 
         viewModel.getTodaysScreenTime()
-        binding.tvScreenTime?.visibility = View.VISIBLE
 
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val horizontalMargin = if (isLandscape) 64.dpToPx() else 10.dpToPx()
+        val screenTimeOnRight = prefs.homeAlignment != Gravity.END
+        // When on the right, use 64dp end margin so the screen time sits to the left of the bell
+        // (bell is at 14dp end margin, ~44dp wide, so it occupies ~14–58dp from the right edge).
+        val horizontalMargin = if (screenTimeOnRight) 64.dpToPx() else 14.dpToPx()
         val marginTop = if (isLandscape) {
             if (prefs.dateTimeVisibility == Constants.DateTime.DATE_ONLY) 36.dpToPx() else 56.dpToPx()
         } else {
@@ -662,48 +864,66 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private fun populateHomeScreen(appCountUpdated: Boolean) {
         if (appCountUpdated) hideHomeApps()
         populateDateTime()
-        populateDailyNotes()
+        updateTodoIconCount()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             populateScreenTime()
 
-        val homeAppsNum = prefs.homeAppsNum
-        if (homeAppsNum == 0) return
+        val homeAppsNum = prefs.homeAppsNum.coerceAtMost(5)
+        if (homeAppsNum == 0) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp1.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp1, prefs.appName1, prefs.appPackage1, prefs.appActivityClassName1, prefs.appUser1, prefs.isShortcut1, prefs.shortcutId1)) {
             prefs.appName1 = ""
             prefs.appPackage1 = ""
         }
-        if (homeAppsNum == 1) return
+        if (homeAppsNum == 1) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp2.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp2, prefs.appName2, prefs.appPackage2, prefs.appActivityClassName2, prefs.appUser2, prefs.isShortcut2, prefs.shortcutId2)) {
             prefs.appName2 = ""
             prefs.appPackage2 = ""
         }
-        if (homeAppsNum == 2) return
+        if (homeAppsNum == 2) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp3.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp3, prefs.appName3, prefs.appPackage3, prefs.appActivityClassName3, prefs.appUser3, prefs.isShortcut3, prefs.shortcutId3)) {
             prefs.appName3 = ""
             prefs.appPackage3 = ""
         }
-        if (homeAppsNum == 3) return
+        if (homeAppsNum == 3) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp4.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp4, prefs.appName4, prefs.appPackage4, prefs.appActivityClassName4, prefs.appUser4, prefs.isShortcut4, prefs.shortcutId4)) {
             prefs.appName4 = ""
             prefs.appPackage4 = ""
         }
-        if (homeAppsNum == 4) return
+        if (homeAppsNum == 4) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp5.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp5, prefs.appName5, prefs.appPackage5, prefs.appActivityClassName5, prefs.appUser5, prefs.isShortcut5, prefs.shortcutId5)) {
             prefs.appName5 = ""
             prefs.appPackage5 = ""
         }
-        if (homeAppsNum == 5) return
+        if (homeAppsNum == 5) {
+            adjustHomeAppsLayoutForTextScale()
+            return
+        }
 
         binding.homeApp6.visibility = View.VISIBLE
         if (!setHomeAppText(binding.homeApp6, prefs.appName6, prefs.appPackage6, prefs.appActivityClassName6, prefs.appUser6, prefs.isShortcut6, prefs.shortcutId6)) {
@@ -724,6 +944,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             prefs.appName8 = ""
             prefs.appPackage8 = ""
         }
+        adjustHomeAppsLayoutForTextScale()
     }
 
     private fun setHomeAppText(
@@ -839,10 +1060,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             textView.compoundDrawablePadding = 0
             return
         }
-        val iconSize = 24.dpToPx()
+        val iconSize = if (prefs.textSizeScale >= 1.15f) 20.dpToPx() else 24.dpToPx()
         drawable.setBounds(0, 0, iconSize, iconSize)
         textView.setCompoundDrawablesRelative(drawable, null, null, null)
-        textView.compoundDrawablePadding = 12.dpToPx()
+        textView.compoundDrawablePadding = if (prefs.textSizeScale >= 1.15f) 8.dpToPx() else 12.dpToPx()
     }
 
     private fun hideHomeApps() {
@@ -911,17 +1132,56 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun launchApp(appName: String, packageName: String, activityClassName: String?, userString: String) {
-        viewModel.selectedApp(
-            AppModel.App(
-                appLabel = appName,
-                key = null,
-                appPackage = packageName,
-                activityClassName = activityClassName,
-                isNew = false,
-                user = getUserHandleFromString(requireContext(), userString)
-            ),
-            Constants.FLAG_LAUNCH_APP
+        val appModel = AppModel.App(
+            appLabel = appName,
+            key = null,
+            appPackage = packageName,
+            activityClassName = activityClassName,
+            isNew = false,
+            user = getUserHandleFromString(requireContext(), userString)
         )
+        if (viewModel.cooldownManager.isInCooldown(packageName)) {
+            showHomeCooldownWarning(packageName, appName) {
+                viewModel.selectedApp(appModel, Constants.FLAG_LAUNCH_APP)
+            }
+            return
+        }
+        viewModel.selectedApp(appModel, Constants.FLAG_LAUNCH_APP)
+    }
+
+    private fun showHomeCooldownWarning(packageName: String, appName: String, onProceed: () -> Unit) {
+        val cm = viewModel.cooldownManager
+        val openCount = cm.getOpenCount(packageName)
+        val durationMs = cm.getTotalDurationMs(packageName)
+        val cooloffEndsAt = cm.getCooloffEndsAt(packageName)
+        val remaining = ((cooloffEndsAt - System.currentTimeMillis()) / 60_000).coerceAtLeast(1)
+        val durationText = run {
+            val mins = durationMs / 60_000
+            val h = mins / 60; val m = mins % 60
+            if (h > 0) "${h}h ${m}m" else "${m}m"
+        }
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_cooldown_warning, null)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningTitle).text =
+            getString(R.string.cooldown_warning_title, appName)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningStats).text =
+            getString(R.string.cooldown_warning_stats, appName, openCount, durationText)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningRemaining).text =
+            getString(R.string.cooldown_warning_remaining, remaining)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningAck).text =
+            getString(R.string.cooldown_warning_ack, appName)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialogView.findViewById<TextView>(R.id.cooldownOpenAnyway).setOnClickListener {
+            dialog.dismiss(); onProceed()
+        }
+        dialogView.findViewById<TextView>(R.id.cooldownStayFocused).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
     }
 
     private fun homeAppClicked(location: Int) {
@@ -969,22 +1229,31 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
         viewModel.getAppList(includeHiddenApps)
-        try {
-            findNavController().navigate(
-                R.id.action_mainFragment_to_appListFragment,
-                bundleOf(
-                    Constants.Key.FLAG to flag,
-                    Constants.Key.RENAME to rename
-                )
-            )
+        val navController = try {
+            findNavController()
         } catch (e: Exception) {
-            findNavController().navigate(
-                R.id.appListFragment,
-                bundleOf(
-                    Constants.Key.FLAG to flag,
-                    Constants.Key.RENAME to rename
+            null
+        } ?: return
+
+        try {
+            if (navController.currentDestination?.id == R.id.mainFragment) {
+                navController.navigate(
+                    R.id.action_mainFragment_to_appListFragment,
+                    bundleOf(
+                        Constants.Key.FLAG to flag,
+                        Constants.Key.RENAME to rename
+                    )
                 )
-            )
+            } else {
+                navController.navigate(
+                    R.id.appListFragment,
+                    bundleOf(
+                        Constants.Key.FLAG to flag,
+                        Constants.Key.RENAME to rename
+                    )
+                )
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
@@ -1019,34 +1288,16 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
     }
 
-    private fun showStatusBar() {
-        val decorView = activity?.window?.decorView ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            decorView.windowInsetsController?.show(WindowInsets.Type.statusBars())
-        else
-            @Suppress("DEPRECATION", "InlinedApi")
-            decorView.apply {
-                systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            }
-    }
-
-    private fun hideStatusBar() {
-        val decorView = activity?.window?.decorView ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            decorView.windowInsetsController?.hide(WindowInsets.Type.statusBars())
-        else {
-            @Suppress("DEPRECATION")
-            decorView.apply {
-                systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE or View.SYSTEM_UI_FLAG_FULLSCREEN
-            }
-        }
-    }
-
     private fun updateStatusBarVisibility(isFocusModeActive: Boolean = prefs.isFocusModeActive()) {
-        if (isFocusModeActive || !prefs.showStatusBar) {
-            hideStatusBar()
+        val activity = activity ?: return
+        val hideForFocus = isFocusModeActive && prefs.focusModeHideStatusBar
+        val show = !hideForFocus && prefs.showStatusBar
+        applyLauncherStatusBarVisibility(activity, show)
+        if (show) {
+            unregisterSystemTimeReceiver()
         } else {
-            showStatusBar()
+            registerSystemTimeReceiver()
+            updateDateTimeDisplay()
         }
     }
 
@@ -1058,7 +1309,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             setPlainWallpaperByTheme(requireContext(), changedAppTheme)
             viewModel.setWallpaperWorker()
         }
-        requireActivity().recreate()
+        AppCompatDelegate.setDefaultNightMode(prefs.resolveLaunchNightMode())
     }
 
     private fun openScreenTimeDigitalWellbeing() {
@@ -1192,6 +1443,63 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         viewModel.refreshHome(false)
     }
 
+    private fun updateRemindersBellCount() {
+        val showReminders = prefs.showRemindersOnHome
+        binding.remindersBellContainer.isVisible = showReminders
+        if (!showReminders) return
+        val count = prefs.remindersJson.toReminderList().count { it.enabled }
+        binding.remindersBellCount.isVisible = count > 0
+        if (count > 0) {
+            binding.remindersBellCount.text = count.toString()
+        }
+    }
+
+    private fun openReminders() {
+        if (!isAdded) return
+        if (syncFocusModeState()) {
+            requireContext().showToast(R.string.focus_mode_blocked)
+            return
+        }
+        try {
+            findNavController().navigate(R.id.action_mainFragment_to_remindersFragment)
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun openHomeSettings() {
+        if (!isAdded) return
+        if (syncFocusModeState()) {
+            requireContext().showToast(R.string.focus_mode_blocked)
+            return
+        }
+        val navController = try {
+            findNavController()
+        } catch (e: Exception) {
+            null
+        } ?: return
+
+        if (navController.currentDestination?.id == R.id.settingsFragment) return
+
+        val options = navOptions {
+            launchSingleTop = true
+        }
+        try {
+            when (navController.currentDestination?.id) {
+                R.id.mainFragment ->
+                    navController.navigate(R.id.action_mainFragment_to_settingsFragment, null, options)
+
+                R.id.appListFragment ->
+                    navController.navigate(R.id.action_appListFragment_to_settingsFragment2, null, options)
+
+                else ->
+                    navController.navigate(R.id.settingsFragment, null, options)
+            }
+            viewModel.firstOpen(false)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun textOnClick(view: View) = onClick(view)
 
     private fun textOnLongClick(view: View) = onLongClick(view)
@@ -1227,16 +1535,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
             override fun onLongClick() {
                 super.onLongClick()
-                if (syncFocusModeState()) {
-                    requireContext().showToast(R.string.focus_mode_blocked)
-                    return
-                }
-                try {
-                    findNavController().navigate(R.id.action_mainFragment_to_settingsFragment)
-                    viewModel.firstOpen(false)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                openHomeSettings()
             }
 
             override fun onDoubleClick() {
@@ -1304,6 +1603,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     override fun onDestroyView() {
         stopFocusModeTicker()
+        unregisterSystemTimeReceiver()
         super.onDestroyView()
         _binding = null
     }

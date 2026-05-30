@@ -22,6 +22,15 @@
         android:layout_height="1dp"
         android:contentDescription="@string/recents_layout_description" />
 
+    <View
+        android:id="@+id/readabilityScrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/scrimColor"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no" />
+
     <!-- Clock and calendar-->
     <LinearLayout
         android:id="@+id/dateTimeLayout"
@@ -31,6 +40,7 @@
         android:layout_marginTop="48dp"
         android:gravity="center_horizontal"
         android:orientation="vertical"
+        android:elevation="8dp"
         android:visibility="gone"
         tools:visibility="visible">
 
@@ -93,7 +103,7 @@
                     android:format24Hour="HH:mm"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:textSize="34sp"
+                    android:textSize="44sp"
                     tools:text="19:24" />
 
                 <TextView
@@ -121,7 +131,7 @@
         android:maxLines="1"
         android:textSize="@dimen/date_size"
         android:visibility="gone"
-        tools:text="21°C  Lahore, PK"
+        tools:text="Lahore&#10;24°C  Partly cloudy"
         tools:visibility="visible" />
 
     <androidx.appcompat.widget.AppCompatTextView
@@ -151,29 +161,85 @@
         tools:visibility="visible" />
 
     <FrameLayout
-        android:id="@+id/dailyNotesCard"
+        android:id="@+id/remindersBellContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginHorizontal="74dp"
-        android:layout_marginTop="48dp"
-        android:background="@drawable/rounded_rect_shade_color"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp"
+        android:layout_gravity="end"
+        android:layout_marginEnd="14dp"
+        android:layout_marginTop="72dp"
+        android:clickable="true"
+        android:contentDescription="@string/reminders"
+        android:elevation="8dp"
+        android:focusable="true">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/remindersBell"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_rect_shade_color"
+            android:padding="10dp"
+            android:src="@drawable/ic_bell" />
+
+        <TextView
+            android:id="@+id/remindersBellCount"
+            style="@style/TextSmallBold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="2dp"
+            android:background="@drawable/badge_reminder_count"
+            android:gravity="center"
+            android:minWidth="18dp"
+            android:minHeight="18dp"
+            android:paddingHorizontal="4dp"
+            android:textColor="@android:color/black"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="3"
+            tools:visibility="visible" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/todoIconContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginEnd="14dp"
+        android:layout_marginTop="126dp"
+        android:clickable="true"
+        android:contentDescription="@string/todo_list"
+        android:elevation="8dp"
+        android:focusable="true"
         android:visibility="gone"
         tools:visibility="visible">
 
-        <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/dailyNotesText"
-            style="@style/TextSmall"
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/todoIcon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="end"
-            android:maxWidth="200dp"
-            android:maxLines="5"
-            android:textAlignment="viewEnd"
-            android:textSize="@dimen/date_size"
-            tools:text="- Call Mom&#10;- Finish report" />
+            android:background="@drawable/rounded_rect_shade_color"
+            android:padding="10dp"
+            android:src="@drawable/ic_todo" />
+
+        <TextView
+            android:id="@+id/todoIconCount"
+            style="@style/TextSmallBold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="2dp"
+            android:background="@drawable/badge_reminder_count"
+            android:gravity="center"
+            android:minWidth="18dp"
+            android:minHeight="18dp"
+            android:paddingHorizontal="4dp"
+            android:textColor="@android:color/black"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="2"
+            tools:visibility="visible" />
     </FrameLayout>
 
     <!-- Screen time-->

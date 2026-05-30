@@ -1,36 +1,149 @@
-<?xml version="1.0" encoding="utf-8"?><!-- French -->
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app">App</string>
+    <string name="app_name" translatable="false">Sukun</string>
+    <string name="github" translatable="false">Github</string>
+    <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
+    <string name="recents_layout_description" translatable="false">recents layout description to be used a unique id to show recent apps</string>
+    <string name="digital_minimalism" translatable="false" />
+    <string name="day_battery" formatted="false" translatable="false">%s, %d%%</string>
+    <string name="tag_0" translatable="false">0</string>
+    <string name="tag_1" translatable="false">1</string>
+    <string name="tag_2" translatable="false">2</string>
+    <string name="tag_3" translatable="false">3</string>
+    <string name="tag_4" translatable="false">4</string>
+    <string name="tag_5" translatable="false">5</string>
+    <string name="tag_6" translatable="false">6</string>
+    <string name="tag_7" translatable="false">7</string>
+    <string name="tag_8" translatable="false">8</string>
+    <string name="time_spent_min" translatable="false" />
+    <string name="time_spent_hour" translatable="false">%1$sh %2$sm</string>
+    <string name="app">Application</string>
     <string name="set_as_default_launcher">Définir comme lanceur par défaut</string>
-    <string name="set_as_default_launcher_u"><u>Définir comme lanceur par défaut</u></string>
-    <string name="set_as_default_launcher_first">Définir comme lanceur par défaut</string>
+    <string name="set_as_default_launcher_u" />
+    <string name="set_as_default_launcher_first">Définir Sukun par défaut d\'abord</string>
     <string name="app_text_color">Couleur du texte</string>
     <string name="double_tap_to_lock_screen">Double appui pour verrouiller</string>
-    <string name="admin_permission_message">Sukun promet d\'utiliser l\'autorisation d\'écran de verrouillage de manière responsable. Sukun ne collecte ni ne partage aucune donnée.</string>
+    <string name="home_button_show_recents">Bouton accueil pour les récents</string>
+    <string name="admin_permission_message">Sukun s\'engage à utiliser l\'autorisation d\'accessibilité de manière responsable. Sukun ne collecte ni ne partage aucune donnée.</string>
     <string name="about">À propos</string>
     <string name="off">Désactivé</string>
     <string name="on">Activé</string>
     <string name="black">Noir</string>
     <string name="white">Blanc</string>
     <string name="change_default_launcher">Changer le lanceur par défaut</string>
+    <string name="turn_off_sukun_launcher">Désactiver le lanceur Sukun</string>
+    <string name="turn_off_sukun_confirmation">Sukun ne sera plus votre écran d\'accueil. Sur l\'écran suivant, choisissez le lanceur normal de votre téléphone (pas Sukun). Sukun reste installé — ouvrez-le depuis la liste des applications à tout moment.</string>
+    <string name="turn_off_sukun_hint">Ouverture des paramètres de l\'application d\'accueil — choisissez un autre lanceur pour remplacer Sukun</string>
+    <string name="turn_off">Désactiver</string>
     <string name="privacy">Confidentialité</string>
     <string name="share">Partager</string>
-    <string name="share_now">Partager</string>
+    <string name="share_now">Partager maintenant</string>
     <string name="rate">Évaluer</string>
-    <string name="rate_now">Évaluer</string>
+    <string name="rate_now">Évaluer maintenant</string>
     <string name="follow">Suivre</string>
     <string name="email">E-mail</string>
-
-    <string name="donate">Donner</string>
-    <string name="swipe_up_for_apps">1. Balayez vers le haut pour toutes les applications.\n2. Appuyez longuement n\'importe où pour les paramètres.</string>
-    <string name="apps_on_home_screen">Applications sur l\'écran d\'accueil</string>
+    <string name="donate">Faire un don</string>
+    <string name="swipe_up_for_apps">1. Glissez vers le haut pour toutes les apps\n2. Appui long n\'importe où pour les paramètres</string>
+    <string name="apps_on_home_screen">Apps sur l\'écran d\'accueil</string>
+    <string name="show_home_app_icons">Afficher les icônes des apps</string>
+    <string name="daily_notes">Notes quotidiennes</string>
+    <string name="daily_notes_list">Liste de tâches / notes</string>
+    <string name="daily_notes_hint">Ajoutez une tâche ou note par ligne</string>
+    <string name="daily_notes_empty_hint">Appuyez pour ajouter des tâches ou des notes</string>
+    <string name="daily_notes_saved">Tâches / notes mises à jour</string>
+    <string name="focus_mode">Mode concentration</string>
+    <string name="focus_mode_status">Mode concentration actif</string>
+    <string name="focus_mode_blocked">Le mode concentration est actif</string>
+    <string name="focus_mode_enable_accessibility">Activez le service d\'accessibilité de Sukun pour utiliser le mode concentration</string>
+    <string name="focus_until">Jusqu\'à %1$s</string>
+    <string name="focus_time_remaining">%1$s restant</string>
+    <string name="focus_15m">15min</string>
+    <string name="focus_30m">30min</string>
+    <string name="focus_1h">1h</string>
+    <string name="focus_2h">2h</string>
+    <string name="custom">Personnalisé</string>
+    <string name="minutes">Minutes</string>
+    <string name="focus_mode_duration_prompt">Définir la durée du mode concentration</string>
+    <string name="focus_mode_duration_prompt_subtitle">Choisissez combien de temps vous souhaitez que le mode concentration reste actif.</string>
+    <string name="focus_mode_custom_prompt">Durée de concentration personnalisée</string>
+    <string name="focus_mode_custom_prompt_subtitle">Entrez une durée en minutes.</string>
+    <string name="start_focus_mode">Démarrer le mode concentration</string>
+    <string name="cancel">Annuler</string>
+    <string name="focus_mode_lock_notifications">Bloquer les notifications</string>
+    <string name="focus_mode_hide_status_bar">Masquer la barre d\'état</string>
+    <string name="focus_custom_duration_error">Entrez une durée de concentration entre %1$d et %2$d minutes</string>
+    <string name="weather">Météo</string>
+    <string name="weather_source">Source météo</string>
+    <string name="weather_location">Lieu météo</string>
+    <string name="weather_units">Unités météo</string>
+    <string name="manual_location">Manuel</string>
+    <string name="device_location">Appareil</string>
+    <string name="google_weather">Google Météo</string>
+    <string name="google_weather_card">Google Météo
+Appuyez pour ouvrir les prévisions</string>
+    <string name="current_location">Position actuelle</string>
+    <string name="type_city_name">Tapez le nom de la ville</string>
+    <string name="save">Enregistrer</string>
+    <string name="not_set">Non défini</string>
+    <string name="celsius_short">C</string>
+    <string name="fahrenheit_short">F</string>
+    <string name="weather_permission_needed">L\'autorisation de localisation est nécessaire pour la météo de l\'appareil</string>
+    <string name="location_services_disabled">Localisation désactivée — appuyez pour activer</string>
+    <string name="weather_location_required">Définissez d\'abord un lieu météo</string>
+    <string name="weather_saved">Météo mise à jour</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
+    <string name="use_same_location_for_prayer">Utiliser ce lieu pour les horaires de prière aussi ?</string>
+    <string name="use_same_location_for_weather">Utiliser ce lieu pour la météo aussi ?</string>
+    <string name="weather_unavailable">Météo indisponible</string>
+    <string name="prayer_times">Horaires de prière</string>
+    <string name="prayer_next">Prochaine prière</string>
+    <string name="prayer_source">Source de prière</string>
+    <string name="prayer_location">Lieu de prière</string>
+    <string name="prayer_permission_needed">L\'autorisation de localisation est nécessaire pour les horaires de prière de l\'appareil</string>
+    <string name="prayer_location_required">Définissez d\'abord un lieu de prière</string>
+    <string name="prayer_saved">Lieu de prière mis à jour</string>
+    <string name="prayer_exact_alarm_permission_needed">Autorisez les alarmes exactes pour que l\'adhan soit joué à l\'heure</string>
+    <string name="premium_feature_requires_upgrade">Cette fonctionnalité nécessite Sukun Premium</string>
+    <string name="go_premium">Premium</string>
+    <string name="upgrade_to_premium">Mettre à niveau</string>
+    <string name="premium_enabled">Sukun Premium activé</string>
+    <string name="premium_already_active">Sukun Premium est déjà actif</string>
+    <string name="prayer_overlay_text">%1$s  %2$s  %3$s</string>
+    <string name="prayer_reminder">Rappel de prière</string>
+    <string name="prayer_reminder_channel_name">Rappels de prière</string>
+    <string name="prayer_reminder_channel_description">Lecture de l\'adhan et rappels des horaires de prière</string>
+    <string name="playing_azan_for_prayer">Lecture de l\'adhan pour %1$s</string>
+    <string name="prayer_time_now">Heure de prière maintenant</string>
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+    <string name="prayer_mark_done">Prié ✓</string>
+    <string name="prayer_mark_confirm">Marquer %1$s comme priée ?</string>
+    <string name="prayer_marked_prayed">Marquée comme priée</string>
+    <string name="prayer_mark_missed">Manquée ✗</string>
+    <string name="prayer_marked_missed">Marquée comme manquée</string>
+    <string name="prayer_analytics">Statistiques de prière</string>
+    <string name="prayer_today">Aujourd\'hui</string>
+    <string name="prayer_this_month">Ce mois  %1$s</string>
+    <string name="prayer_this_year">Cette année  %1$s</string>
+    <string name="total">Total</string>
+    <string name="azan">Adhan</string>
+    <string name="azan_sound">Son de l\'adhan</string>
+    <string name="azan_sound_makkah">La Mecque</string>
+    <string name="azan_sound_marylebone">Marylebone</string>
+    <string name="custom_azan_file">Fichier adhan personnalisé</string>
+    <string name="prayer_azan_saved">Adhan personnalisé mis à jour</string>
     <string name="daily_wallpaper_update">Nouveau fond d\'écran quotidien</string>
+    <string name="change_wallpaper_now">Changer le fond d\'écran maintenant</string>
     <string name="left">Gauche</string>
     <string name="right">Droite</string>
     <string name="center">Centre</string>
-    <string name="home_layout_alignment">Alignement des applications</string>
-    <string name="swipe_left_app">Balayer vers la gauche</string>
-    <string name="swipe_right_app">Balayer vers la droite</string>
+    <string name="home_layout_alignment">Alignement des apps</string>
+    <string name="swipe_left_app">App en glissant à gauche</string>
+    <string name="swipe_right_app">App en glissant à droite</string>
     <string name="_0">0</string>
     <string name="_1">1</string>
     <string name="_2">2</string>
@@ -40,107 +153,199 @@
     <string name="_6">6</string>
     <string name="_7">7</string>
     <string name="_8">8</string>
-    <string name="app_drawer_tips">Conseil : Commencez à saisir le nom d\'une application pour la lancer automatiquement.</string>
+    <string name="app_drawer_tips">Astuce : Commencez à taper un nom d\'app pour la lancer automatiquement</string>
     <string name="okay">D\'accord</string>
-    <string name="cool">Cool !</string>
-    <string name="auto_show_keyboard">Afficher automatiquement le clavier</string>
-    <string name="hide">Cacher</string>
-    <string name="status_bar">Afficher la barre d\'état</string>
+    <string name="cool">Super !</string>
+    <string name="auto_show_keyboard">Afficher le clavier automatiquement</string>
+    <string name="app_drawer_fast_scroller">Défilement rapide dans le tiroir d\'apps</string>
+    <string name="hide">Masquer</string>
+    <string name="status_bar">Barre d\'état en haut</string>
+    <string name="audio">Audio</string>
+    <string name="hourly_chime">Carillon horaire</string>
+    <string name="hourly_chime_from">De</string>
+    <string name="hourly_chime_to">à</string>
     <string name="rename">Renommer</string>
     <string name="show_date_time">Afficher la date et l\'heure</string>
     <string name="appearance">Apparence</string>
     <string name="gestures">Gestes</string>
-    <string name="theme_mode">Thème d\'affichage</string>
+    <string name="theme_mode">Mode du thème</string>
+    <string name="theme">Thème</string>
+    <string name="settings">Paramètres</string>
+    <string name="home">Accueil</string>
+    <string name="apps">Apps</string>
+    <string name="daily_wallpaper">Fond d\'écran quotidien</string>
+    <string name="prayer">Prière</string>
     <string name="system_default">Système</string>
+    <string name="theme_mode_ambient">Auto (ambiant)</string>
+    <string name="theme_mode_ambient_premium">Auto (ambiant) · Premium</string>
+    <string name="ambient_theme_no_sensor">Cet appareil n\'a pas de capteur de lumière. Le thème Auto (ambiant) n\'est pas disponible.</string>
     <string name="dark">Sombre</string>
     <string name="light">Clair</string>
+    <string name="small">Petit</string>
+    <string name="medium">Moyen</string>
+    <string name="large">Grand</string>
+    <string name="xlarge">Très grand</string>
+    <string name="language">Langue</string>
+    <string name="select_language">Sélectionner la langue</string>
     <string name="welcome_to_sukun_settings">Bienvenue dans les paramètres !
         \n\nN\'oubliez pas, si vous avez des questions, notre page À propos a la réponse.</string>
-    <string name="rate_us_message">Hé, trouvez-vous Sukun utile? Si oui, une note de 5 étoiles est le meilleur moyen de nous soutenir.
-        \n\nMerci, vous ne verrez plus ce message.</string>
-    <string name="share_message">Bonjour, nous avons besoin de votre aide ! L\'année dernière, nous avons franchi le million de téléchargements. Cette année, nous voulons atteindre un million de plus, mais nous ne pouvons pas le faire seuls.
-        \n\nAuriez-vous la gentillesse de partager Sukun avec vos amis, s\'il vous plaît ? Merci et passez une merveilleuse journée!</string>
-    <string name="keyboard_message">Bonjour, le clavier est le moyen le plus rapide de trouver et de lancer des applications dans Sukun. Pouvons-nous vous demander de garder cela activé pendant quelques jours de plus, puis de décider? Le choix vous appartient toujours.</string>
-    <string name="digital_wellbeing_message">Si vous souhaitez définir des limites de temps pour certaines applications, la fonctionnalité Digital Wellbeing d\'Android peut vous aider à le faire.
-        \n\nVeuillez rechercher Digital Wellbeing dans les paramètres de votre téléphone et l\'activer.</string>
-    <string name="app_usage_message">Pour afficher/masquer le temps d\'écran sur l\'écran d\'accueil, autorisez ou refusez l\'autorisation d\'utilisation de l\'application.
-        \n\nRemarque : Aucune donnée d\'utilisation de l\'application n\'est collectée. Tout est traité sur votre appareil.</string>
-    <string name="pro_message">Sukun a également une version pro appelée Pro Launcher. Elle dispose de fonctionnalités supplémentaires telles que la météo, les widgets, les polices, les dossiers, les fonds d\'écran AMOLED, etc.
-        \n\nC\'est aussi le meilleur moyen de soutenir les développeurs d\'Sukun. Jetez-y un œil !</string>
-    <string name="wallpaper_message">Sukun propose de superbes fonds d\'écran nouveaux chaque jour. Donne un nouveau look à ton écran d\'accueil chaque jour, gratuitement!
-        \n\nTu veux essayer?</string>
-    <string name="accessibility_service_description">L\'autorisation d\'accessibilité est requise pour activer le double appui pour verrouiller et le bouton d\'accueil pour afficher les applications récentes. Toutes les données acquises par Sukun via ce service ne quitteront pas votre appareil.</string>
-    <string name="support_sukun_for_free">Soutenez Sukun gratuitement en utilisant notre lien d\'affiliation Amazon.</string>
-    <string name="support_sukun_message">Chaque fois que vous achetez quelque chose en utilisant notre lien, nous recevons une petite commission. Enregistrez le lien et utilisez le chaque fois que vous commandez en ligne. Merci!</string>
+    <string name="rate_us_message">Bonjour, vous ne verrez plus ce message.
+        \n\nSi vous trouvez Sukun utile, pourriez-vous laisser un avis 5 étoiles ? Cela compte énormément pour nous. Merci !</string>
+    <string name="share_message">Nous avons besoin de votre aide ! Nous pensons que tout le monde devrait connaître Sukun et ses avantages, mais nous ne pouvons pas le faire seuls.
+        \n\nPourriez-vous partager Sukun avec vos amis, votre famille et vos abonnés ? Merci pour votre soutien ! ❤</string>
+    <string name="keyboard_message">Bonjour, le clavier est le moyen le plus rapide de trouver et lancer des apps dans Sukun. Pouvons-nous vous demander de le garder activé quelques jours de plus avant de décider ?
+        \n\nLe choix vous appartient toujours.</string>
+    <string name="digital_wellbeing_message">Si vous souhaitez définir des limites de temps pour certaines apps, la fonctionnalité Bien-être numérique d\'Android peut vous aider. Recherchez Bien-être numérique dans les paramètres de votre téléphone et activez-le.</string>
+    <string name="app_usage_message">Pour afficher ou masquer votre temps d\'écran sur l\'écran d\'accueil, autorisez ou refusez l\'autorisation d\'utilisation des apps.
+        \n\nRemarque : Aucune donnée d\'utilisation des apps n\'est collectée. Tout est traité sur votre appareil.</string>
+    <string name="pro_message" />
+    <string name="wallpaper_message">Sukun propose de beaux nouveaux fonds d\'écran chaque jour. Donnez à votre écran d\'accueil un look frais chaque jour, gratuitement !
+        \n\nVous souhaitez l\'essayer ?</string>
+    <string name="accessibility_service_description">L\'autorisation d\'accessibilité est requise pour activer le double appui pour verrouiller et le bouton d\'accueil pour afficher les apps récentes. Aucune donnée acquise par Sukun via ce service ne quittera votre appareil.</string>
+    <string name="support_sukun_for_free">Soutenez Sukun gratuitement en utilisant notre lien affilié Amazon.</string>
+    <string name="support_sukun_message">Chaque fois que vous achetez quelque chose via notre lien, nous recevons une petite commission. Veuillez enregistrer le lien et l\'utiliser lorsque vous faites des achats en ligne.\nMerci !</string>
     <string name="open">Ouvrir le lien</string>
     <string name="copy">Copier</string>
     <string name="close">Fermer</string>
-    <string name="not_now">Plus tard</string>
-    <string name="public_roadmap">Feuille de route publique d\'Sukun</string>
+    <string name="stop">Arrêter</string>
+    <string name="change">Modifier</string>
+    <string name="not_now">Pas maintenant</string>
+    <string name="public_roadmap">Feuille de route publique de Sukun</string>
     <string name="instagram">Instagram</string>
-    <string name="twitter">Twitter</string>
+    <string name="twitter">Développeur</string>
     <string name="roadmap">Feuille de route</string>
     <string name="date">Date</string>
     <string name="date_only">Date uniquement</string>
+    <string name="clock_style">Style d\'horloge</string>
+    <string name="clock_style_standard">Standard</string>
+    <string name="clock_style_day_ring">Anneau du jour</string>
+    <string name="day_start_hour">Heure de début de journée</string>
+    <string name="day_end_hour">Heure de fin de journée</string>
+    <string name="day_start_hour_title">Définir l\'heure de début de journée</string>
+    <string name="day_end_hour_title">Définir l\'heure de fin de journée</string>
+    <string name="clock_hour_hint">Heure</string>
+    <string name="clock_hour_format">%1$02d:00</string>
+    <string name="day_start_hour_error">Entrez une heure de début de 0 à 23, antérieure à l\'heure de fin</string>
+    <string name="day_end_hour_error">Entrez une heure de fin de 1 à 24, postérieure à l\'heure de début</string>
     <string name="bottom_on">Bas : Activé</string>
     <string name="bottom_off">Bas : Désactivé</string>
-    <string name="please_set_sukun_as_default_first">Veuillez d\'abord définir Sukun comme lanceur par défaut.</string>
-    <string name="affiliate">Affilier</string>
-    <string name="tip_start_typing_for_rename">Conseil : Commencez à écrire pour faire apparaitre l\'option RENOMMER.</string>
-    <string name="hidden_apps_message">Remarque : Appuyez sur \"Sukun\" en haut de cette page pour trouver vos applications cachées.\n\nPlus de détails sont disponibles dans notre page \"À propos\" ci-dessous.</string>
-    <string name="swipe_down_for">Balayer vers le bas pour</string>
+    <string name="please_set_sukun_as_default_first">Veuillez d\'abord définir Sukun par défaut</string>
+    <string name="affiliate">Affilié</string>
+    <string name="tip_start_typing_for_rename">Astuce : Commencez à taper pour l\'option RENOMMER l\'app</string>
+    <string name="hidden_apps_message">Remarque : Appuyez sur \'Sukun\' en haut de cette page de Paramètres pour trouver vos apps masquées.\n\nPlus de détails disponibles sur notre page À propos.</string>
+    <string name="swipe_down_for">Glisser vers le bas pour</string>
+    <string name="double_tap_action">Action du double appui</string>
+    <string name="lock">Verrouiller</string>
+    <string name="focus">Concentration</string>
     <string name="search">Rechercher</string>
     <string name="notifications">Notifications</string>
-    <string name="accessibility_disclosure">Veuillez activer le service d\'accessibilité d\'Sukun dans les paramètres de votre appareil pour utiliser les gestes Double appui pour verrouiller ou Bouton d\'accueil pour les applications récentes.\n\nVeuillez noter que ce service est utilisé uniquement pour ces gestes. Notre service d\'accessibilité ne collecte ni ne partage aucune donnée.</string>
+    <string name="accessibility_disclosure">Veuillez activer le service d\'accessibilité de Sukun dans les paramètres de votre appareil pour activer les gestes de double appui pour verrouiller ou bouton d\'accueil pour les apps récentes.
+    \n\nVeuillez noter que ce service n\'est utilisé que pour ces gestes. Notre service d\'accessibilité ne collecte ni ne partage aucune donnée.</string>
     <string name="accept">Accepter</string>
     <string name="permission">Autorisation</string>
-    <string name="double_tap_lock">Appuyer deux fois pour verrouiller</string>
-    <string name="home_button_show_recents">Bouton d\'accueil pour les récents</string>
+    <string name="double_tap_lock">Double appui pour verrouiller</string>
     <string name="enable">Activer</string>
     <string name="disable">Désactiver</string>
-    <string name="not_working"><u>Ne fonctionne pas?</u></string>
-    <string name="info">Info</string>
-    <string name="delete">Supprimer</string>
+    <string name="not_working" />
+    <string name="info">Informations</string>
+    <string name="delete">Désinstaller</string>
     <string name="text_size">Taille du texte</string>
     <string name="enabled">Activé</string>
     <string name="disabled">Désactivé</string>
-    <string name="please_turn_on_double_tap_to_unlock">Veuillez appuyer deux fois pour verrouiller.</string>
-    <string name="launcher_failed_to_lock_device">Sukun n\'a pas réussi à verrouiller le téléphone.
-        Veuillez vérifier les paramètres de votre application.</string>
-    <string name="long_press_to_select_app">Appuyez longuement pour sélectionner une application.</string>
-    <string name="unable_to_open_app">Impossible d\'ouvrir les informations sur l\'application</string>
+    <string name="please_turn_on_double_tap_to_unlock">Veuillez activer le double appui pour verrouiller</string>
+    <string name="launcher_failed_to_lock_device">Sukun n\'a pas pu verrouiller l\'appareil.\nVeuillez vérifier les paramètres de l\'app.</string>
+    <string name="long_press_to_select_app">Appui long pour sélectionner l\'app</string>
+    <string name="unable_to_open_app">Impossible d\'ouvrir l\'app</string>
     <string name="copied">Copié</string>
-    <string name="system_app_cannot_delete">Application système, impossible de supprimer</string>
-    <string name="type_a_new_app_name_first">Tapez d\'abord un nouveau nom d\'application.</string>
-    <string name="app_not_found">Application introuvable</string>
-    <string name="unable_to_launch_app">Impossible de lancer l\'application</string>
-    <string name="search_for_Launcher_or_home_app">Rechercher l\'application Launcher ou Home</string>
-    <string name="swipe_left_app_enabled">Balayage vers la gauche activé</string>
-    <string name="swipe_right_app_enabled">Balayage vers la droite activée</string>
-    <string name="swipe_left_app_disabled">Balayage vers la gauche désactivé</string>
-    <string name="swipe_right_app_disabled">Balayage vers la droite désactivé</string>
-    <string name="your_wallpaper_will_update_shortly">Votre fond d\'écran sera bientôt mis à jour.</string>
-    <string name="sukun_is_not_default_launcher">Sukun n\'est pas le lanceur par défaut.
-        La mise à jour quotidienne du fond d\'écran peut échouer.</string>
-    <string name="long_press_to_enable">Appuyez longuement pour activer.</string>
-    <string name="no_hidden_apps">Aucune application cachées</string>
-    <string name="hidden_apps">Applications cachées</string>
+    <string name="system_app_cannot_delete">App système, impossible de désinstaller</string>
+    <string name="type_a_new_app_name_first">Tapez d\'abord un nouveau nom d\'app</string>
+    <string name="app_not_found">App introuvable</string>
+    <string name="unable_to_launch_app">Impossible de lancer l\'app</string>
+    <string name="search_for_Launcher_or_home_app">Recherchez Lanceur ou app d\'accueil</string>
+    <string name="swipe_left_app_enabled">App en glissant à gauche activée</string>
+    <string name="swipe_right_app_enabled">App en glissant à droite activée</string>
+    <string name="swipe_left_app_disabled">App en glissant à gauche désactivée</string>
+    <string name="swipe_right_app_disabled">App en glissant à droite désactivée</string>
+    <string name="your_wallpaper_will_update_shortly">Votre fond d\'écran sera mis à jour sous peu</string>
+    <string name="sukun_is_not_default_launcher">Sukun n\'est pas le lanceur par défaut. La mise à jour du fond d\'écran échouera.</string>
+    <string name="long_press_to_enable">Appui long pour activer</string>
+    <string name="no_hidden_apps">Aucune app masquée</string>
+    <string name="hidden_apps">Apps masquées</string>
     <string name="adapter_show">Afficher</string>
     <string name="adapter_hide">Masquer</string>
-    <string name="are_you_using_your_phone_or_is_your_phone_using_you">Utilisez-vous votre téléphone, ou votre téléphone vous utilise-t-il?</string>
-    <string name="about_sukun">À propos Sukun</string>
-    <string name="learn_more">Apprendre encore plus</string>
+    <string name="are_you_using_your_phone_or_is_your_phone_using_you">Utilisez-vous votre téléphone, ou votre téléphone vous utilise-t-il ?</string>
+    <string name="about_sukun">À propos et FAQ</string>
     <string name="screen_time">Temps d\'écran</string>
-    <string name="did_you_know">Saviez-vous?</string>
-    <string name="leave_a_review">Laisser un commentaire</string>
-    <string name="review_message">Sukun est et sera toujours entièrement gratuit. Il n\'y a pas de publicité. Il ne collecte aucune donnée. Plus important encore, cela vous aide à réduire votre temps d’écran et à vivre une vie numérique plus saine.
-        \n\nNous pensons que passer à un lanceur minimal est une excellente décision. Même si nous sommes évidemment partiaux, nous espérons que vous appréciez l\'expérience. N\'hésitez pas à partager vos idées avec nous!</string>
-    <string name="alignment_changed">Alignement changé ✅</string>
+    <string name="recently_used">Récemment utilisées</string>
+    <string name="all_apps">Toutes les apps</string>
+    <string name="learn_more">En savoir plus</string>
+    <string name="did_you_know">Le saviez-vous ?</string>
+    <string name="leave_a_review">Laisser un avis</string>
+    <string name="review_message">Sukun est gratuit et le restera toujours. Il n\'a pas de publicités, ne collecte aucune donnée et réduit votre temps d\'écran, ce qui mène à une vie plus saine.
+        \n\nNous espérons que vous l\'appréciez. Dites-nous ce que vous en pensez.</string>
+    <string name="alignment_changed">Alignement modifié ✅</string>
     <string name="home_screen">Écran d\'accueil</string>
-    <string name="hey">Salut</string>
-    <string name="more_features">Plus de fonctionnalités…</string>
-    <string name="new_year_wish">À une année meilleure que toutes les précédentes. Bonne année !</string>
-    <string name="new_year_wish_1">" Peu importe comment s'est passé le mois de janvier. Tu as encore le reste de l'année pour faire mieux que jamais."</string>
-    <string name="cheers">Santé!</string>
+    <string name="focus_and_productivity">Concentration et productivité</string>
+    <string name="hey">Bonjour</string>
+    <string name="more_features" />
+    <string name="new_year_wish">Que cette année soit meilleure que toutes les précédentes. Bonne année !</string>
+    <string name="new_year_wish_1">Peu importe comment janvier s\'est passé. Vous avez encore le reste de l\'année pour faire mieux que jamais.</string>
+    <string name="cheers">Santé !</string>
     <string name="notification_bar">Barre de notifications</string>
-</resources><!-- French -->
+    <string name="private_space">Espace privé</string>
+    <string name="reminders">Rappels</string>
+    <string name="manage_reminders">Gérer les rappels</string>
+    <string name="manage">Gérer</string>
+    <string name="add_reminder">+ Ajouter</string>
+    <string name="no_reminders">Aucun rappel pour l\'instant.\nAppuyez sur + Ajouter pour en créer un.</string>
+    <string name="reminder_title_hint">Titre</string>
+    <string name="reminder_message_hint">Message</string>
+    <string name="reminder_schedule">Planifier</string>
+    <string name="schedule_daily">Quotidien</string>
+    <string name="schedule_hourly">Toutes les heures</string>
+    <string name="schedule_weekly">Jours</string>
+    <string name="reminder_time">Heure</string>
+    <string name="reminder_repeat_every">Répéter toutes les</string>
+    <string name="reminder_interval_1h">1 heure</string>
+    <string name="reminder_interval_nh">%1$d heures</string>
+    <string name="day_sun">Di</string>
+    <string name="day_mon">Lu</string>
+    <string name="day_tue">Ma</string>
+    <string name="day_wed">Me</string>
+    <string name="day_thu">Je</string>
+    <string name="day_fri">Ve</string>
+    <string name="day_sat">Sa</string>
+    <string name="delete_reminder_confirm">Supprimer « %1$s » ?</string>
+    <string name="reminder_delete">Supprimer</string>
+    <string name="reminder_added">Rappel ajouté</string>
+    <string name="reminder_updated">Rappel mis à jour</string>
+    <string name="reminder_deleted">Rappel supprimé</string>
+    <string name="reminder_title_required">Veuillez entrer un titre</string>
+    <string name="reminder_days_required">Veuillez sélectionner au moins un jour</string>
+    <string name="reminder_exact_alarm_needed">Autorisez les alarmes exactes pour une planification précise des rappels</string>
+    <string name="reminder_notifications_needed">Activez les notifications pour recevoir les rappels</string>
+    <string name="reminder_channel_name">Rappels</string>
+    <string name="reminder_channel_description">Notifications de rappels personnalisés</string>
+    <string name="reminder_done">Terminé</string>
+    <string name="reminder_stats">%1$d/%2$d effectués (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Limite</string>
+    <string name="cooldown_warning_title">%1$s est en pause</string>
+    <string name="cooldown_warning_stats">Vous avez ouvert %1$s %2$d fois aujourd\'hui et l\'avez utilisé pendant %3$s.</string>
+    <string name="cooldown_warning_remaining">Pause active : %1$d min restantes.</string>
+    <string name="cooldown_warning_ack">Je comprends qu\'il est important d\'utiliser %1$s avec modération.</string>
+    <string name="cooldown_open_anyway">Ouvrir quand même</string>
+    <string name="cooldown_stay_focused">Rester concentré</string>
+    <string name="cooldown_config_title">Définir une limite pour %1$s</string>
+    <string name="cooldown_config_subtitle">Définissez des limites quotidiennes. Une pause commence dès qu\'une limite est atteinte. Laissez un champ vide pour désactiver cette limite.</string>
+    <string name="cooldown_config_opens_label">Ouvertures max par jour (0 = désactivé)</string>
+    <string name="cooldown_config_opens_hint">ex. 5</string>
+    <string name="cooldown_config_duration_label">Utilisation max par jour (minutes, 0 = désactivé)</string>
+    <string name="cooldown_config_duration_hint">ex. 30</string>
+    <string name="cooldown_config_cooloff_label">Période de pause (minutes)</string>
+    <string name="cooldown_config_cooloff_hint">ex. 30</string>
+    <string name="cooldown_config_save">Enregistrer</string>
+    <string name="cooldown_config_remove">Supprimer la limite</string>
+    <string name="cooldown_no_limits_set">Définissez au moins une limite (ouvertures ou durée)</string>
+</resources>

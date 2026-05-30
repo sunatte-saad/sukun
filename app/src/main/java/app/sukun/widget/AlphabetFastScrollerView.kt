@@ -7,6 +7,8 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+
+import android.graphics.Typeface
 import app.sukun.R
 import app.sukun.helper.getColorFromAttr
 
@@ -18,7 +20,7 @@ class AlphabetFastScrollerView @JvmOverloads constructor(
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
-        typeface = android.graphics.Typeface.DEFAULT_BOLD
+        typeface = Typeface.DEFAULT_BOLD
     }
 
     private var sections: List<String> = emptyList()
@@ -56,9 +58,10 @@ class AlphabetFastScrollerView @JvmOverloads constructor(
         sections.forEachIndexed { index, section ->
             val isSelected = index == selectedIndex
             textPaint.textSize = if (isSelected) selectedTextSize else defaultTextSize
-            textPaint.color = context.getColorFromAttr(
-                if (isSelected) R.attr.primaryColor else R.attr.primaryColorTrans50
-            )
+            textPaint.color = if (isSelected) 
+                context.getColorFromAttr(R.attr.primaryColor) 
+            else 
+                context.getColorFromAttr(R.attr.primaryColorTrans50)
             val centerY = slotHeight * index + slotHeight / 2f
             val baseline = centerY - (textPaint.descent() + textPaint.ascent()) / 2f
             canvas.drawText(section, centerX, baseline, textPaint)

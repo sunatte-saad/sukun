@@ -10,10 +10,11 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
-/build
+build/
 /captures
 /app/release
 .externalNativeBuild
 .cxx
 google-services.json
 *.md
+!CHANGELOG.md

@@ -1,12 +1,17 @@
 package app.sukun.ui
 
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -17,11 +22,13 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Recycler
 import app.sukun.MainViewModel
 import app.sukun.R
+import app.sukun.data.AppCooldownConfig
 import app.sukun.data.AppModel
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.databinding.FragmentAppDrawerBinding
 import app.sukun.helper.deletePinnedShortcut
+import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hideKeyboard
 import app.sukun.helper.isEinkDisplay
 import app.sukun.helper.isPrivateSpaceProfile
@@ -42,6 +49,7 @@ class AppDrawerFragment : Fragment() {
     private var flag = Constants.FLAG_LAUNCH_APP
     private var canRename = false
     private var currentAppList: List<AppModel>? = null
+    private var currentRecentPackages: List<String> = emptyList()
     private var currentPrivateSpaceApps: List<AppModel>? = null
     private var currentPrivateSpaceLocked: Boolean = true
     private var currentPrivateSpaceAvailable: Boolean = false
@@ -80,13 +88,20 @@ class AppDrawerFragment : Fragment() {
     }
 
     private fun initViews() {
+        binding.appRename.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
+        binding.appRename.setShadowLayer(4f, 0f, 2f, requireContext().getColorFromAttr(R.attr.primaryTextShadowColor))
         if (flag == Constants.FLAG_HIDDEN_APPS)
             binding.search.queryHint = getString(R.string.hidden_apps)
         else if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_CALENDAR_APP)
             binding.search.queryHint = "Please select an app"
         try {
             val searchTextView = binding.search.findViewById<TextView>(R.id.search_src_text)
-            if (searchTextView != null) searchTextView.gravity = prefs.appLabelAlignment
+            if (searchTextView != null) {
+                searchTextView.gravity = prefs.appLabelAlignment
+                searchTextView.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
+                searchTextView.setHintTextColor(requireContext().getColorFromAttr(R.attr.primaryColorTrans50))
+                searchTextView.setShadowLayer(4f, 0f, 2f, requireContext().getColorFromAttr(R.attr.primaryTextShadowColor))
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -128,6 +143,15 @@ class AppDrawerFragment : Fragment() {
                 updateFastScroller()
             },
             appClickListener = { appModel ->
+                if (flag == Constants.FLAG_LAUNCH_APP && appModel is AppModel.App
+                    && viewModel.cooldownManager.isInCooldown(appModel.appPackage)
+                ) {
+                    showCooldownWarningDialog(appModel) {
+                        viewModel.selectedApp(appModel, flag)
+                        findNavController().popBackStack(R.id.mainFragment, false)
+                    }
+                    return@AppDrawerAdapter
+                }
                 viewModel.selectedApp(appModel, flag)
                 if (flag == Constants.FLAG_LAUNCH_APP || flag == Constants.FLAG_HIDDEN_APPS)
                     findNavController().popBackStack(R.id.mainFragment, false)
@@ -145,6 +169,7 @@ class AppDrawerFragment : Fragment() {
             appDeleteListener = { appModel ->
                 when (appModel) {
                     is AppModel.PrivateSpaceHeader -> {}
+                    is AppModel.SectionHeader -> {}
                     is AppModel.PinnedShortcut ->
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
                             requireContext().deletePinnedShortcut(
@@ -211,6 +236,9 @@ class AppDrawerFragment : Fragment() {
             privateSpaceSettingsListener = {
                 viewModel.openPrivateSpaceSettings()
                 findNavController().popBackStack(R.id.mainFragment, false)
+            },
+            appCooldownLimitListener = { appModel ->
+                if (appModel is AppModel.App) showCooldownConfigDialog(appModel)
             }
         )
 
@@ -257,6 +285,10 @@ class AppDrawerFragment : Fragment() {
                 currentAppList = it
                 updateCombinedAppList()
             }
+            viewModel.recentAppPackages.observe(viewLifecycleOwner) {
+                currentRecentPackages = it ?: emptyList()
+                updateCombinedAppList()
+            }
             if (flag == Constants.FLAG_LAUNCH_APP) {
                 viewModel.privateSpaceAvailable.observe(viewLifecycleOwner) {
                     currentPrivateSpaceAvailable = it
@@ -276,7 +308,22 @@ class AppDrawerFragment : Fragment() {
 
     private fun updateCombinedAppList() {
         val apps = currentAppList ?: return
-        val combined = apps.toMutableList()
+        val combined = mutableListOf<AppModel>()
+
+        if (flag == Constants.FLAG_LAUNCH_APP) {
+            val firstByPackage = apps
+                .filterIsInstance<AppModel.App>()
+                .groupBy { it.appPackage }
+                .mapValues { (_, items) -> items.first() }
+
+            val recentApps = currentRecentPackages.mapNotNull { firstByPackage[it] }
+            if (recentApps.isNotEmpty()) {
+                combined.add(AppModel.SectionHeader(getString(R.string.recently_used)))
+                combined.addAll(recentApps)
+            }
+            combined.add(AppModel.SectionHeader(getString(R.string.all_apps)))
+        }
+        combined.addAll(apps)
 
         if (flag == Constants.FLAG_LAUNCH_APP && currentPrivateSpaceAvailable) {
             combined.add(AppModel.PrivateSpaceHeader(isLocked = currentPrivateSpaceLocked))
@@ -285,6 +332,7 @@ class AppDrawerFragment : Fragment() {
             }
         }
 
+        adapter.updateCooledOff(viewModel.cooldownManager.getCooledOffPackages())
         adapter.setAppList(combined)
         adapter.filter.filter(binding.search.query)
     }
@@ -348,6 +396,109 @@ class AppDrawerFragment : Fragment() {
         }
     }
 
+    private fun showCooldownWarningDialog(appModel: AppModel.App, onProceed: () -> Unit) {
+        val cm = viewModel.cooldownManager
+        val openCount = cm.getOpenCount(appModel.appPackage)
+        val durationMs = cm.getTotalDurationMs(appModel.appPackage)
+        val cooloffEndsAt = cm.getCooloffEndsAt(appModel.appPackage)
+        val remaining = ((cooloffEndsAt - System.currentTimeMillis()) / 60_000).coerceAtLeast(1)
+
+        val durationText = formatDuration(durationMs)
+        val appName = appModel.appLabel
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_cooldown_warning, null)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningTitle).text =
+            getString(R.string.cooldown_warning_title, appName)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningStats).text =
+            getString(R.string.cooldown_warning_stats, appName, openCount, durationText)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningRemaining).text =
+            getString(R.string.cooldown_warning_remaining, remaining)
+        dialogView.findViewById<TextView>(R.id.cooldownWarningAck).text =
+            getString(R.string.cooldown_warning_ack, appName)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+
+        dialogView.findViewById<TextView>(R.id.cooldownOpenAnyway).setOnClickListener {
+            dialog.dismiss()
+            onProceed()
+        }
+        dialogView.findViewById<TextView>(R.id.cooldownStayFocused).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
+    }
+
+    private fun showCooldownConfigDialog(appModel: AppModel.App) {
+        val cm = viewModel.cooldownManager
+        val existing = cm.getConfig(appModel.appPackage)
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_cooldown_config, null)
+        val etOpens = dialogView.findViewById<EditText>(R.id.etCooldownOpens)
+        val etDuration = dialogView.findViewById<EditText>(R.id.etCooldownDuration)
+        val etCooloff = dialogView.findViewById<EditText>(R.id.etCooldownCooloff)
+
+        if (existing != null) {
+            if (existing.maxOpens > 0) etOpens.setText(existing.maxOpens.toString())
+            if (existing.maxDurationMinutes > 0) etDuration.setText(existing.maxDurationMinutes.toString())
+            etCooloff.setText(existing.cooloffMinutes.toString())
+        } else {
+            etCooloff.setText("30")
+        }
+
+        dialogView.findViewById<TextView>(R.id.cooldownConfigTitle).text =
+            getString(R.string.cooldown_config_title, appModel.appLabel)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+
+        dialogView.findViewById<TextView>(R.id.cooldownConfigSave).setOnClickListener {
+            val maxOpens = etOpens.text?.toString()?.trim()?.toIntOrNull() ?: 0
+            val maxDurationMins = etDuration.text?.toString()?.trim()?.toIntOrNull() ?: 0
+            val cooloffMins = etCooloff.text?.toString()?.trim()?.toIntOrNull() ?: 30
+
+            if (maxOpens == 0 && maxDurationMins == 0) {
+                requireContext().showToast(getString(R.string.cooldown_no_limits_set))
+                return@setOnClickListener
+            }
+
+            cm.setConfig(AppCooldownConfig(
+                packageName = appModel.appPackage,
+                maxOpens = maxOpens,
+                maxDurationMinutes = maxDurationMins,
+                cooloffMinutes = cooloffMins.coerceAtLeast(1)
+            ))
+            adapter.updateCooledOff(cm.getCooledOffPackages())
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<TextView>(R.id.cooldownConfigRemove).setOnClickListener {
+            cm.removeConfig(appModel.appPackage)
+            adapter.updateCooledOff(cm.getCooledOffPackages())
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<TextView>(R.id.cooldownConfigCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun formatDuration(ms: Long): String {
+        val totalMinutes = ms / 60_000
+        val hours = totalMinutes / 60
+        val minutes = totalMinutes % 60
+        return when {
+            hours > 0 -> "${hours}h ${minutes}m"
+            else -> "${minutes}m"
+        }
+    }
+
     private fun checkMessageAndExit() {
         findNavController().popBackStack()
         if (flag == Constants.FLAG_LAUNCH_APP)
@@ -357,6 +508,15 @@ class AppDrawerFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         binding.search.showKeyboard(prefs.autoShowKeyboard)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (flag == Constants.FLAG_HIDDEN_APPS) {
+            viewModel.getHiddenApps()
+        } else {
+            viewModel.getAppList()
+        }
     }
 
     override fun onStop() {

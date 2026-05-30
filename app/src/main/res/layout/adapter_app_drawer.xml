@@ -14,7 +14,8 @@
         android:maxLines="1"
         android:paddingHorizontal="24dp"
         android:paddingVertical="@dimen/app_padding_vertical"
-        android:text="@string/app" />
+        android:text="@string/app"
+        android:textColor="?attr/primaryColor" />
 
     <ImageView
         android:id="@+id/otherProfileIndicator"
@@ -27,13 +28,14 @@
         android:src="@drawable/ic_rounded"
         app:tint="?attr/primaryColor" />
 
+
     <LinearLayout
         android:id="@+id/appHideLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginVertical="1dp"
         android:animateLayoutChanges="true"
-        android:background="?attr/primaryShadeDarkColor"
+        android:background="?attr/primaryInverseColor"
         android:clickable="true"
         android:focusable="true"
         android:gravity="end|center_vertical"
@@ -52,7 +54,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/delete"
+            android:textColor="?attr/primaryColor"
             android:textSize="12sp"
+            app:drawableTint="?attr/primaryColor"
             app:drawableTopCompat="@drawable/ic_delete" />
 
         <TextView
@@ -67,7 +71,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/rename"
+            android:textColor="?attr/primaryColor"
             android:textSize="12sp"
+            app:drawableTint="?attr/primaryColor"
             app:drawableTopCompat="@drawable/ic_rename" />
 
         <TextView
@@ -82,7 +88,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/hide"
+            android:textColor="?attr/primaryColor"
             android:textSize="12sp"
+            app:drawableTint="?attr/primaryColor"
             app:drawableTopCompat="@drawable/ic_hide" />
 
         <TextView
@@ -97,8 +105,27 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/info"
+            android:textColor="?attr/primaryColor"
             android:textSize="12sp"
+            app:drawableTint="?attr/primaryColor"
             app:drawableTopCompat="@drawable/ic_info" />
+
+        <TextView
+            android:id="@+id/appCooldownLimit"
+            style="@style/TextSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:drawablePadding="2dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingHorizontal="8dp"
+            android:text="@string/cooldown_limit"
+            android:textColor="?attr/primaryColor"
+            android:textSize="12sp"
+            app:drawableTint="?attr/primaryColor"
+            app:drawableTopCompat="@drawable/ic_bell" />
 
         <TextView
             android:id="@+id/appMenuClose"
@@ -112,7 +139,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/close"
+            android:textColor="?attr/primaryColor"
             android:textSize="12sp"
+            app:drawableTint="?attr/primaryColor"
             app:drawableTopCompat="@drawable/ic_close" />
 
     </LinearLayout>
@@ -125,6 +154,7 @@
         android:clickable="true"
         android:focusable="true"
         android:gravity="end|center_vertical"
+        android:background="?attr/primaryInverseColor"
         android:orientation="horizontal"
         android:visibility="gone"
         tools:visibility="gone">
@@ -143,6 +173,7 @@
             android:maxLength="30"
             android:maxLines="1"
             android:paddingVertical="@dimen/app_padding_vertical"
+            android:textColor="?attr/primaryColor"
             android:textColorHint="?attr/primaryColorTrans50" />
 
         <TextView
@@ -157,7 +188,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/rename"
+            android:textColor="?attr/primaryColor"
             android:textSize="12sp"
+            app:drawableTint="?attr/primaryColor"
             app:drawableTopCompat="@drawable/ic_check" />
 
         <TextView
@@ -171,7 +204,9 @@
             android:maxLines="1"
             android:paddingHorizontal="8dp"
             android:text="@string/close"
+            android:textColor="?attr/primaryColor"
             android:textSize="12sp"
+            app:drawableTint="?attr/primaryColor"
             app:drawableTopCompat="@drawable/ic_close" />
     </LinearLayout>
 

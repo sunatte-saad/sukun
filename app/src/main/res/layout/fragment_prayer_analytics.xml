@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/scrimColor">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginVertical="8dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:fadingEdgeLength="48dp"
+        android:overScrollMode="never"
+        android:requiresFadingEdge="vertical"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            android:paddingVertical="64dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:background="@drawable/rounded_rect_shade_color"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    style="@style/TextLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="@string/prayer_analytics"
+                    android:textColor="?attr/primaryColor" />
+
+                <!-- TODAY -->
+                <TextView
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingVertical="4dp"
+                    android:text="@string/prayer_today"
+                    android:textColor="?attr/primaryColor" />
+
+                <TextView
+                    android:id="@+id/tvTodayStats"
+                    style="@style/TextSmallBold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="16dp"
+                    android:paddingVertical="4dp"
+                    tools:text="Fajr ✓\nDhuhr ✓\nAsr ✓\nMaghrib –\nIsha –" />
+
+                <!-- THIS MONTH -->
+                <TextView
+                    android:id="@+id/tvMonthHeader"
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingVertical="4dp"
+                    android:textColor="?attr/primaryColor"
+                    tools:text="This Month  May 2026" />
+
+                <TextView
+                    android:id="@+id/tvMonthStats"
+                    style="@style/TextSmallBold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="16dp"
+                    android:paddingVertical="4dp"
+                    tools:text="Fajr      12 / 13\nDhuhr     13 / 13\nAsr        9 / 13\nMaghrib    7 / 13\nIsha       4 / 13\n─────────────\nTotal     45 / 65" />
+
+                <!-- THIS YEAR -->
+                <TextView
+                    android:id="@+id/tvYearHeader"
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingVertical="4dp"
+                    android:textColor="?attr/primaryColor"
+                    tools:text="This Year  2026" />
+
+                <TextView
+                    android:id="@+id/tvYearStats"
+                    style="@style/TextSmallBold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:paddingVertical="4dp"
+                    tools:text="Fajr      90 / 133\nDhuhr    125 / 133\nAsr       80 / 133\nMaghrib   95 / 133\nIsha      60 / 133\n─────────────\nTotal    450 / 665" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</FrameLayout>

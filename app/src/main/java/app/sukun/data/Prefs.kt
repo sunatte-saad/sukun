@@ -5,6 +5,12 @@ import android.content.SharedPreferences
 import android.view.Gravity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
+import app.sukun.helper.AmbientThemeController
+import org.json.JSONArray
+import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class Prefs(context: Context) {
     private val PREFS_FILENAME = "app.sukun"
@@ -35,6 +41,10 @@ class Prefs(context: Context) {
     private val HIDDEN_APPS_UPDATED = "HIDDEN_APPS_UPDATED"
     private val SHOW_HINT_COUNTER = "SHOW_HINT_COUNTER"
     private val APP_THEME = "APP_THEME"
+    private val AMBIENT_THEME_DARK = "AMBIENT_THEME_DARK"
+    private val APP_LANGUAGE = "APP_LANGUAGE"
+    private val PRO_USER = "PRO_USER"
+    private val PRO_PURCHASE_TOKEN = "PRO_PURCHASE_TOKEN"
     private val ABOUT_CLICKED = "ABOUT_CLICKED"
     private val RATE_CLICKED = "RATE_CLICKED"
     private val WALLPAPER_MSG_SHOWN = "WALLPAPER_MSG_SHOWN"
@@ -50,6 +60,7 @@ class Prefs(context: Context) {
     private val FOCUS_MODE_ENDS_AT = "FOCUS_MODE_ENDS_AT"
     private val FOCUS_MODE_LAST_DURATION = "FOCUS_MODE_LAST_DURATION"
     private val FOCUS_MODE_LOCK_NOTIFICATIONS = "FOCUS_MODE_LOCK_NOTIFICATIONS"
+    private val FOCUS_MODE_HIDE_STATUS_BAR = "FOCUS_MODE_HIDE_STATUS_BAR"
     private val DOUBLE_TAP_ACTION = "DOUBLE_TAP_ACTION"
     private val SHOW_WEATHER_ON_HOME = "SHOW_WEATHER_ON_HOME"
     private val WEATHER_UNITS = "WEATHER_UNITS"
@@ -59,10 +70,15 @@ class Prefs(context: Context) {
     private val WEATHER_LATITUDE = "WEATHER_LATITUDE"
     private val WEATHER_LONGITUDE = "WEATHER_LONGITUDE"
     private val WEATHER_TEMPERATURE_TEXT = "WEATHER_TEMPERATURE_TEXT"
+    private val WEATHER_CONDITION_TEXT = "WEATHER_CONDITION_TEXT"
+    private val WEATHER_PRECIPITATION_TEXT = "WEATHER_PRECIPITATION_TEXT"
     private val WEATHER_LAST_UPDATED = "WEATHER_LAST_UPDATED"
     private val SHOW_PRAYER_ON_HOME = "SHOW_PRAYER_ON_HOME"
     private val SHOW_DAILY_NOTES_ON_HOME = "SHOW_DAILY_NOTES_ON_HOME"
+    private val SHOW_REMINDERS_ON_HOME = "SHOW_REMINDERS_ON_HOME"
     private val DAILY_NOTES_LIST = "DAILY_NOTES_LIST"
+    private val SHOW_TODO_ON_HOME = "SHOW_TODO_ON_HOME"
+    private val TODO_ITEMS_JSON = "TODO_ITEMS_JSON"
     private val PRAYER_SOURCE_MODE = "PRAYER_SOURCE_MODE"
     private val PRAYER_LOCATION_QUERY = "PRAYER_LOCATION_QUERY"
     private val PRAYER_LOCATION_LABEL = "PRAYER_LOCATION_LABEL"
@@ -78,6 +94,14 @@ class Prefs(context: Context) {
     private val HOURLY_CHIME_ENABLED = "HOURLY_CHIME_ENABLED"
     private val HOURLY_CHIME_START_HOUR = "HOURLY_CHIME_START_HOUR"
     private val HOURLY_CHIME_END_HOUR = "HOURLY_CHIME_END_HOUR"
+    private val HOURLY_CHIME_SOUND = "HOURLY_CHIME_SOUND"
+    private val HOURLY_CHIME_CUSTOM_URI = "HOURLY_CHIME_CUSTOM_URI"
+    private val RECENT_APPS = "RECENT_APPS"
+    private val REMINDERS_JSON = "REMINDERS_JSON"
+    private val PRAYER_LOGS = "PRAYER_LOGS"
+    private val COOLDOWN_CONFIGS = "COOLDOWN_CONFIGS"
+    private val COOLDOWN_DAILY_USAGE_PREFIX = "COOLDOWN_USAGE_"
+    private val COOLDOWN_LAST_PKG = "COOLDOWN_LAST_PKG"
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -179,7 +203,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(LOCK_MODE, value).apply() }
 
     var autoShowKeyboard: Boolean
-        get() = prefs.getBoolean(AUTO_SHOW_KEYBOARD, true)
+        get() = true
         set(value) = prefs.edit { putBoolean(AUTO_SHOW_KEYBOARD, value).apply() }
 
     var keyboardMessageShown: Boolean
@@ -195,8 +219,8 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(DAILY_WALLPAPER_URL, value).apply() }
 
     var homeAppsNum: Int
-        get() = prefs.getInt(HOME_APPS_NUM, 4)
-        set(value) = prefs.edit { putInt(HOME_APPS_NUM, value).apply() }
+        get() = prefs.getInt(HOME_APPS_NUM, 4).coerceIn(0, 5)
+        set(value) = prefs.edit { putInt(HOME_APPS_NUM, value.coerceIn(0, 5)).apply() }
 
     var homeAlignment: Int
         get() = prefs.getInt(HOME_ALIGNMENT, Gravity.START)
@@ -246,16 +270,46 @@ class Prefs(context: Context) {
         get() = prefs.getInt(APP_THEME, AppCompatDelegate.MODE_NIGHT_YES)
         set(value) = prefs.edit { putInt(APP_THEME, value).apply() }
 
+    /** Resolved dark state when [appTheme] is [Constants.THEME_MODE_AMBIENT_LIGHT]. */
+    var ambientThemeDark: Boolean
+        get() = prefs.getBoolean(AMBIENT_THEME_DARK, true)
+        set(value) = prefs.edit { putBoolean(AMBIENT_THEME_DARK, value).apply() }
+
+    fun isAmbientLightTheme(): Boolean = appTheme == Constants.THEME_MODE_AMBIENT_LIGHT
+
+    fun resolveLaunchNightMode(): Int {
+        return when (appTheme) {
+            Constants.THEME_MODE_AMBIENT_LIGHT -> {
+                if (!isProUser) AppCompatDelegate.MODE_NIGHT_YES
+                else AmbientThemeController.nightModeForDark(ambientThemeDark)
+            }
+            else -> appTheme
+        }
+    }
+
+    fun isEffectivelyDarkTheme(): Boolean {
+        return when (appTheme) {
+            AppCompatDelegate.MODE_NIGHT_YES -> true
+            AppCompatDelegate.MODE_NIGHT_NO -> false
+            Constants.THEME_MODE_AMBIENT_LIGHT -> ambientThemeDark
+            else -> false
+        }
+    }
+
+    var appLanguage: String
+        get() = prefs.getString(APP_LANGUAGE, "").toString()
+        set(value) = prefs.edit { putString(APP_LANGUAGE, value).apply() }
+
     var textSizeScale: Float
-        get() = prefs.getFloat(TEXT_SIZE_SCALE, 1.0f)
-        set(value) = prefs.edit { putFloat(TEXT_SIZE_SCALE, value).apply() }
+        get() = prefs.getFloat(TEXT_SIZE_SCALE, 1.0f).coerceIn(0.5f, 2.0f)
+        set(value) = prefs.edit { putFloat(TEXT_SIZE_SCALE, value.coerceIn(0.5f, 2.0f)).apply() }
 
     var hideSetDefaultLauncher: Boolean
         get() = prefs.getBoolean(HIDE_SET_DEFAULT_LAUNCHER, false)
         set(value) = prefs.edit { putBoolean(HIDE_SET_DEFAULT_LAUNCHER, value).apply() }
 
     var appDrawerFastScroller: Boolean
-        get() = prefs.getBoolean(APP_DRAWER_FAST_SCROLLER, true)
+        get() = true
         set(value) = prefs.edit { putBoolean(APP_DRAWER_FAST_SCROLLER, value).apply() }
 
     var screenTimeLastUpdated: Long
@@ -271,7 +325,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putInt(SHOWN_ON_DAY_OF_YEAR, value).apply() }
 
     var homeButtonShowRecents: Boolean
-        get() = prefs.getBoolean(HOME_BUTTON_SHOW_RECENTS, false)
+        get() = true
         set(value) = prefs.edit { putBoolean(HOME_BUTTON_SHOW_RECENTS, value).apply() }
 
     var focusModeEndsAt: Long
@@ -286,6 +340,11 @@ class Prefs(context: Context) {
         get() = prefs.getBoolean(FOCUS_MODE_LOCK_NOTIFICATIONS, false)
         set(value) = prefs.edit { putBoolean(FOCUS_MODE_LOCK_NOTIFICATIONS, value).apply() }
 
+    /** When true (default), focus mode hides the status bar like before. When false, status bar follows the global setting. */
+    var focusModeHideStatusBar: Boolean
+        get() = prefs.getBoolean(FOCUS_MODE_HIDE_STATUS_BAR, true)
+        set(value) = prefs.edit { putBoolean(FOCUS_MODE_HIDE_STATUS_BAR, value).apply() }
+
     var doubleTapAction: String
         get() = prefs.getString(DOUBLE_TAP_ACTION, Constants.DoubleTapAction.LOCK).toString()
         set(value) = prefs.edit { putString(DOUBLE_TAP_ACTION, value).apply() }
@@ -299,7 +358,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(WEATHER_UNITS, value).apply() }
 
     var weatherSourceMode: String
-        get() = prefs.getString(WEATHER_SOURCE_MODE, Constants.WeatherSource.MANUAL).toString()
+        get() = prefs.getString(WEATHER_SOURCE_MODE, Constants.WeatherSource.DEVICE).toString()
         set(value) = prefs.edit { putString(WEATHER_SOURCE_MODE, value).apply() }
 
     var weatherLocationQuery: String
@@ -322,24 +381,62 @@ class Prefs(context: Context) {
         get() = prefs.getString(WEATHER_TEMPERATURE_TEXT, "").toString()
         set(value) = prefs.edit { putString(WEATHER_TEMPERATURE_TEXT, value).apply() }
 
+    var weatherConditionText: String
+        get() = prefs.getString(WEATHER_CONDITION_TEXT, "").toString()
+        set(value) = prefs.edit { putString(WEATHER_CONDITION_TEXT, value).apply() }
+
+    var weatherPrecipitationText: String
+        get() = prefs.getString(WEATHER_PRECIPITATION_TEXT, "").toString()
+        set(value) = prefs.edit { putString(WEATHER_PRECIPITATION_TEXT, value).apply() }
+
     var weatherLastUpdated: Long
         get() = prefs.getLong(WEATHER_LAST_UPDATED, 0L)
         set(value) = prefs.edit { putLong(WEATHER_LAST_UPDATED, value).apply() }
 
     var showPrayerOnHome: Boolean
-        get() = prefs.getBoolean(SHOW_PRAYER_ON_HOME, false)
+        get() = prefs.getBoolean(SHOW_PRAYER_ON_HOME, true)
         set(value) = prefs.edit { putBoolean(SHOW_PRAYER_ON_HOME, value).apply() }
+
+    var isProUser: Boolean
+        get() = prefs.getBoolean(PRO_USER, true)
+        set(value) = prefs.edit { putBoolean(PRO_USER, value).apply() }
+
+    var proPurchaseToken: String
+        get() = prefs.getString(PRO_PURCHASE_TOKEN, "").toString()
+        set(value) = prefs.edit { putString(PRO_PURCHASE_TOKEN, value).apply() }
+
+    fun unlockPremium(token: String? = null) {
+        isProUser = true
+        proPurchaseToken = token.orEmpty()
+    }
+
+    fun revokePremium() {
+        isProUser = false
+        proPurchaseToken = ""
+    }
 
     var showDailyNotesOnHome: Boolean
         get() = prefs.getBoolean(SHOW_DAILY_NOTES_ON_HOME, false)
         set(value) = prefs.edit { putBoolean(SHOW_DAILY_NOTES_ON_HOME, value).apply() }
 
+    var showRemindersOnHome: Boolean
+        get() = prefs.getBoolean(SHOW_REMINDERS_ON_HOME, true)
+        set(value) = prefs.edit { putBoolean(SHOW_REMINDERS_ON_HOME, value).apply() }
+
     var dailyNotesList: String
         get() = prefs.getString(DAILY_NOTES_LIST, "").toString()
         set(value) = prefs.edit { putString(DAILY_NOTES_LIST, value).apply() }
 
+    var showTodoOnHome: Boolean
+        get() = prefs.getBoolean(SHOW_TODO_ON_HOME, false)
+        set(value) = prefs.edit { putBoolean(SHOW_TODO_ON_HOME, value).apply() }
+
+    var todoItemsJson: String
+        get() = prefs.getString(TODO_ITEMS_JSON, "").toString()
+        set(value) = prefs.edit { putString(TODO_ITEMS_JSON, value).apply() }
+
     var prayerSourceMode: String
-        get() = prefs.getString(PRAYER_SOURCE_MODE, Constants.PrayerSource.MANUAL).toString()
+        get() = prefs.getString(PRAYER_SOURCE_MODE, Constants.PrayerSource.DEVICE).toString()
         set(value) = prefs.edit { putString(PRAYER_SOURCE_MODE, value).apply() }
 
     var prayerLocationQuery: String
@@ -398,9 +495,29 @@ class Prefs(context: Context) {
         get() = prefs.getInt(HOURLY_CHIME_END_HOUR, Constants.HourlyChime.DEFAULT_END_HOUR)
         set(value) = prefs.edit { putInt(HOURLY_CHIME_END_HOUR, value).apply() }
 
+    var hourlyChimeSound: String
+        get() = prefs.getString(HOURLY_CHIME_SOUND, Constants.ChimeSound.BUNDLED).toString()
+        set(value) = prefs.edit { putString(HOURLY_CHIME_SOUND, value).apply() }
+
+    var hourlyChimeCustomUri: String
+        get() = prefs.getString(HOURLY_CHIME_CUSTOM_URI, "").toString()
+        set(value) = prefs.edit { putString(HOURLY_CHIME_CUSTOM_URI, value).apply() }
+
+    var remindersJson: String
+        get() = prefs.getString(REMINDERS_JSON, "").toString()
+        set(value) = prefs.edit { putString(REMINDERS_JSON, value).apply() }
+
     var hiddenApps: MutableSet<String>
         get() = prefs.getStringSet(HIDDEN_APPS, mutableSetOf()) as MutableSet<String>
         set(value) = prefs.edit { putStringSet(HIDDEN_APPS, value).apply() }
+
+    var recentApps: List<String>
+        get() = prefs.getString(RECENT_APPS, "")
+            .orEmpty()
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+        set(value) = prefs.edit { putString(RECENT_APPS, value.joinToString(",")).apply() }
 
     var hiddenAppsUpdated: Boolean
         get() = prefs.getBoolean(HIDDEN_APPS_UPDATED, false)
@@ -818,8 +935,20 @@ class Prefs(context: Context) {
 
     fun setAppRenameLabel(appPackage: String, renameLabel: String) = prefs.edit { putString(appPackage, renameLabel).apply() }
 
+    fun pushRecentApp(packageName: String, maxSize: Int = 6) {
+        if (packageName.isBlank()) return
+        val updated = recentApps.toMutableList().apply {
+            remove(packageName)
+            add(0, packageName)
+            while (size > maxSize) removeAt(lastIndex)
+        }
+        recentApps = updated
+    }
+
     fun clearWeatherCache() {
         weatherTemperatureText = ""
+        weatherConditionText = ""
+        weatherPrecipitationText = ""
         weatherLastUpdated = 0L
     }
 
@@ -836,6 +965,61 @@ class Prefs(context: Context) {
         prayerNextAt = 0L
         prayerDisplayTime = ""
         prayerLastUpdated = 0L
+    }
+
+    private var prayerLogsJson: String
+        get() = prefs.getString(PRAYER_LOGS, "[]") ?: "[]"
+        set(value) = prefs.edit { putString(PRAYER_LOGS, value).apply() }
+
+    fun logPrayer(prayerKey: String) {
+        val dateKey = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val logs = getPrayerLogs().toMutableList()
+        logs.removeAll { it.prayerKey == prayerKey && it.dateKey == dateKey }
+        logs.add(PrayerLog(prayerKey, dateKey, System.currentTimeMillis()))
+        val cutoff = System.currentTimeMillis() - 2L * 365 * 24 * 60 * 60 * 1000
+        val trimmed = logs.filter { it.timestamp > cutoff }
+        val arr = JSONArray()
+        trimmed.forEach { log ->
+            arr.put(JSONObject().apply {
+                put("p", log.prayerKey)
+                put("d", log.dateKey)
+                put("t", log.timestamp)
+            })
+        }
+        prayerLogsJson = arr.toString()
+    }
+
+    fun unmarkPrayer(prayerKey: String) {
+        val dateKey = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val logs = getPrayerLogs().toMutableList()
+        logs.removeAll { it.prayerKey == prayerKey && it.dateKey == dateKey }
+        val cutoff = System.currentTimeMillis() - 2L * 365 * 24 * 60 * 60 * 1000
+        val trimmed = logs.filter { it.timestamp > cutoff }
+        val arr = JSONArray()
+        trimmed.forEach { log ->
+            arr.put(JSONObject().apply {
+                put("p", log.prayerKey)
+                put("d", log.dateKey)
+                put("t", log.timestamp)
+            })
+        }
+        prayerLogsJson = arr.toString()
+    }
+
+    fun getPrayerLogs(): List<PrayerLog> {
+        return try {
+            val arr = JSONArray(prayerLogsJson)
+            (0 until arr.length()).map { i ->
+                val obj = arr.getJSONObject(i)
+                PrayerLog(
+                    prayerKey = obj.getString("p"),
+                    dateKey = obj.getString("d"),
+                    timestamp = obj.getLong("t"),
+                )
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     fun clearPrayerLocation() {
@@ -866,5 +1050,85 @@ class Prefs(context: Context) {
 
     fun getFocusModeRemainingMillis(): Long {
         return if (isFocusModeActive()) focusModeEndsAt - System.currentTimeMillis() else 0L
+    }
+
+    // --- Cooldown ---
+
+    var cooldownLastLaunchedPkg: String
+        get() = prefs.getString(COOLDOWN_LAST_PKG, "") ?: ""
+        set(value) = prefs.edit { putString(COOLDOWN_LAST_PKG, value) }
+
+    fun getCooldownConfig(packageName: String): AppCooldownConfig? {
+        val json = prefs.getString(COOLDOWN_CONFIGS, "{}") ?: "{}"
+        return try {
+            val obj = org.json.JSONObject(json)
+            if (!obj.has(packageName)) return null
+            val pkg = obj.getJSONObject(packageName)
+            AppCooldownConfig(
+                packageName = packageName,
+                maxOpens = pkg.optInt("opens", 0),
+                maxDurationMinutes = pkg.optInt("duration", 0),
+                cooloffMinutes = pkg.optInt("cooloff", 30)
+            )
+        } catch (_: Exception) { null }
+    }
+
+    fun setCooldownConfig(config: AppCooldownConfig) {
+        val json = prefs.getString(COOLDOWN_CONFIGS, "{}") ?: "{}"
+        val obj = try { org.json.JSONObject(json) } catch (_: Exception) { org.json.JSONObject() }
+        obj.put(config.packageName, org.json.JSONObject().apply {
+            put("opens", config.maxOpens)
+            put("duration", config.maxDurationMinutes)
+            put("cooloff", config.cooloffMinutes)
+        })
+        prefs.edit { putString(COOLDOWN_CONFIGS, obj.toString()) }
+    }
+
+    fun removeCooldownConfig(packageName: String) {
+        val json = prefs.getString(COOLDOWN_CONFIGS, "{}") ?: "{}"
+        val obj = try { org.json.JSONObject(json) } catch (_: Exception) { org.json.JSONObject() }
+        obj.remove(packageName)
+        prefs.edit { putString(COOLDOWN_CONFIGS, obj.toString()) }
+    }
+
+    fun getAllCooldownPackages(): Set<String> {
+        val json = prefs.getString(COOLDOWN_CONFIGS, "{}") ?: "{}"
+        return try {
+            val obj = org.json.JSONObject(json)
+            obj.keys().asSequence().toSet()
+        } catch (_: Exception) { emptySet() }
+    }
+
+    fun getCooldownDailyUsage(packageName: String): AppCooldownManager.DailyUsage? {
+        val key = COOLDOWN_DAILY_USAGE_PREFIX + packageName
+        val json = prefs.getString(key, "") ?: ""
+        if (json.isBlank()) return null
+        return try {
+            val obj = org.json.JSONObject(json)
+            AppCooldownManager.DailyUsage(
+                date = obj.getString("date"),
+                packageName = packageName,
+                openCount = obj.optInt("opens", 0),
+                totalDurationMs = obj.optLong("duration", 0L),
+                cooloffEndsAt = obj.optLong("cooloffEndsAt", 0L),
+                lastLaunchTimeMs = obj.optLong("lastLaunch", 0L)
+            )
+        } catch (_: Exception) { null }
+    }
+
+    fun saveCooldownDailyUsage(packageName: String, usage: AppCooldownManager.DailyUsage) {
+        val key = COOLDOWN_DAILY_USAGE_PREFIX + packageName
+        val obj = org.json.JSONObject().apply {
+            put("date", usage.date)
+            put("opens", usage.openCount)
+            put("duration", usage.totalDurationMs)
+            put("cooloffEndsAt", usage.cooloffEndsAt)
+            put("lastLaunch", usage.lastLaunchTimeMs)
+        }
+        prefs.edit { putString(key, obj.toString()) }
+    }
+
+    fun clearCooldownDailyUsage(packageName: String) {
+        prefs.edit { remove(COOLDOWN_DAILY_USAGE_PREFIX + packageName) }
     }
 }

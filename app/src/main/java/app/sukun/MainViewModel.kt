@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.os.Build
+import android.os.SystemClock
 import android.os.UserHandle
 import android.os.UserManager
 import androidx.lifecycle.AndroidViewModel
@@ -15,8 +16,10 @@ import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import app.sukun.data.AppCooldownManager
 import app.sukun.data.AppModel
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
@@ -30,6 +33,7 @@ import app.sukun.helper.formattedTimeSpent
 import app.sukun.helper.getAppsList
 import app.sukun.helper.getCachedPrayerState
 import app.sukun.helper.getCachedWeatherData
+import app.sukun.helper.getRandomLocalWallpaperAsset
 import app.sukun.helper.getPrivateSpaceApps
 import app.sukun.helper.getPrivateSpaceUserHandle
 import app.sukun.helper.hasBeenMinutes
@@ -39,16 +43,32 @@ import app.sukun.helper.isPrivateSpaceLocked
 import app.sukun.helper.isExpired
 import app.sukun.helper.refreshPrayerState
 import app.sukun.helper.refreshWeather
+import app.sukun.helper.setWallpaperFromAsset
+import app.sukun.helper.setPlainWallpaper
 import app.sukun.helper.showToast
 import app.sukun.helper.usageStats.EventLogWrapper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        private const val APP_LIST_LOAD_MAX_RETRIES = 4
+        private const val APP_LIST_LOAD_RETRY_DELAY_MS = 500L
+        private const val APP_LIST_BOOT_RETRY_WINDOW_MS = 2 * 60 * 1000L
+    }
+
+    private fun shouldRetryEmptyAppList(): Boolean =
+        SystemClock.elapsedRealtime() < APP_LIST_BOOT_RETRY_WINDOW_MS
+
+    private var appListLoadGeneration = 0
+    private var hiddenAppsLoadGeneration = 0
     private val appContext by lazy { application.applicationContext }
     private val prefs = Prefs(appContext)
+    val cooldownManager by lazy { AppCooldownManager(prefs) }
 
     val firstOpen = MutableLiveData<Boolean>()
     val refreshHome = MutableLiveData<Boolean>()
@@ -62,6 +82,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val screenTimeValue = MutableLiveData<String>()
     val weatherData = MutableLiveData<WeatherData?>()
     val prayerData = MutableLiveData<PrayerState?>()
+    val recentAppPackages = MutableLiveData<List<String>>(emptyList())
 
     val privateSpaceApps = MutableLiveData<List<AppModel>?>()
     val privateSpaceLocked = MutableLiveData<Boolean>()
@@ -119,12 +140,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         launcher.getShortcuts(query, appModel.user)?.find { it.id == appModel.shortcutId }
             ?.let { shortcut ->
                 launcher.startShortcut(shortcut, null, null)
+                prefs.pushRecentApp(appModel.appPackage)
             }
     }
 
     private fun saveHomeApp(appModel: AppModel, position: Int) {
         when (appModel) {
             is AppModel.PrivateSpaceHeader -> return
+            is AppModel.SectionHeader -> return
             is AppModel.App -> {
                 when (position) {
                     1 -> {
@@ -283,6 +306,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun saveSwipeApp(appModel: AppModel, isLeft: Boolean) {
         when (appModel) {
             is AppModel.PrivateSpaceHeader -> return
+            is AppModel.SectionHeader -> return
             is AppModel.App -> {
                 if (isLeft) {
                     prefs.appNameSwipeLeft = appModel.appLabel
@@ -385,9 +409,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         try {
             launcher.startMainActivity(component, userHandle, null, null)
+            prefs.pushRecentApp(packageName)
+            cooldownManager.recordLaunch(packageName)
+            prefs.cooldownLastLaunchedPkg = packageName
         } catch (e: SecurityException) {
             try {
                 launcher.startMainActivity(component, android.os.Process.myUserHandle(), null, null)
+                prefs.pushRecentApp(packageName)
+                cooldownManager.recordLaunch(packageName)
+                prefs.cooldownLastLaunchedPkg = packageName
             } catch (e: Exception) {
                 appContext.showToast(appContext.getString(R.string.unable_to_open_app))
             }
@@ -396,18 +426,49 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun onReturnedToLauncher() {
+        val pkg = prefs.cooldownLastLaunchedPkg
+        if (pkg.isNotBlank()) {
+            cooldownManager.recordReturnToLauncher(pkg)
+            prefs.cooldownLastLaunchedPkg = ""
+        }
+    }
+
     fun getAppList(includeHiddenApps: Boolean = false) {
+        val generation = ++appListLoadGeneration
         viewModelScope.launch {
-            val apps = getAppsList(appContext, prefs, includeRegularApps = true, includeHiddenApps)
+            var apps = getAppsList(appContext, prefs, includeRegularApps = true, includeHiddenApps)
+            var attempt = 0
+            while (apps.isEmpty() && shouldRetryEmptyAppList() && attempt < APP_LIST_LOAD_MAX_RETRIES) {
+                delay(APP_LIST_LOAD_RETRY_DELAY_MS * (attempt + 1))
+                if (generation != appListLoadGeneration) return@launch
+                apps = getAppsList(appContext, prefs, includeRegularApps = true, includeHiddenApps)
+                attempt++
+            }
+            if (generation != appListLoadGeneration) return@launch
             appList.value = apps
+            if (!includeHiddenApps) {
+                recentAppPackages.value = getRecentAppPackages(apps)
+            }
         }
         getPrivateSpaceAppList()
     }
 
     fun getHiddenApps() {
+        val generation = ++hiddenAppsLoadGeneration
         viewModelScope.launch {
-            hiddenApps.value =
+            var apps =
                 getAppsList(appContext, prefs, includeRegularApps = false, includeHiddenApps = true)
+            var attempt = 0
+            while (apps.isEmpty() && shouldRetryEmptyAppList() && attempt < APP_LIST_LOAD_MAX_RETRIES) {
+                delay(APP_LIST_LOAD_RETRY_DELAY_MS * (attempt + 1))
+                if (generation != hiddenAppsLoadGeneration) return@launch
+                apps =
+                    getAppsList(appContext, prefs, includeRegularApps = false, includeHiddenApps = true)
+                attempt++
+            }
+            if (generation != hiddenAppsLoadGeneration) return@launch
+            hiddenApps.value = apps
         }
     }
 
@@ -416,12 +477,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setWallpaperWorker() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
         val uploadWorkRequest = PeriodicWorkRequestBuilder<WallpaperWorker>(4, TimeUnit.HOURS)
             .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.HOURS)
-            .setConstraints(constraints)
             .build()
         WorkManager
             .getInstance(appContext)
@@ -430,6 +487,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
                 uploadWorkRequest
             )
+    }
+
+    fun refreshWallpaperNow() {
+        viewModelScope.launch {
+            prefs.dailyWallpaper = true
+            val localWallpaper = getRandomLocalWallpaperAsset(appContext, prefs.dailyWallpaperUrl)
+            if (localWallpaper != null) {
+                val (assetName, wallpaperKey) = localWallpaper
+                val success = setWallpaperFromAsset(
+                    appContext = appContext,
+                    assetName = assetName,
+                    darkWallpaper = true
+                )
+                if (success) {
+                    prefs.dailyWallpaperUrl = wallpaperKey
+                    setWallpaperWorker()
+                    return@launch
+                }
+            }
+
+            prefs.dailyWallpaperUrl = ""
+            WorkManager.getInstance(appContext).enqueue(OneTimeWorkRequestBuilder<WallpaperWorker>().build())
+            setWallpaperWorker()
+        }
     }
 
     fun cancelWallpaperWorker() {
@@ -499,10 +580,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             if (shouldRefresh) {
                 refreshPrayerData(forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
-            } else if (prefs.azanEnabled) {
-                PrayerReminderScheduler.scheduleNextReminder(appContext, prefs)
             } else {
-                PrayerReminderScheduler.cancelReminder(appContext)
+                PrayerReminderScheduler.scheduleNextReminder(appContext, prefs)
             }
         }
     }
@@ -511,7 +590,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val refreshedPrayer = refreshPrayerState(appContext, prefs, forceLocationRefresh)
             prayerData.value = refreshedPrayer ?: getCachedPrayerState(prefs)
-            if (prefs.showPrayerOnHome && prefs.azanEnabled && prayerData.value != null) {
+            if (prefs.showPrayerOnHome && prayerData.value != null) {
                 PrayerReminderScheduler.scheduleNextReminder(appContext, prefs)
             } else {
                 PrayerReminderScheduler.cancelReminder(appContext)
@@ -531,29 +610,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getTodaysScreenTime() {
-        if (prefs.screenTimeLastUpdated.hasBeenMinutes(1).not()) return
+        // Skip throttle when there is no cached value yet (e.g. fresh ViewModel after process death),
+        // so the view is never left visible-but-empty.
+        val hasValue = screenTimeValue.value != null
+        if (hasValue && prefs.screenTimeLastUpdated.hasBeenMinutes(1).not()) return
 
-        val eventLogWrapper = EventLogWrapper(
-            appContext
-        )
-        // Start of today in millis
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val eventLogWrapper = EventLogWrapper(appContext)
+                // Start of today in millis
+                val calendar = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startTime = calendar.timeInMillis
+                val endTime = System.currentTimeMillis()
+
+                val timeSpent = eventLogWrapper.aggregateSimpleUsageStats(
+                    eventLogWrapper.aggregateForegroundStats(
+                        eventLogWrapper.getForegroundStatsByTimestamps(startTime, endTime)
+                    )
+                )
+                val viewTimeSpent = appContext.formattedTimeSpent(timeSpent)
+                screenTimeValue.postValue(viewTimeSpent)
+                prefs.screenTimeLastUpdated = endTime
+            } catch (_: Exception) {
+                screenTimeValue.postValue(appContext.formattedTimeSpent(0L))
+            }
         }
-        val startTime = calendar.timeInMillis
-        val endTime = System.currentTimeMillis()
-
-        val timeSpent = eventLogWrapper.aggregateSimpleUsageStats(
-            eventLogWrapper.aggregateForegroundStats(
-                eventLogWrapper.getForegroundStatsByTimestamps(startTime, endTime)
-            )
-        )
-        val viewTimeSpent = appContext.formattedTimeSpent(timeSpent)
-        screenTimeValue.postValue(viewTimeSpent)
-        prefs.screenTimeLastUpdated = endTime
     }
 
     fun getPrivateSpaceAppList() {
@@ -613,6 +699,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    private fun getRecentAppPackages(apps: List<AppModel>): List<String> {
+        return try {
+            val appPackages = apps
+                .asSequence()
+                .filterIsInstance<AppModel.App>()
+                .map { it.appPackage }
+                .filter { it.isNotBlank() }
+                .toSet()
+            if (appPackages.isEmpty()) return emptyList()
+
+            val trackedRecent = prefs.recentApps
+                .filter { it.isNotBlank() && appPackages.contains(it) && it != appContext.packageName }
+                .distinct()
+                .take(6)
+            if (trackedRecent.isNotEmpty()) return trackedRecent
+
+            val end = System.currentTimeMillis()
+            val start = end - TimeUnit.DAYS.toMillis(7)
+            val foregroundStats = EventLogWrapper(appContext).getForegroundStatsByTimestamps(start, end)
+            if (foregroundStats.isEmpty()) return emptyList()
+
+            foregroundStats
+                .asSequence()
+                .groupBy { it.packageName }
+                .mapValues { (_, stats) -> stats.maxOfOrNull { it.endTime } ?: 0L }
+                .filter { (pkg, timestamp) ->
+                    pkg.isNotBlank() &&
+                            pkg != appContext.packageName &&
+                            timestamp > 0L &&
+                            appPackages.contains(pkg)
+                }
+                .toList()
+                .sortedByDescending { it.second }
+                .map { it.first }
+                .take(6)
+        } catch (_: Exception) {
+            emptyList()
         }
     }
 }

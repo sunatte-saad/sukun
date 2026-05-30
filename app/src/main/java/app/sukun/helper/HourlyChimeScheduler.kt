@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import java.util.Calendar
@@ -17,14 +18,14 @@ object HourlyChimeScheduler {
         alarmManager.cancel(pendingIntent)
         if (!prefs.hourlyChimeEnabled) return
 
-        // Use inexact repeating — no SCHEDULE_EXACT_ALARM permission needed.
-        // A minute or two of drift is fine for an hourly chime.
-        alarmManager.setInexactRepeating(
-            AlarmManager.RTC_WAKEUP,
-            nextFullHourMillis(),
-            AlarmManager.INTERVAL_HOUR,
-            pendingIntent
-        )
+        val triggerAtMillis = nextChimeMillis(prefs)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+        } else {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+        }
     }
 
     fun cancel(context: Context) {
@@ -44,12 +45,22 @@ object HourlyChimeScheduler {
         )
     }
 
-    private fun nextFullHourMillis(): Long {
+    private fun nextChimeMillis(prefs: Prefs): Long {
         val cal = Calendar.getInstance()
         cal.set(Calendar.MINUTE, 0)
         cal.set(Calendar.SECOND, 0)
         cal.set(Calendar.MILLISECOND, 0)
         cal.add(Calendar.HOUR_OF_DAY, 1)
+
+        val startHour = prefs.hourlyChimeStartHour.coerceIn(0, 23)
+        val endHour = prefs.hourlyChimeEndHour.coerceIn(0, 23)
+        val nextHour = cal.get(Calendar.HOUR_OF_DAY)
+        if (nextHour < startHour) {
+            cal.set(Calendar.HOUR_OF_DAY, startHour)
+        } else if (nextHour > endHour) {
+            cal.add(Calendar.DAY_OF_YEAR, 1)
+            cal.set(Calendar.HOUR_OF_DAY, startHour)
+        }
         return cal.timeInMillis
     }
 }

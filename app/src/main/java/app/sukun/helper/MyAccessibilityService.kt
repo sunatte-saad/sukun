@@ -57,11 +57,12 @@ class MyAccessibilityService : AccessibilityService() {
     private fun shouldBlockPackage(packageName: String): Boolean {
         if (!prefs.isFocusModeActive() || packageName.isBlank()) return false
         if (packageName == SYSTEM_UI_PACKAGE) {
-            return !keyguardManager.isKeyguardLocked && !prefs.canOpenNotificationsInFocusMode()
+            return !prefs.canOpenNotificationsInFocusMode()
         }
         if (notificationShadeActive
             && packageName != BuildConfig.APPLICATION_ID
             && packageName != ANDROID_PACKAGE
+            && packageName != SYSTEM_UI_PACKAGE
         ) {
             return true
         }
@@ -69,13 +70,21 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     private fun updateNotificationShadeState(packageName: String, eventType: Int) {
-        if (!prefs.isFocusModeActive() || !prefs.canOpenNotificationsInFocusMode()) {
+        if (!prefs.isFocusModeActive()) {
             notificationShadeActive = false
             return
         }
         when {
-            packageName == SYSTEM_UI_PACKAGE && eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                notificationShadeActive = !keyguardManager.isKeyguardLocked
+            packageName == SYSTEM_UI_PACKAGE && (
+                eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+                    eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
+                    eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ||
+                    eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
+                ) -> {
+                notificationShadeActive = true
+                if (!prefs.canOpenNotificationsInFocusMode()) {
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                }
             }
 
             packageName == BuildConfig.APPLICATION_ID || packageName == ANDROID_PACKAGE -> {

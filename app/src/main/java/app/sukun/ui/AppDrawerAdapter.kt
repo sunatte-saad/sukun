@@ -19,11 +19,16 @@ import app.sukun.R
 import app.sukun.data.AppModel
 import app.sukun.data.Constants
 import app.sukun.databinding.AdapterAppDrawerBinding
+import app.sukun.databinding.AdapterAppSectionHeaderBinding
 import app.sukun.databinding.AdapterPrivateSpaceHeaderBinding
 import app.sukun.helper.dpToPx
+import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hideKeyboard
 import app.sukun.helper.isSystemApp
 import app.sukun.helper.showKeyboard
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
 import java.text.Normalizer
 
 class AppDrawerAdapter(
@@ -38,11 +43,13 @@ class AppDrawerAdapter(
     private val appRenameListener: (AppModel, String) -> Unit,
     private val privateSpaceToggleListener: () -> Unit = {},
     private val privateSpaceSettingsListener: () -> Unit = {},
+    private val appCooldownLimitListener: (AppModel) -> Unit = {},
 ) : ListAdapter<AppModel, RecyclerView.ViewHolder>(DIFF_CALLBACK), Filterable {
 
     companion object {
         const val VIEW_TYPE_APP = 0
         const val VIEW_TYPE_PRIVATE_HEADER = 1
+        const val VIEW_TYPE_SECTION_HEADER = 2
 
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<AppModel>() {
             override fun areItemsTheSame(oldItem: AppModel, newItem: AppModel): Boolean = when {
@@ -53,6 +60,8 @@ class AppDrawerAdapter(
                     oldItem.shortcutId == newItem.shortcutId && oldItem.user == newItem.user
 
                 oldItem is AppModel.PrivateSpaceHeader && newItem is AppModel.PrivateSpaceHeader -> true
+                oldItem is AppModel.SectionHeader && newItem is AppModel.SectionHeader ->
+                    oldItem.appLabel == newItem.appLabel
 
                 else -> false
             }
@@ -67,6 +76,8 @@ class AppDrawerAdapter(
     private val appFilter = createAppFilter()
     private val myUserHandle = android.os.Process.myUserHandle()
     private val sectionPositions = linkedMapOf<String, Int>()
+    var cooledOffPackages: Set<String> = emptySet()
+        private set
 
     var appsList: MutableList<AppModel> = mutableListOf()
     var appFilteredList: MutableList<AppModel> = mutableListOf()
@@ -74,6 +85,7 @@ class AppDrawerAdapter(
     override fun getItemViewType(position: Int): Int {
         return when (appFilteredList.getOrNull(position)) {
             is AppModel.PrivateSpaceHeader -> VIEW_TYPE_PRIVATE_HEADER
+            is AppModel.SectionHeader -> VIEW_TYPE_SECTION_HEADER
             else -> VIEW_TYPE_APP
         }
     }
@@ -82,6 +94,13 @@ class AppDrawerAdapter(
         return when (viewType) {
             VIEW_TYPE_PRIVATE_HEADER -> PrivateSpaceHeaderViewHolder(
                 AdapterPrivateSpaceHeaderBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+            )
+            VIEW_TYPE_SECTION_HEADER -> SectionHeaderViewHolder(
+                AdapterAppSectionHeaderBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
                     false
@@ -110,6 +129,7 @@ class AppDrawerAdapter(
                         privateSpaceSettingsListener,
                     )
                 }
+                is SectionHeaderViewHolder -> holder.bind(appModel.appLabel, appLabelGravity)
 
                 is ViewHolder -> holder.bind(
                     flag,
@@ -117,11 +137,13 @@ class AppDrawerAdapter(
                     showAppIcons,
                     myUserHandle,
                     appModel,
+                    appModel.appPackage in cooledOffPackages,
                     appClickListener,
                     appDeleteListener,
                     appInfoListener,
                     appHideListener,
-                    appRenameListener
+                    appRenameListener,
+                    appCooldownLimitListener
                 )
             }
         } catch (e: Exception) {
@@ -137,10 +159,17 @@ class AppDrawerAdapter(
                 isBangSearch = charSearch?.startsWith("!") ?: false
                 autoLaunch = charSearch?.startsWith(" ")?.not() ?: true
 
-                val appFilteredList = (if (charSearch.isNullOrBlank()) appsList
-                else appsList.filter { app ->
-                    app !is AppModel.PrivateSpaceHeader && appLabelMatches(app.appLabel, charSearch)
-                } as MutableList<AppModel>)
+                val appFilteredList = if (charSearch.isNullOrBlank()) {
+                    appsList
+                } else {
+                    appsList.filter { app ->
+                        app !is AppModel.PrivateSpaceHeader &&
+                                app !is AppModel.SectionHeader &&
+                                appLabelMatches(app.appLabel, charSearch)
+                    }.distinctBy { app ->
+                        if (app is AppModel.App) app.appPackage to app.user else app
+                    }.toMutableList()
+                }
 
                 val filterResults = FilterResults()
                 filterResults.values = appFilteredList
@@ -170,6 +199,7 @@ class AppDrawerAdapter(
                 && flag == Constants.FLAG_LAUNCH_APP
                 && appFilteredList.isNotEmpty()
                 && appFilteredList[0] !is AppModel.PrivateSpaceHeader
+                && appFilteredList[0] !is AppModel.SectionHeader
             ) appClickListener(appFilteredList[0])
         } catch (e: Exception) {
             e.printStackTrace()
@@ -207,8 +237,15 @@ class AppDrawerAdapter(
     }
 
     fun launchFirstInList() {
-        val first = appFilteredList.firstOrNull { it !is AppModel.PrivateSpaceHeader }
+        val first = appFilteredList.firstOrNull {
+            it !is AppModel.PrivateSpaceHeader && it !is AppModel.SectionHeader
+        }
         if (first != null) appClickListener(first)
+    }
+
+    fun updateCooledOff(packages: Set<String>) {
+        cooledOffPackages = packages
+        notifyDataSetChanged()
     }
 
     fun getSections(): List<String> = sectionPositions.keys.toList()
@@ -226,11 +263,19 @@ class AppDrawerAdapter(
     }
 
     private fun getSectionLabel(item: AppModel): String? {
-        if (item is AppModel.PrivateSpaceHeader || item.appLabel.isBlank()) return null
+        if (item is AppModel.PrivateSpaceHeader || item is AppModel.SectionHeader || item.appLabel.isBlank()) return null
         val normalized = Normalizer.normalize(item.appLabel.trim(), Normalizer.Form.NFD)
             .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
         val leadingChar = normalized.firstOrNull { char -> char.isLetterOrDigit() } ?: return "#"
         return if (leadingChar.isLetter()) leadingChar.uppercaseChar().toString() else "#"
+    }
+
+    class SectionHeaderViewHolder(private val binding: AdapterAppSectionHeaderBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(title: String, appLabelGravity: Int) = with(binding) {
+            sectionTitle.text = title
+            sectionTitle.gravity = appLabelGravity
+        }
     }
 
     class PrivateSpaceHeaderViewHolder(private val binding: AdapterPrivateSpaceHeaderBinding) :
@@ -257,26 +302,47 @@ class AppDrawerAdapter(
             showAppIcons: Boolean,
             myUserHandle: UserHandle,
             appModel: AppModel,
+            isCoolingOff: Boolean,
             clickListener: (AppModel) -> Unit,
             appDeleteListener: (AppModel) -> Unit,
             appInfoListener: (AppModel) -> Unit,
             appHideListener: (AppModel, Int) -> Unit,
             appRenameListener: (AppModel, String) -> Unit,
+            cooldownLimitListener: (AppModel) -> Unit,
         ) = with(binding) {
             appHideLayout.visibility = View.GONE
             renameLayout.visibility = View.GONE
             appTitle.visibility = View.VISIBLE
 
             // Show indicators in title based on app type and state
-            appTitle.text = buildString {
+            val baseLabel = buildString {
                 append(appModel.appLabel)
                 if (appModel.isNew) append(" ✦")
+            }
+            if (isCoolingOff && appModel.appPackage.isNotBlank()) {
+                val indicator = "  ⏸"
+                val full = baseLabel + indicator
+                val span = SpannableString(full)
+                val start = full.length - indicator.length
+                span.setSpan(RelativeSizeSpan(0.85f), start, full.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+                span.setSpan(
+                    ForegroundColorSpan(appTitle.context.getColorFromAttr(R.attr.primaryColorTrans80)),
+                    start, full.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+                appTitle.text = span
+            } else {
+                appTitle.text = baseLabel
             }
             appTitle.gravity = appLabelGravity
             setAppIcon(showAppIcons, appModel)
             otherProfileIndicator.isVisible = appModel.user != myUserHandle
 
             appTitle.setOnClickListener { clickListener(appModel) }
+            appCooldownLimit.setOnClickListener {
+                appHideLayout.visibility = View.GONE
+                appTitle.visibility = View.VISIBLE
+                cooldownLimitListener(appModel)
+            }
 
             appTitle.setOnLongClickListener {
                 if (appModel.appPackage.isNotEmpty()) {

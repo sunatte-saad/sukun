@@ -13,7 +13,7 @@ object PrayerReminderScheduler {
     fun scheduleNextReminder(context: Context, prefs: Prefs = Prefs(context)) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val pendingIntent = buildPendingIntent(context, prefs)
-        if (!prefs.showPrayerOnHome || !prefs.azanEnabled || prefs.prayerNextAt <= System.currentTimeMillis()) {
+        if (!prefs.showPrayerOnHome || prefs.prayerNextAt <= System.currentTimeMillis()) {
             alarmManager.cancel(pendingIntent)
             return
         }

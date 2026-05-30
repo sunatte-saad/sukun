@@ -1,11 +1,29 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Ukrainian -->
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
+    <string name="app_name" translatable="false">Sukun</string>
+    <string name="github" translatable="false">Github</string>
+    <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
+    <string name="recents_layout_description" translatable="false">recents layout description to be used a unique id to show recent apps</string>
+    <string name="digital_minimalism" translatable="false" />
+    <string name="day_battery" formatted="false" translatable="false">%s, %d%%</string>
+    <string name="tag_0" translatable="false">0</string>
+    <string name="tag_1" translatable="false">1</string>
+    <string name="tag_2" translatable="false">2</string>
+    <string name="tag_3" translatable="false">3</string>
+    <string name="tag_4" translatable="false">4</string>
+    <string name="tag_5" translatable="false">5</string>
+    <string name="tag_6" translatable="false">6</string>
+    <string name="tag_7" translatable="false">7</string>
+    <string name="tag_8" translatable="false">8</string>
+    <string name="time_spent_min" translatable="false" />
+    <string name="time_spent_hour" translatable="false">%1$sh %2$sm</string>
     <string name="app">Додаток</string>
     <string name="set_as_default_launcher">Зробити лаунчером за замовчування</string>
-    <string name="set_as_default_launcher_u"><u>Зробити лаунчером за замовчування</u></string>
+    <string name="set_as_default_launcher_u" />
     <string name="set_as_default_launcher_first">Зробити лаунчером за замовчування</string>
     <string name="app_text_color">Кольор тексту</string>
     <string name="double_tap_to_lock_screen">Блокування подвійним тапом</string>
+    <string name="home_button_show_recents">Кнопка додому для нещодавніх</string>
     <string name="admin_permission_message">Sukun обіцяє відповідально використовувати роздільну здатність екрана блокування. Sukun не збирає і не передає будь-які дані.</string>
     <string name="about">Про нас</string>
     <string name="off">Викл</string>
@@ -13,6 +31,10 @@
     <string name="black">Чорний</string>
     <string name="white">Білий</string>
     <string name="change_default_launcher">Змінити лаунчер за замовчуванням</string>
+    <string name="turn_off_sukun_launcher">Turn off Sukun launcher</string>
+    <string name="turn_off_sukun_confirmation">Sukun will stop being your home screen. On the next screen, choose your phone\'s normal launcher (not Sukun). Sukun stays installed — open it from your app list anytime.</string>
+    <string name="turn_off_sukun_hint">Opening Home app settings — choose another launcher to replace Sukun</string>
+    <string name="turn_off">Turn off</string>
     <string name="privacy">Конфіденційність</string>
     <string name="share">Поділитися</string>
     <string name="share_now">Поділитися</string>
@@ -20,11 +42,102 @@
     <string name="rate_now">Оцінити</string>
     <string name="follow">Перейти</string>
     <string name="email">Электронна пошта</string>
-
     <string name="donate">Пожертвувати</string>
     <string name="swipe_up_for_apps">1. Проведіть вгору, щоб відкрити всі програми.\n2. Тривалим натисканням будь-де відкриваються налаштування</string>
     <string name="apps_on_home_screen">Кількість програм на головному екрані</string>
+    <string name="show_home_app_icons">Show app icons</string>
+    <string name="daily_notes">Daily tasks / notes</string>
+    <string name="daily_notes_list">Tasks / notes list</string>
+    <string name="daily_notes_hint">Add one task or note per line</string>
+    <string name="daily_notes_empty_hint">Tap to add tasks or notes</string>
+    <string name="daily_notes_saved">Tasks / notes updated</string>
+    <string name="focus_mode">Focus mode</string>
+    <string name="focus_mode_status">Focus mode active</string>
+    <string name="focus_mode_blocked">Focus mode is active</string>
+    <string name="focus_mode_enable_accessibility">Enable Sukun accessibility service to use focus mode</string>
+    <string name="focus_until">Until %1$s</string>
+    <string name="focus_time_remaining">%1$s left</string>
+    <string name="focus_15m">15m</string>
+    <string name="focus_30m">30m</string>
+    <string name="focus_1h">1h</string>
+    <string name="focus_2h">2h</string>
+    <string name="custom">Custom</string>
+    <string name="minutes">Minutes</string>
+    <string name="focus_mode_duration_prompt">Set focus mode duration</string>
+    <string name="focus_mode_duration_prompt_subtitle">Choose how long you want focus mode to stay active.</string>
+    <string name="focus_mode_custom_prompt">Custom focus duration</string>
+    <string name="focus_mode_custom_prompt_subtitle">Enter a duration in minutes.</string>
+    <string name="start_focus_mode">Start focus mode</string>
+    <string name="cancel">Cancel</string>
+    <string name="focus_mode_lock_notifications">Lock notifications</string>
+    <string name="focus_mode_hide_status_bar">Hide status bar</string>
+    <string name="focus_custom_duration_error">Enter a focus duration between %1$d and %2$d minutes</string>
+    <string name="weather">Weather</string>
+    <string name="weather_source">Weather source</string>
+    <string name="weather_location">Weather location</string>
+    <string name="weather_units">Weather units</string>
+    <string name="manual_location">Manual</string>
+    <string name="device_location">Device</string>
+    <string name="google_weather">Google Weather</string>
+    <string name="google_weather_card">Google Weather
+Tap to open forecast</string>
+    <string name="current_location">Current location</string>
+    <string name="type_city_name">Type city name</string>
+    <string name="save">Save</string>
+    <string name="not_set">Not set</string>
+    <string name="celsius_short">C</string>
+    <string name="fahrenheit_short">F</string>
+    <string name="weather_permission_needed">Location permission is needed for device weather</string>
+    <string name="location_services_disabled">Location is off — tap to enable</string>
+    <string name="weather_location_required">Set a weather location first</string>
+    <string name="weather_saved">Weather updated</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="use_same_location_for_prayer">Use this location for prayer times too?</string>
+    <string name="use_same_location_for_weather">Use this location for weather too?</string>
+    <string name="weather_unavailable">Weather unavailable</string>
+    <string name="prayer_times">Prayer times</string>
+    <string name="prayer_next">Next prayer</string>
+    <string name="prayer_source">Prayer source</string>
+    <string name="prayer_location">Prayer location</string>
+    <string name="prayer_permission_needed">Location permission is needed for device prayer times</string>
+    <string name="prayer_location_required">Set a prayer location first</string>
+    <string name="prayer_saved">Prayer location updated</string>
+    <string name="prayer_exact_alarm_permission_needed">Allow exact alarms so azan can play on time</string>
+    <string name="premium_feature_requires_upgrade">This feature requires Sukun Premium.</string>
+    <string name="go_premium">Go Premium</string>
+    <string name="upgrade_to_premium">Upgrade</string>
+    <string name="premium_enabled">Sukun Premium activated</string>
+    <string name="premium_already_active">Sukun Premium is already active</string>
+    <string name="prayer_overlay_text">%1$s  %2$s  %3$s</string>
+    <string name="prayer_reminder">Prayer reminder</string>
+    <string name="prayer_reminder_channel_name">Prayer reminders</string>
+    <string name="prayer_reminder_channel_description">Azan playback and prayer-time reminders</string>
+    <string name="playing_azan_for_prayer">Playing azan for %1$s</string>
+    <string name="prayer_time_now">Prayer time now</string>
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+    <string name="prayer_mark_done">Prayed ✓</string>
+    <string name="prayer_mark_confirm">Mark %1$s as prayed?</string>
+    <string name="prayer_marked_prayed">Marked as prayed</string>
+    <string name="prayer_mark_missed">Missed ✗</string>
+    <string name="prayer_marked_missed">Marked as missed</string>
+    <string name="prayer_analytics">Prayer Analytics</string>
+    <string name="prayer_today">Today</string>
+    <string name="prayer_this_month">This Month  %1$s</string>
+    <string name="prayer_this_year">This Year  %1$s</string>
+    <string name="total">Total</string>
+    <string name="azan">Azan</string>
+    <string name="azan_sound">Azan sound</string>
+    <string name="azan_sound_makkah">Makkah</string>
+    <string name="azan_sound_marylebone">Marylebone</string>
+    <string name="custom_azan_file">Custom azan file</string>
+    <string name="prayer_azan_saved">Custom azan updated</string>
     <string name="daily_wallpaper_update">Щодня нові шпалери</string>
+    <string name="change_wallpaper_now">Change wallpaper now</string>
     <string name="left">Ліворуч</string>
     <string name="right">Праворуч</string>
     <string name="center">По центру</string>
@@ -44,16 +157,36 @@
     <string name="okay">Добре</string>
     <string name="cool">Круто!</string>
     <string name="auto_show_keyboard">Автопоказ клавіатури</string>
+    <string name="app_drawer_fast_scroller">App drawer fast scroller</string>
     <string name="hide">Приховати</string>
     <string name="status_bar">Показувати рядок стану</string>
+    <string name="audio">Audio</string>
+    <string name="hourly_chime">Hourly chime</string>
+    <string name="hourly_chime_from">From</string>
+    <string name="hourly_chime_to">to</string>
     <string name="rename">Перенайменувати</string>
     <string name="show_date_time">Показувати дату та час</string>
     <string name="appearance">Поява</string>
     <string name="gestures">Жести</string>
     <string name="theme_mode">Тема</string>
+    <string name="theme">Theme</string>
+    <string name="settings">Settings</string>
+    <string name="home">Home</string>
+    <string name="apps">Apps</string>
+    <string name="daily_wallpaper">Daily wallpaper</string>
+    <string name="prayer">Prayer</string>
     <string name="system_default">Системна</string>
+    <string name="theme_mode_ambient">Auto (ambient)</string>
+    <string name="theme_mode_ambient_premium">Auto (ambient) · Premium</string>
+    <string name="ambient_theme_no_sensor">This device has no light sensor. Auto (ambient) theme is unavailable.</string>
     <string name="dark">Темна</string>
     <string name="light">Світла</string>
+    <string name="small">Small</string>
+    <string name="medium">Medium</string>
+    <string name="large">Large</string>
+    <string name="xlarge">X-Large</string>
+    <string name="language">Language</string>
+    <string name="select_language">Select Language</string>
     <string name="welcome_to_sukun_settings">Ласкаво просимо до налаштувань!
         \n\nПам\'ятайте, якщо у вас є питання, на нашій сторінці «Про нас» є відповідь.</string>
     <string name="rate_us_message">Привіт, ти більше не побачиш це повідомлення.
@@ -76,6 +209,8 @@
     <string name="open">Відкрити посилання</string>
     <string name="copy">Копіювати</string>
     <string name="close">Закрити</string>
+    <string name="stop">Stop</string>
+    <string name="change">Change</string>
     <string name="not_now">Не зараз</string>
     <string name="public_roadmap">Публічна дорожня карта Sukun</string>
     <string name="instagram">Instagram</string>
@@ -83,6 +218,17 @@
     <string name="roadmap">Дорожня карта</string>
     <string name="date">Дата</string>
     <string name="date_only">Толільки дата</string>
+    <string name="clock_style">Clock style</string>
+    <string name="clock_style_standard">Standard</string>
+    <string name="clock_style_day_ring">Day ring</string>
+    <string name="day_start_hour">Day start hour</string>
+    <string name="day_end_hour">Day end hour</string>
+    <string name="day_start_hour_title">Set day start hour</string>
+    <string name="day_end_hour_title">Set day end hour</string>
+    <string name="clock_hour_hint">Hour</string>
+    <string name="clock_hour_format">%1$02d:00</string>
+    <string name="day_start_hour_error">Enter a start hour from 0 to 23, earlier than the end hour</string>
+    <string name="day_end_hour_error">Enter an end hour from 1 to 24, later than the start hour</string>
     <string name="bottom_on">Внизу: Вкл</string>
     <string name="bottom_off">Внизу: Викл</string>
     <string name="please_set_sukun_as_default_first">Спочатку встановіть Sukun як стандартний лаунчер.</string>
@@ -91,16 +237,18 @@
     <string name="hidden_apps_message">Примітка. Натисніть «Sukun» у верхній частині сторінки налаштувань, щоб знайти приховані програми.
         \n\nДокладніша інформація доступна на нашій сторінці «Про нас» нижче.</string>
     <string name="swipe_down_for">Проведіть вниз для</string>
+    <string name="double_tap_action">Double tap action</string>
+    <string name="lock">Lock</string>
+    <string name="focus">Focus</string>
     <string name="search">Пошук</string>
     <string name="notifications">Повідомлення</string>
     <string name="accessibility_disclosure">Увімкніть службу доступності Sukun у налаштуваннях Вашого пристрою, щоб увімкнути жести подвійного торкання для блокування або кнопки «Домому» для нещодавніх додатків.\n\nЗверніть увагу, що ця служба використовується лише для цих жестів. Наша служба доступності не збирає та не поширює жодних даних.</string>
     <string name="accept">Прийняти</string>
     <string name="permission">Дозвіл</string>
     <string name="double_tap_lock">Блокування подвійним дотиком</string>
-    <string name="home_button_show_recents">Кнопка додому для нещодавніх</string>
     <string name="enable">Включити</string>
     <string name="disable">Виключити</string>
-    <string name="not_working"><u>Не працює?</u></string>
+    <string name="not_working" />
     <string name="info">Інформація</string>
     <string name="delete">Видалити</string>
     <string name="text_size">Розмір тексту</string>
@@ -129,18 +277,77 @@
     <string name="adapter_hide">Приховати</string>
     <string name="are_you_using_your_phone_or_is_your_phone_using_you">Ви користуєтеся своїм телефоном, чи ваш телефон використовує вас?</string>
     <string name="about_sukun">Про нас Sukun</string>
-    <string name="learn_more">Вивчайте більше</string>
     <string name="screen_time">Час екрану</string>
+    <string name="recently_used">Recently used</string>
+    <string name="all_apps">All apps</string>
+    <string name="learn_more">Вивчайте більше</string>
     <string name="did_you_know">Ти знав?</string>
     <string name="leave_a_review">Залиште відгук</string>
     <string name="review_message">Sukun є і завжди буде абсолютно безкоштовним. У ньому немає реклами. Він не збирає дані. Найважливіше те, що це допомагає вам скоротити час використання екрана та жити здоровішим цифровим життям.
         \n\nМи вважаємо, що перехід на мінімальний лаунчер є відмінним рішенням. Хоча ми явно упереджені, ми сподіваємося, що вам сподобається. Не соромтеся поділитися з нами своїми думками!</string>
     <string name="alignment_changed">Вирівнювання змінено ✅</string>
     <string name="home_screen">Головний екран</string>
+    <string name="focus_and_productivity">Focus &amp; Productivity</string>
     <string name="hey">Привіт</string>
     <string name="more_features">Більше функцій…</string>
     <string name="new_year_wish">За рік, кращий за всі попередні. З новим роком!</string>
     <string name="new_year_wish_1">" Неважливо, як пройшов січень. У вас ще є решта року, щоб досягти успіху, як ніколи раніше."</string>
     <string name="cheers">будьмо!</string>
     <string name="notification_bar">Панель сповіщень</string>
-</resources><!-- Ukrainian -->
+    <string name="private_space">Private space</string>
+    <string name="reminders">Reminders</string>
+    <string name="manage_reminders">Manage reminders</string>
+    <string name="manage">Manage</string>
+    <string name="add_reminder">+ Add</string>
+    <string name="no_reminders">No reminders yet.\nTap + Add to create one.</string>
+    <string name="reminder_title_hint">Title</string>
+    <string name="reminder_message_hint">Message</string>
+    <string name="reminder_schedule">Schedule</string>
+    <string name="schedule_daily">Daily</string>
+    <string name="schedule_hourly">Hourly</string>
+    <string name="schedule_weekly">Days</string>
+    <string name="reminder_time">Time</string>
+    <string name="reminder_repeat_every">Repeat every</string>
+    <string name="reminder_interval_1h">1 hour</string>
+    <string name="reminder_interval_nh">%1$d hours</string>
+    <string name="day_sun">Su</string>
+    <string name="day_mon">Mo</string>
+    <string name="day_tue">Tu</string>
+    <string name="day_wed">We</string>
+    <string name="day_thu">Th</string>
+    <string name="day_fri">Fr</string>
+    <string name="day_sat">Sa</string>
+    <string name="delete_reminder_confirm">Delete "%1$s"?</string>
+    <string name="reminder_delete">Delete</string>
+    <string name="reminder_added">Reminder added</string>
+    <string name="reminder_updated">Reminder updated</string>
+    <string name="reminder_deleted">Reminder deleted</string>
+    <string name="reminder_title_required">Please enter a title</string>
+    <string name="reminder_days_required">Please select at least one day</string>
+    <string name="reminder_exact_alarm_needed">Allow exact alarms for precise reminder timing</string>
+    <string name="reminder_notifications_needed">Enable notifications to receive reminders</string>
+    <string name="reminder_channel_name">Reminders</string>
+    <string name="reminder_channel_description">Custom reminder notifications</string>
+    <string name="reminder_done">Done</string>
+    <string name="reminder_stats">%1$d/%2$d done (%3$d%%)</string>
+
+    <!-- Cooldown -->
+    <string name="cooldown_limit">Ліміт</string>
+    <string name="cooldown_warning_title">%1$s на перерві</string>
+    <string name="cooldown_warning_stats">Ви відкрили %1$s %2$d раз(ів) сьогодні та використовували %3$s.</string>
+    <string name="cooldown_warning_remaining">Перерва: залишилось %1$d хв.</string>
+    <string name="cooldown_warning_ack">Я розумію, що важливо усвідомлено використовувати %1$s.</string>
+    <string name="cooldown_open_anyway">Відкрити все одно</string>
+    <string name="cooldown_stay_focused">Залишитися зосередженим</string>
+    <string name="cooldown_config_title">Встановити ліміт для %1$s</string>
+    <string name="cooldown_config_subtitle">Встановіть щоденні ліміти. Перерва починається при досягненні будь-якого ліміту. Залиште поле порожнім, щоб вимкнути цей ліміт.</string>
+    <string name="cooldown_config_opens_label">Макс. відкрить на день (0 = вимк)</string>
+    <string name="cooldown_config_opens_hint">напр. 5</string>
+    <string name="cooldown_config_duration_label">Макс. використання на день (хвилини, 0 = вимк)</string>
+    <string name="cooldown_config_duration_hint">напр. 30</string>
+    <string name="cooldown_config_cooloff_label">Тривалість перерви (хвилини)</string>
+    <string name="cooldown_config_cooloff_hint">напр. 30</string>
+    <string name="cooldown_config_save">Зберегти</string>
+    <string name="cooldown_config_remove">Видалити ліміт</string>
+    <string name="cooldown_no_limits_set">Встановіть хоча б один ліміт (відкриття або тривалість)</string>
+</resources>

@@ -16,7 +16,7 @@ class PrayerBootReceiver : BroadcastReceiver() {
             try {
                 val appContext = context.applicationContext
                 val prefs = Prefs(appContext)
-                if (!prefs.showPrayerOnHome || !prefs.azanEnabled) {
+                if (!prefs.showPrayerOnHome) {
                     PrayerReminderScheduler.cancelReminder(appContext)
                     return@launch
                 }
@@ -30,8 +30,13 @@ class PrayerBootReceiver : BroadcastReceiver() {
                 pendingResult.finish()
             }
         }
-        // Reschedule hourly chime on boot (runs on main thread, lightweight)
+        // Reschedule hourly chime and reminders on boot (runs on main thread, lightweight)
         val appContext = context.applicationContext
         HourlyChimeScheduler.scheduleNext(appContext)
+        if (Prefs(appContext).showRemindersOnHome) {
+            ReminderScheduler.scheduleAll(appContext)
+        } else {
+            ReminderScheduler.cancelAll(appContext)
+        }
     }
 }

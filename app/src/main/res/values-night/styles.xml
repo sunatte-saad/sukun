@@ -40,8 +40,10 @@
         <item name="primaryColorInverseTrans80">@color/whiteInverseTrans80</item>
         <item name="primaryColorInverseTrans90">@color/whiteInverseTrans90</item>
         <item name="primaryShadeColor">@color/whiteInverseTrans10</item>
-        <item name="primaryShadeDarkColor">@color/whiteInverseTrans25</item>
-        <item name="dialogShadeColor">@color/whiteInverseTrans50</item>
+        <item name="primaryShadeDarkColor">@color/blackInverseTrans10</item>
+        <item name="dialogShadeColor">@color/whiteInverseTrans90</item>
+        <item name="dividerColor">@color/whiteInverseTrans25</item>
+        <item name="scrimColor">@color/scrim_dark</item>
 
     </style>
 
