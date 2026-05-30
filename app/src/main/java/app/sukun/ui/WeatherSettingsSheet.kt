@@ -4,14 +4,12 @@ import android.Manifest
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -81,14 +79,7 @@ class WeatherSettingsSheet : DialogFragment() {
             window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             window.setGravity(Gravity.BOTTOM)
             window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            window.setDimAmount(0.4f)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                window.setBackgroundBlurRadius(40)
-                val params = window.attributes
-                params.blurBehindRadius = 40
-                params.flags = params.flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
-                window.attributes = params
-            }
+            window.setDimAmount(0.55f)
         }
     }
 
@@ -106,14 +97,14 @@ class WeatherSettingsSheet : DialogFragment() {
         binding.chipManual.setOnClickListener { selectSource(Constants.WeatherSource.MANUAL) }
         binding.chipDevice.setOnClickListener { selectDeviceSource() }
         binding.chipGoogle.setOnClickListener { selectSource(Constants.WeatherSource.GOOGLE) }
+        binding.locationRow.setOnClickListener { openLocationEditor() }
         binding.locationValueLabel.setOnClickListener { openLocationEditor() }
         binding.btnSaveLocation.setOnClickListener { saveLocation() }
         binding.btnCloseLocation.setOnClickListener {
             binding.locationEditLayout.isVisible = false
             binding.etLocation.hideKeyboard()
         }
-        binding.chipCelsius.setOnClickListener { selectUnits(Constants.WeatherUnit.CELSIUS) }
-        binding.chipFahrenheit.setOnClickListener { selectUnits(Constants.WeatherUnit.FAHRENHEIT) }
+        binding.weatherUnitsRow.setOnClickListener { toggleUnits() }
     }
 
     private fun updateUI() {
@@ -140,10 +131,19 @@ class WeatherSettingsSheet : DialogFragment() {
 
     private fun updateSourceChips() {
         val source = prefs.weatherSourceMode
-        setChipState(binding.chipManual, source == Constants.WeatherSource.MANUAL)
-        setChipState(binding.chipDevice, source == Constants.WeatherSource.DEVICE)
-        setChipState(binding.chipGoogle, source == Constants.WeatherSource.GOOGLE)
+        binding.weatherSourceSummary.text = weatherSourceLabel(source)
+        setOptionState(binding.chipManual, source == Constants.WeatherSource.MANUAL)
+        setOptionState(binding.chipDevice, source == Constants.WeatherSource.DEVICE)
+        setOptionState(binding.chipGoogle, source == Constants.WeatherSource.GOOGLE)
     }
+
+    private fun weatherSourceLabel(source: String): String = getString(
+        when (source) {
+            Constants.WeatherSource.DEVICE -> R.string.device_location
+            Constants.WeatherSource.GOOGLE -> R.string.google_weather_short
+            else -> R.string.manual_location
+        }
+    )
 
     private fun updateLocationSection() {
         val source = prefs.weatherSourceMode
@@ -162,29 +162,44 @@ class WeatherSettingsSheet : DialogFragment() {
     }
 
     private fun updateUnitChips() {
-        val isFahrenheit = prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT
-        setChipState(binding.chipCelsius, !isFahrenheit)
-        setChipState(binding.chipFahrenheit, isFahrenheit)
+        binding.weatherUnitsValue.text = getString(
+            if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT)
+                R.string.fahrenheit_short
+            else
+                R.string.celsius_short
+        )
     }
 
-    private fun setChipState(chip: TextView, selected: Boolean) {
-        chip.setBackgroundResource(
-            if (selected) R.drawable.bg_chip_selected else R.drawable.bg_chip_unselected
-        )
-        chip.setTextColor(
+    private fun toggleUnits() {
+        val next = if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT) {
+            Constants.WeatherUnit.CELSIUS
+        } else {
+            Constants.WeatherUnit.FAHRENHEIT
+        }
+        selectUnits(next)
+    }
+
+    private fun setOptionState(option: TextView, selected: Boolean) {
+        option.setTextColor(
             requireContext().getColorFromAttr(
-                if (selected) R.attr.primaryInverseColor else R.attr.primaryColor
+                if (selected) R.attr.primaryColor else R.attr.primaryColorTrans50
             )
         )
+        option.paint.isFakeBoldText = selected
     }
 
     private fun selectSource(source: String) {
         if (prefs.weatherSourceMode == source) return
         prefs.weatherSourceMode = source
         prefs.clearWeatherCache()
-        refreshWeather()
         updateUI()
+        refreshWeather()
         listener?.onWeatherSettingsChanged()
+        if (source == Constants.WeatherSource.MANUAL && prefs.weatherLocationQuery.isBlank()) {
+            binding.locationEditLayout.isVisible = true
+            binding.etLocation.setText(prefs.weatherLocationLabel)
+            binding.etLocation.showKeyboard()
+        }
     }
 
     private fun selectDeviceSource() {
@@ -277,10 +292,6 @@ class WeatherSettingsSheet : DialogFragment() {
             viewModel.cancelWeatherWorker(clearCachedWeather = true)
             viewModel.loadWeather()
             return
-        }
-        if (prefs.weatherSourceMode == Constants.WeatherSource.MANUAL && prefs.weatherLocationQuery.isBlank()) {
-            prefs.weatherSourceMode = Constants.WeatherSource.DEVICE
-            updateUI()
         }
         val canRefresh = when (prefs.weatherSourceMode) {
             Constants.WeatherSource.DEVICE -> requireContext().hasWeatherLocationPermission()

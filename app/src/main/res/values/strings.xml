@@ -89,6 +89,7 @@
     <string name="manual_location">Manual</string>
     <string name="device_location">Device</string>
     <string name="google_weather">Google Weather</string>
+    <string name="google_weather_short">Google</string>
     <string name="google_weather_card">Google Weather&#10;Tap to open forecast</string>
     <string name="current_location">Current location</string>
     <string name="type_city_name">Type city name</string>

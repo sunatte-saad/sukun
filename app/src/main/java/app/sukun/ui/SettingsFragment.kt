@@ -651,11 +651,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             return
         }
 
-        if (prefs.weatherSourceMode == Constants.WeatherSource.MANUAL && prefs.weatherLocationQuery.isBlank()) {
-            prefs.weatherSourceMode = Constants.WeatherSource.DEVICE
-            populateWeatherSettings()
-        }
-
         val canRefreshWeather = when (prefs.weatherSourceMode) {
             Constants.WeatherSource.DEVICE -> requireContext().hasWeatherLocationPermission()
             else -> prefs.weatherLocationQuery.isNotBlank()

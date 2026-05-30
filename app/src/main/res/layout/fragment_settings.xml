@@ -1277,18 +1277,15 @@
                         android:animateLayoutChanges="true"
                         android:background="@drawable/rounded_primary_gradient"
                         android:elevation="8dp"
+                        android:gravity="start|center_vertical"
                         android:orientation="horizontal"
                         android:outlineAmbientShadowColor="@color/colorPrimaryDark"
                         android:outlineSpotShadowColor="@color/colorPrimaryDark"
-                        android:paddingHorizontal="12dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="12dp"
                         android:paddingVertical="2dp"
                         android:visibility="gone"
                         tools:ignore="UnusedAttribute">
-
-                        <Space
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1" />
 
                         <TextView
                             android:id="@+id/themeLight"
@@ -1297,6 +1294,8 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="24dp"
                             android:gravity="center"
+                            android:minHeight="36dp"
+                            android:paddingHorizontal="4dp"
                             android:paddingVertical="6dp"
                             android:text="@string/light" />
 
@@ -1307,23 +1306,26 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="24dp"
                             android:gravity="center"
+                            android:minHeight="36dp"
+                            android:paddingHorizontal="4dp"
                             android:paddingVertical="6dp"
                             android:text="@string/dark" />
 
-                        <FrameLayout
+                        <LinearLayout
                             android:id="@+id/themeAmbient"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:minHeight="36dp"
+                            android:orientation="horizontal"
                             android:paddingVertical="6dp"
-                            android:paddingEnd="6dp">
+                            android:paddingEnd="4dp">
 
                             <TextView
                                 android:id="@+id/themeAmbientLabel"
                                 style="@style/TextSmallBold"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_gravity="center"
-                                android:gravity="center"
                                 android:text="@string/theme_mode_ambient" />
 
                             <TextView
@@ -1331,14 +1333,12 @@
                                 style="@style/TextSmallBold"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_gravity="top|end"
+                                android:layout_marginStart="2dp"
                                 android:includeFontPadding="false"
                                 android:text="★"
                                 android:textColor="?attr/primaryColor"
-                                android:textSize="8sp"
-                                android:translationX="4dp"
-                                android:translationY="-3dp" />
-                        </FrameLayout>
+                                android:textSize="9sp" />
+                        </LinearLayout>
 
                     </LinearLayout>
 
