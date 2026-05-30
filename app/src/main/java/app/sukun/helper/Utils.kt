@@ -61,14 +61,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.Collator
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.Scanner
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -77,6 +75,8 @@ private data class WeatherLocationResult(
     val latitude: String,
     val longitude: String,
 )
+
+private const val NETWORK_TIMEOUT_MS = 10_000
 
 fun Context.showToast(message: String?, duration: Int = Toast.LENGTH_SHORT) {
     if (message.isNullOrBlank()) return
@@ -388,16 +388,23 @@ fun openAppInfo(context: Context, userHandle: UserHandle, packageName: String) {
 suspend fun getBitmapFromURL(src: String?): Bitmap? {
     return withContext(Dispatchers.IO) {
         var bitmap: Bitmap? = null
+        var connection: HttpURLConnection? = null
         try {
             val url = URL(src)
-            val connection: HttpURLConnection = url
-                .openConnection() as HttpURLConnection
+            connection = url.openConnection() as HttpURLConnection
+            connection.connectTimeout = NETWORK_TIMEOUT_MS
+            connection.readTimeout = NETWORK_TIMEOUT_MS
+            connection.instanceFollowRedirects = true
             connection.doInput = true
             connection.connect()
-            val input: InputStream = connection.inputStream
-            bitmap = BitmapFactory.decodeStream(input)
+            if (connection.responseCode !in 200..299) return@withContext null
+            connection.inputStream.use { input ->
+                bitmap = BitmapFactory.decodeStream(input)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
+        } finally {
+            connection?.disconnect()
         }
         bitmap
     }
@@ -542,7 +549,7 @@ fun getScreenDimensions(context: Context): Pair<Int, Int> {
 
 suspend fun getTodaysWallpaper(wallType: String, firstOpenTime: Long): String {
     return withContext(Dispatchers.IO) {
-        var wallpaperUrl: String
+        var connection: HttpURLConnection? = null
         try {
             val key = if (firstOpenTime.isDaySince() < 10)
                 String.format("0_%s", firstOpenTime.isDaySince().toString())
@@ -553,26 +560,24 @@ suspend fun getTodaysWallpaper(wallType: String, firstOpenTime: Long): String {
             }
 
             val url = URL(Constants.URL_WALLPAPERS)
-            val connection: HttpURLConnection = url.openConnection() as HttpURLConnection
+            connection = url.openConnection() as HttpURLConnection
+            connection.connectTimeout = NETWORK_TIMEOUT_MS
+            connection.readTimeout = NETWORK_TIMEOUT_MS
+            connection.instanceFollowRedirects = true
             connection.doInput = true
             connection.connect()
+            if (connection.responseCode !in 200..299) return@withContext getBackupWallpaper(wallType)
 
-            val inputStream = connection.inputStream
-            val scanner = Scanner(inputStream)
-            val stringBuffer = StringBuffer()
-            while (scanner.hasNext()) {
-                stringBuffer.append(scanner.nextLine())
-            }
-
-            val json = JSONObject(stringBuffer.toString())
-            val wallpapers = json.getString(key)
-            val wallpapersJson = JSONObject(wallpapers)
-            wallpaperUrl = wallpapersJson.getString(wallType)
-            wallpaperUrl
+            val body = connection.inputStream.bufferedReader().use { it.readText() }
+            val json = JSONObject(body)
+            val wallpapers = json.optString(key)
+            val wallpapersJson = if (wallpapers.isNotBlank()) JSONObject(wallpapers) else return@withContext getBackupWallpaper(wallType)
+            wallpapersJson.optString(wallType).ifBlank { getBackupWallpaper(wallType) }
 
         } catch (e: Exception) {
-            wallpaperUrl = getBackupWallpaper(wallType)
-            wallpaperUrl
+            getBackupWallpaper(wallType)
+        } finally {
+            connection?.disconnect()
         }
     }
 }
@@ -867,21 +872,24 @@ private suspend fun reverseGeocodeWeatherLocation(
 }
 
 private suspend fun getJsonObject(urlString: String): JSONObject? = withContext(Dispatchers.IO) {
+    var connection: HttpURLConnection? = null
     try {
         val url = URL(urlString)
-        val connection = url.openConnection() as HttpURLConnection
+        connection = url.openConnection() as HttpURLConnection
+        connection.connectTimeout = NETWORK_TIMEOUT_MS
+        connection.readTimeout = NETWORK_TIMEOUT_MS
+        connection.instanceFollowRedirects = true
         connection.doInput = true
         connection.connect()
 
-        val inputStream = connection.inputStream
-        val scanner = Scanner(inputStream)
-        val stringBuffer = StringBuffer()
-        while (scanner.hasNext()) {
-            stringBuffer.append(scanner.nextLine())
-        }
-        JSONObject(stringBuffer.toString())
+        if (connection.responseCode !in 200..299) return@withContext null
+
+        val body = connection.inputStream.bufferedReader().use { it.readText() }
+        JSONObject(body)
     } catch (e: Exception) {
         null
+    } finally {
+        connection?.disconnect()
     }
 }
 
@@ -1028,9 +1036,14 @@ fun Context.copyToClipboard(text: String) {
 
 fun Context.openUrl(url: String) {
     if (url.isEmpty()) return
-    val intent = Intent(Intent.ACTION_VIEW)
-    intent.data = Uri.parse(url)
-    startActivity(intent)
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    try {
+        if (packageManager.resolveActivity(intent, 0) != null) {
+            startActivity(intent)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }
 
 fun Context.isSystemApp(packageName: String, user: UserHandle? = null): Boolean {

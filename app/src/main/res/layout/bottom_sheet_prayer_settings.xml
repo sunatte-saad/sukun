@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_weather_sheet"
+    android:fillViewport="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="40dp">
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_chip_unselected" />
+
+        <!-- Prayer on/off toggle -->
+        <FrameLayout
+            android:id="@+id/prayerToggleRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:paddingVertical="12dp"
+                android:text="@string/prayer_times" />
+
+            <TextView
+                android:id="@+id/prayerToggle"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="24dp"
+                android:paddingVertical="12dp"
+                android:text="@string/off" />
+
+        </FrameLayout>
+
+        <!-- Sub-settings — shown only when prayer is on -->
+        <LinearLayout
+            android:id="@+id/prayerSubSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Source -->
+
+            <TextView
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginBottom="10dp"
+                android:text="@string/prayer_source"
+                android:textColor="?attr/primaryColorTrans80" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="24dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/chipManual"
+                    style="@style/TextSmallBold"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:text="@string/manual_location" />
+
+                <TextView
+                    android:id="@+id/chipDevice"
+                    style="@style/TextSmallBold"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:text="@string/device_location" />
+
+            </LinearLayout>
+
+            <!-- Location -->
+
+            <LinearLayout
+                android:id="@+id/locationSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginBottom="10dp"
+                    android:text="@string/prayer_location"
+                    android:textColor="?attr/primaryColorTrans80" />
+
+                <TextView
+                    android:id="@+id/locationValueLabel"
+                    style="@style/TextSmallBold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:background="@drawable/bg_chip_unselected"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="10dp"
+                    android:text="@string/not_set" />
+
+                <LinearLayout
+                    android:id="@+id/locationEditLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/rounded_primary_gradient"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingVertical="2dp"
+                    android:visibility="gone">
+
+                    <androidx.appcompat.widget.AppCompatEditText
+                        android:id="@+id/etLocation"
+                        style="@style/TextSmall"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:hint="@string/type_city_name"
+                        android:imeOptions="actionDone"
+                        android:inputType="textCapWords"
+                        android:maxLines="1"
+                        android:paddingVertical="8dp"
+                        android:textColorHint="?attr/primaryColorTrans50" />
+
+                    <TextView
+                        android:id="@+id/btnSaveLocation"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:paddingVertical="8dp"
+                        android:text="@string/save" />
+
+                    <TextView
+                        android:id="@+id/btnCloseLocation"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:paddingVertical="8dp"
+                        android:text="@string/close" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Azan -->
+
+            <TextView
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginBottom="10dp"
+                android:text="@string/azan"
+                android:textColor="?attr/primaryColorTrans80" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="8dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/chipAzanOff"
+                    style="@style/TextSmallBold"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:text="@string/off" />
+
+                <TextView
+                    android:id="@+id/chipAzanMakkah"
+                    style="@style/TextSmallBold"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:text="@string/azan_sound_makkah" />
+
+                <TextView
+                    android:id="@+id/chipAzanMarylebone"
+                    style="@style/TextSmallBold"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:text="@string/azan_sound_marylebone" />
+
+                <TextView
+                    android:id="@+id/chipAzanCustom"
+                    style="@style/TextSmallBold"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:text="@string/custom" />
+
+            </LinearLayout>
+
+            <!-- Custom azan file row -->
+            <FrameLayout
+                android:id="@+id/customAzanRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:paddingVertical="10dp"
+                    android:text="@string/custom_azan_file"
+                    android:textColor="?attr/primaryColorTrans80" />
+
+                <TextView
+                    android:id="@+id/customAzanFile"
+                    style="@style/TextSmallBold"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="24dp"
+                    android:paddingVertical="10dp"
+                    android:text="@string/not_set" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <!-- Analytics divider -->
+        <View
+            android:id="@+id/analyticsDivider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/primaryColorTrans50"
+            android:visibility="gone" />
+
+        <!-- Analytics section -->
+        <LinearLayout
+            android:id="@+id/analyticsSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginBottom="12dp"
+                android:text="@string/prayer_analytics"
+                android:textColor="?attr/primaryColorTrans80" />
+
+            <TextView
+                android:id="@+id/tvTodayStats"
+                style="@style/TextSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="monospace"
+                android:lineSpacingMultiplier="1.3" />
+
+            <TextView
+                android:id="@+id/tvMonthHeader"
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginBottom="8dp"
+                android:textColor="?attr/primaryColorTrans80" />
+
+            <TextView
+                android:id="@+id/tvMonthStats"
+                style="@style/TextSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="monospace"
+                android:lineSpacingMultiplier="1.3" />
+
+            <TextView
+                android:id="@+id/tvYearHeader"
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginBottom="8dp"
+                android:textColor="?attr/primaryColorTrans80" />
+
+            <TextView
+                android:id="@+id/tvYearStats"
+                style="@style/TextSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:fontFamily="monospace"
+                android:lineSpacingMultiplier="1.3" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

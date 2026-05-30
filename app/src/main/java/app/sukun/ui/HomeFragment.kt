@@ -287,7 +287,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             updateWeatherLayout()
         }
         viewModel.screenTimeValue.observe(viewLifecycleOwner) {
-            if (it != null && prefs.showScreenTimeOnHome && requireContext().appUsagePermissionGranted()) {
+            val hasUsageAccess = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && requireContext().appUsagePermissionGranted()
+            if (it != null && prefs.showScreenTimeOnHome && hasUsageAccess) {
                 binding.tvScreenTime?.text = it
                 binding.tvScreenTime?.visibility = View.VISIBLE
                 positionTopCornerStack()
@@ -964,7 +965,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             populateScreenTime()
 
-        val homeAppsNum = prefs.homeAppsNum.coerceAtMost(5)
+        val homeAppsNum = prefs.homeAppsNum.coerceAtMost(8)
         if (homeAppsNum == 0) {
             adjustHomeAppsLayoutForTextScale()
             return
