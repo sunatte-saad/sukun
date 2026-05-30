@@ -199,6 +199,7 @@
     <string name="xlarge">X-Large</string>
     <string name="language">Language</string>
     <string name="select_language">Select Language</string>
+    <string name="select_language_description">Pick the language you want Sukun to use across the launcher.</string>
     <string name="welcome_to_sukun_settings">Welcome to the settings!
         \n\nRemember, if you have any questions, our About page has the answer.</string>
     <string name="rate_us_message">Hi, you won\'t see this message again.

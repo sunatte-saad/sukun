@@ -5,6 +5,9 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -15,10 +18,12 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import app.sukun.helper.applyLauncherStatusBarVisibility
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import app.sukun.helper.applyLauncherStatusBarVisibility
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.bundleOf
@@ -54,6 +59,7 @@ import app.sukun.helper.openUrl
 import app.sukun.helper.setPlainWallpaper
 import app.sukun.helper.showKeyboard
 import app.sukun.helper.showToast
+import app.sukun.helper.dpToPx
 import app.sukun.listener.DeviceAdmin
 
 class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListener {
@@ -644,21 +650,54 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun showLanguageSelector() {
         val languages = LocaleHelper.getAvailableLanguages()
-        val languageNames = languages.map { it.displayName }.toTypedArray()
         val currentLanguage = LocaleHelper.getSelectedLanguage(requireContext())
         val checkedItem = languages.indexOf(currentLanguage)
 
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.select_language)
-            .setSingleChoiceItems(languageNames, checkedItem) { dialog, which ->
-                val selectedLanguage = languages[which]
-                LocaleHelper.setLocale(requireContext(), selectedLanguage.code)
-                populateLanguage()
-                // Recreate activity to apply language change
-                activity?.recreate()
-                dialog.dismiss()
+        val dialogView = layoutInflater.inflate(R.layout.dialog_language_selector, null)
+        val languageContainer = dialogView.findViewById<LinearLayout>(R.id.languageItemsContainer)
+        val languagePickerClose = dialogView.findViewById<TextView>(R.id.languagePickerClose)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        languages.forEachIndexed { index, language ->
+            val isSelected = index == checkedItem
+            val languageOption = TextView(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 10.dpToPx()
+                }
+                setPadding(20.dpToPx(), 18.dpToPx(), 20.dpToPx(), 18.dpToPx())
+                text = language.displayName
+                textSize = 16f
+                setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
+                setTypeface(typeface, if (isSelected) Typeface.BOLD else Typeface.NORMAL)
+                alpha = if (isSelected) 1f else 0.92f
+                background = requireContext().getDrawable(R.drawable.rounded_rect_shade_color)
+                isClickable = true
+                isFocusable = true
+                if (isSelected) {
+                    append(" ✓")
+                }
+                setOnClickListener {
+                    LocaleHelper.setLocale(requireContext(), language.code)
+                    populateLanguage()
+                    activity?.recreate()
+                    dialog.dismiss()
+                }
             }
-            .show()
+            languageContainer.addView(languageOption)
+        }
+
+        languagePickerClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun canUsePremiumFeature(): Boolean {
