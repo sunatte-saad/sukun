@@ -131,7 +131,7 @@
         android:maxLines="1"
         android:textSize="@dimen/date_size"
         android:visibility="gone"
-        tools:text="Lahore&#10;24°C  Partly cloudy"
+        tools:text="24°C  Partly cloudy&#10;Lahore"
         tools:visibility="visible" />
 
     <androidx.appcompat.widget.AppCompatTextView

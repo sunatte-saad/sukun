@@ -13,7 +13,7 @@ data class WeatherData(
             val details = listOf(temperatureText, conditionText, precipitationText)
                 .filter { it.isNotBlank() }
                 .joinToString("  ")
-            return listOf(location, details)
+            return listOf(details, location)
                 .filter { it.isNotBlank() }
                 .joinToString("  ")
         }

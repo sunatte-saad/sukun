@@ -784,14 +784,20 @@ private suspend fun geocodeWeatherLocation(query: String): WeatherLocationResult
 
     val firstResult = results.optJSONObject(0) ?: return@withContext null
     WeatherLocationResult(
-        label = listOf(
-            firstResult.optString("name"),
-            firstResult.optString("admin1"),
-            firstResult.optString("country_code")
-        ).filter { it.isNotBlank() }.distinct().joinToString(", "),
+        label = buildWeatherLocationLabel(
+            city = firstResult.optString("name"),
+            country = firstResult.optString("country").ifBlank { firstResult.optString("country_code") },
+        ),
         latitude = firstResult.optDouble("latitude").toString(),
         longitude = firstResult.optDouble("longitude").toString()
     )
+}
+
+private fun buildWeatherLocationLabel(city: String?, country: String?): String {
+    return listOfNotNull(
+        city?.trim()?.takeIf { it.isNotBlank() },
+        country?.trim()?.takeIf { it.isNotBlank() },
+    ).distinct().joinToString(", ")
 }
 
 @SuppressLint("MissingPermission")
@@ -849,15 +855,12 @@ private suspend fun reverseGeocodeWeatherLocation(
         val address = geocoder.getFromLocation(latitude, longitude, 1)
             ?.firstOrNull()
             ?: return@withContext null
-        listOf(
-            address.locality,
-            address.subAdminArea,
-            address.adminArea,
-            address.countryCode
-        ).filter { it.isNotBlank() }
-            .distinct()
-            .joinToString(", ")
-            .ifBlank { null }
+        buildWeatherLocationLabel(
+            city = address.locality?.takeIf { it.isNotBlank() }
+                ?: address.subLocality?.takeIf { it.isNotBlank() }
+                ?: address.featureName,
+            country = address.countryName?.takeIf { it.isNotBlank() } ?: address.countryCode,
+        ).ifBlank { null }
     } catch (_: Exception) {
         null
     }

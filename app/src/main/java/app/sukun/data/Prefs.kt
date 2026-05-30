@@ -271,6 +271,12 @@ class Prefs(context: Context) {
         get() = prefs.getInt(APP_THEME, AppCompatDelegate.MODE_NIGHT_YES)
         set(value) = prefs.edit { putInt(APP_THEME, value).apply() }
 
+    /** Maps legacy \"System\" theme to light or dark based on current device night mode. */
+    fun migrateLegacyAppTheme(isDeviceDark: Boolean) {
+        if (appTheme != AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) return
+        appTheme = if (isDeviceDark) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+    }
+
     /** Resolved dark state when [appTheme] is [Constants.THEME_MODE_AMBIENT_LIGHT]. */
     var ambientThemeDark: Boolean
         get() = prefs.getBoolean(AMBIENT_THEME_DARK, true)

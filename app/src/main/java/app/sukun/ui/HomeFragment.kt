@@ -73,6 +73,7 @@ import app.sukun.helper.openDialerApp
 import app.sukun.helper.openSearch
 import app.sukun.helper.setPlainWallpaperByTheme
 import app.sukun.helper.showToast
+import app.sukun.helper.prayerKeyToMark
 import app.sukun.helper.toOverlayText
 import app.sukun.listener.OnSwipeTouchListener
 import app.sukun.listener.ViewSwipeTouchListener
@@ -526,7 +527,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private fun promptMarkPrayerDone() {
         val state = currentPrayerState ?: return
-        val prayerName = app.sukun.helper.getPrayerName(requireContext(), state.prayerKey)
+        val prayerKeyToMark = state.prayerKeyToMark()
+        val prayerName = app.sukun.helper.getPrayerName(requireContext(), prayerKeyToMark)
         AlertDialog.Builder(requireContext())
             .setTitle(prayerName)
             .setItems(
@@ -536,10 +538,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 )
             ) { _, which ->
                 if (which == 0) {
-                    prefs.logPrayer(state.prayerKey)
+                    prefs.logPrayer(prayerKeyToMark)
                     requireContext().showToast(R.string.prayer_marked_prayed)
                 } else {
-                    prefs.unmarkPrayer(state.prayerKey)
+                    prefs.unmarkPrayer(prayerKeyToMark)
                     requireContext().showToast(R.string.prayer_marked_missed)
                 }
             }
@@ -622,12 +624,15 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                     binding.weatherText.isVisible -> weatherTopMargin + binding.weatherText.height
                     else -> getDateTimeBottom() ?: 0
                 }
-                val screenTimeBottom = if (binding.tvScreenTime?.isVisible == true) {
-                    binding.tvScreenTime.top + binding.tvScreenTime.height
-                } else {
-                    0
-                }
-                val topOverlayBottom = max(overlayBottom, screenTimeBottom)
+                val topCornerBottom = listOfNotNull(
+                    binding.remindersBellContainer.takeIf { it.isVisible }
+                        ?.let { it.top + it.height },
+                    binding.todoIconContainer.takeIf { it.isVisible }
+                        ?.let { it.top + it.height },
+                    binding.tvScreenTime?.takeIf { it.isVisible }
+                        ?.let { it.top + it.height },
+                ).maxOrNull() ?: 0
+                val topOverlayBottom = max(overlayBottom, topCornerBottom)
                 updateHomeAppsTopPadding(topOverlayBottom + spacing)
             } catch (_: Throwable) {
                 // View was likely destroyed while this runnable executed; safely ignore
@@ -871,9 +876,17 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         fun applyPositions() {
             val currentBinding = safeBinding ?: return
             try {
-                positionScreenTimeBelowBell(currentBinding, iconsGravity, horizontalMargin, spacing)
-                positionTodoBelowStack(currentBinding, iconsGravity, horizontalMargin, spacing)
-                positionOverlayText()
+                positionTodoBelowBell(currentBinding, iconsGravity, horizontalMargin, spacing)
+                val todo = currentBinding.todoIconContainer
+                if (todo.isVisible) {
+                    todo.doOnLayout {
+                        positionScreenTimeBelowStack(currentBinding, iconsGravity, horizontalMargin, spacing)
+                        positionOverlayText()
+                    }
+                } else {
+                    positionScreenTimeBelowStack(currentBinding, iconsGravity, horizontalMargin, spacing)
+                    positionOverlayText()
+                }
             } catch (_: Throwable) {
             }
         }
@@ -885,33 +898,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
     }
 
-    private fun positionScreenTimeBelowBell(
-        binding: FragmentHomeBinding,
-        iconsGravity: Int,
-        horizontalMargin: Int,
-        spacing: Int,
-    ) {
-        val screenTime = binding.tvScreenTime
-        if (screenTime == null || !screenTime.isVisible) return
-
-        val topMargin = if (binding.remindersBellContainer.isVisible) {
-            binding.remindersBellContainer.top + binding.remindersBellContainer.height + spacing
-        } else {
-            screenTimeFallbackTopMargin()
-        }
-        screenTime.layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-        ).apply {
-            this.topMargin = topMargin
-            marginStart = horizontalMargin
-            marginEnd = horizontalMargin
-            gravity = iconsGravity or Gravity.TOP
-        }
-        screenTime.setPadding(10.dpToPx())
-    }
-
-    private fun positionTodoBelowStack(
+    private fun positionTodoBelowBell(
         binding: FragmentHomeBinding,
         iconsGravity: Int,
         horizontalMargin: Int,
@@ -920,12 +907,11 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val todo = binding.todoIconContainer
         if (!todo.isVisible) return
 
-        val anchor = when {
-            binding.tvScreenTime?.isVisible == true -> binding.tvScreenTime
-            binding.remindersBellContainer.isVisible -> binding.remindersBellContainer
-            else -> null
+        val topMargin = if (binding.remindersBellContainer.isVisible) {
+            binding.remindersBellContainer.top + binding.remindersBellContainer.height + spacing
+        } else {
+            126.dpToPx()
         }
-        val topMargin = anchor?.let { it.top + it.height + spacing } ?: 126.dpToPx()
         todo.layoutParams = (todo.layoutParams as? FrameLayout.LayoutParams)?.apply {
             this.topMargin = topMargin
             marginStart = horizontalMargin
@@ -940,6 +926,34 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             marginEnd = horizontalMargin
             gravity = iconsGravity or Gravity.TOP
         }
+    }
+
+    private fun positionScreenTimeBelowStack(
+        binding: FragmentHomeBinding,
+        iconsGravity: Int,
+        horizontalMargin: Int,
+        spacing: Int,
+    ) {
+        val screenTime = binding.tvScreenTime
+        if (screenTime == null || !screenTime.isVisible) return
+
+        val topMargin = when {
+            binding.todoIconContainer.isVisible ->
+                binding.todoIconContainer.top + binding.todoIconContainer.height + spacing
+            binding.remindersBellContainer.isVisible ->
+                binding.remindersBellContainer.top + binding.remindersBellContainer.height + spacing
+            else -> screenTimeFallbackTopMargin()
+        }
+        screenTime.layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            this.topMargin = topMargin
+            marginStart = horizontalMargin
+            marginEnd = horizontalMargin
+            gravity = iconsGravity or Gravity.TOP
+        }
+        screenTime.setPadding(10.dpToPx())
     }
 
     private fun populateHomeScreen(appCountUpdated: Boolean) {

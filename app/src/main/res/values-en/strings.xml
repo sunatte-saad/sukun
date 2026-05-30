@@ -176,7 +176,7 @@ Tap to open forecast</string>
     <string name="daily_wallpaper">Daily Wallpaper</string>
     <string name="prayer">Prayer</string>
     <string name="system_default">System</string>
-    <string name="theme_mode_ambient">Auto (ambient)</string>
+    <string name="theme_mode_ambient">Ambient</string>
     <string name="theme_mode_ambient_premium">Auto (ambient) · Premium</string>
     <string name="ambient_theme_no_sensor">This device has no light sensor. Auto (ambient) theme is unavailable.</string>
     <string name="dark">Dark</string>

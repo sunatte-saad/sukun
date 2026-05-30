@@ -92,6 +92,20 @@ fun PrayerState.toOverlayText(context: Context, now: Long = System.currentTimeMi
     )
 }
 
+/** Prayer to mark while the next azan has not started (overlay still counts down to [prayerKey]). */
+fun PrayerState.prayerKeyToMark(now: Long = System.currentTimeMillis()): String {
+    return if (prayerTimeMillis > now) previousPrayerKey(prayerKey) else prayerKey
+}
+
+fun previousPrayerKey(prayerKey: String): String = when (prayerKey) {
+    Constants.Prayer.FAJR -> Constants.Prayer.ISHA
+    Constants.Prayer.DHUHR -> Constants.Prayer.FAJR
+    Constants.Prayer.ASR -> Constants.Prayer.DHUHR
+    Constants.Prayer.MAGHRIB -> Constants.Prayer.ASR
+    Constants.Prayer.ISHA -> Constants.Prayer.MAGHRIB
+    else -> prayerKey
+}
+
 fun formatPrayerRemainingTime(remainingMillis: Long): String {
     val totalSeconds = (remainingMillis / 1000L).coerceAtLeast(0L)
     val hours = totalSeconds / 3600L

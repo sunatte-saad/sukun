@@ -163,6 +163,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
             binding.homeAppsNum.text = prefs.homeAppsNum.toString()
             migrateScreenTimePrefIfNeeded()
+            migrateLegacyAppThemeIfNeeded()
             populateScreenTimeOnOff()
             populateWallpaperText()
             populateAppThemeText()
@@ -286,11 +287,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.prayerSubMenuLayout?.visibility = if (isVisible) View.GONE else View.VISIBLE
                 binding.prayerSettingsToggle?.text = getString(if (isVisible) R.string.manage else R.string.close)
             }
-            R.id.remindersSettingsHeader -> {
-                val isVisible = binding.remindersSubMenuLayout?.visibility == View.VISIBLE
-                binding.remindersSubMenuLayout?.visibility = if (isVisible) View.GONE else View.VISIBLE
-                binding.remindersSettingsToggle?.text = getString(if (isVisible) R.string.manage else R.string.close)
-            }
             R.id.remindersOnOff -> toggleReminders()
             R.id.prayerOnOff -> togglePrayer()
             R.id.prayerSource -> binding.prayerSourceSelectLayout?.visibility = View.VISIBLE
@@ -324,7 +320,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.focusCustomLayout.visibility = View.GONE
                 binding.etFocusCustomMinutes.hideKeyboard()
             }
-            R.id.remindersManage -> findNavController().navigate(R.id.action_settingsFragment_to_remindersFragment)
             R.id.prayerAnalytics -> findNavController().navigate(R.id.action_settingsFragment_to_prayerAnalyticsFragment)
             R.id.hourlyChimeOnOff -> toggleHourlyChime()
             R.id.hourlyChimeStartHour -> showHourPicker(isStart = true)
@@ -346,7 +341,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.appThemeText -> binding.appThemeSelectLayout.visibility = View.VISIBLE
             R.id.themeLight -> updateTheme(AppCompatDelegate.MODE_NIGHT_NO)
             R.id.themeDark -> updateTheme(AppCompatDelegate.MODE_NIGHT_YES)
-            R.id.themeSystem -> updateTheme(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
             R.id.themeAmbient -> updateTheme(Constants.THEME_MODE_AMBIENT_LIGHT)
             R.id.appLanguageText -> findNavController().navigate(R.id.action_settingsFragment_to_languageFragment)
             R.id.textSizeValue -> binding.textSizesLayout.visibility = View.VISIBLE
@@ -420,9 +414,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.appInfo.setOnClickListener(this)
         binding.setLauncher.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
-        binding.remindersSettingsHeader?.setOnClickListener(this)
         binding.remindersOnOff?.setOnClickListener(this)
-        binding.remindersManage?.setOnClickListener(this)
         binding.prayerAnalytics?.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
@@ -500,7 +492,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.appThemeText.setOnClickListener(this)
         binding.themeLight.setOnClickListener(this)
         binding.themeDark.setOnClickListener(this)
-        binding.themeSystem.setOnClickListener(this)
         binding.themeAmbient.setOnClickListener(this)
         binding.textSizeValue.setOnClickListener(this)
         binding.actionAccessibility.setOnClickListener(this)
@@ -620,7 +611,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateRemindersSettings() {
         binding.remindersOnOff?.text = getString(if (prefs.showRemindersOnHome) R.string.on else R.string.off)
-        binding.remindersOptionsLayout?.isVisible = prefs.showRemindersOnHome
     }
 
     private fun populatePremiumStatus() {
@@ -1380,6 +1370,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
     }
 
+    private fun migrateLegacyAppThemeIfNeeded() {
+        val nightMask = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        val isDeviceDark = nightMask == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        prefs.migrateLegacyAppTheme(isDeviceDark)
+    }
+
     private fun populateAppThemeText(appTheme: Int = prefs.appTheme) {
         binding.themeAmbientLabel.text = getString(R.string.theme_mode_ambient)
         binding.themeAmbientStar.isVisible = true
@@ -1387,7 +1383,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             AppCompatDelegate.MODE_NIGHT_YES -> getString(R.string.dark)
             AppCompatDelegate.MODE_NIGHT_NO -> getString(R.string.light)
             Constants.THEME_MODE_AMBIENT_LIGHT -> getString(R.string.theme_mode_ambient)
-            else -> getString(R.string.system_default)
+            else -> getString(R.string.dark)
         }
     }
 
