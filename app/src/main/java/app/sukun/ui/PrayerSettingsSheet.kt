@@ -411,85 +411,32 @@ class PrayerSettingsSheet : DialogFragment() {
         val daysElapsedYear = cal.get(Calendar.DAY_OF_YEAR)
 
         binding.tvTodayStats.text = buildTodayDashboard(todayLogs)
-        binding.tvMonthHeader.text = "This Month · $monthName"
-        binding.tvMonthStats.text = buildMonthAnalytics(logs.filter { it.dateKey.startsWith(monthPrefix) }, daysElapsedMonth)
-        binding.tvYearHeader.text = "This Year · $yearPrefix"
-        binding.tvYearStats.text = buildYearAnalytics(logs.filter { it.dateKey.startsWith(yearPrefix) }, daysElapsedYear)
+        binding.tvMonthHeader.text = monthName
+        binding.tvMonthStats.text = buildPrayerCounts(logs.filter { it.dateKey.startsWith(monthPrefix) }, daysElapsedMonth, padStart = 2)
+        binding.tvYearHeader.text = yearPrefix
+        binding.tvYearStats.text = buildPrayerCounts(logs.filter { it.dateKey.startsWith(yearPrefix) }, daysElapsedYear, padStart = 3)
     }
 
     private fun buildTodayDashboard(prayedKeys: Set<String>): String {
-        val doneCount = prayers.count { it in prayedKeys }
-        val rate = (doneCount * 100) / 5
         return buildString {
-            appendLine("TODAY   $doneCount / 5  ($rate%)")
-            appendLine()
             prayers.forEach { key ->
-                val done = key in prayedKeys
-                appendLine("${if (done) "🔥" else "—"}  ${getPrayerDisplayName(key)}  →  ${if (done) "✓" else "○"}")
+                val name = getPrayerDisplayName(key).padEnd(8)
+                val mark = if (key in prayedKeys) "✓" else "·"
+                appendLine("$name $mark")
             }
         }
     }
 
-    private fun buildMonthAnalytics(logs: List<PrayerLog>, daysElapsed: Int): String {
-        val stats = prayers.map { key ->
-            val daysPrayed = logs.filter { it.prayerKey == key }.map { it.dateKey }.toSet().size
-            val rate = if (daysElapsed > 0) (daysPrayed * 100) / daysElapsed else 0
-            Triple(key, daysPrayed, rate)
-        }
-        return buildString {
-            appendLine("Days elapsed: $daysElapsed")
-            appendLine()
-            stats.forEach { (key, days, rate) ->
-                appendLine("${getPrayerDisplayName(key)}")
-                appendLine("  $days days · $rate%")
-                appendLine("  ${progressBar(rate)}")
-                appendLine()
-            }
-            val best = stats.maxByOrNull { it.third }
-            val worst = stats.minByOrNull { it.third }
-            appendLine("Best: ${best?.let { getPrayerDisplayName(it.first) }} (${best?.third}%)")
-            appendLine("Needs work: ${worst?.let { getPrayerDisplayName(it.first) }} (${worst?.third}%)")
-            appendLine()
-            append("🔥 ${calculateStreak(logs)} day streak")
-        }
-    }
-
-    private fun buildYearAnalytics(logs: List<PrayerLog>, daysElapsed: Int): String {
-        var total = 0
+    private fun buildPrayerCounts(logs: List<PrayerLog>, daysElapsed: Int, padStart: Int): String {
         return buildString {
             prayers.forEach { key ->
                 val daysPrayed = logs.filter { it.prayerKey == key }.map { it.dateKey }.toSet().size
-                total += daysPrayed
-                val rate = if (daysElapsed > 0) (daysPrayed * 100) / daysElapsed else 0
-                appendLine("${getPrayerDisplayName(key)}")
-                appendLine("  $daysPrayed / $daysElapsed days · $rate%")
-                appendLine("  ${progressBar(rate)}")
-                appendLine()
+                val name = getPrayerDisplayName(key).padEnd(8)
+                val count = daysPrayed.toString().padStart(padStart)
+                val total = daysElapsed.toString().padStart(padStart)
+                appendLine("$name $count / $total")
             }
-            val avg = total / 5
-            val overallRate = if (daysElapsed > 0) (avg * 100) / daysElapsed else 0
-            appendLine("Overall: $overallRate%  ·  avg $avg prayers/day")
         }
-    }
-
-    private fun progressBar(percent: Int): String {
-        val filled = percent / 10
-        return "█".repeat(filled) + "░".repeat(10 - filled) + " $percent%"
-    }
-
-    private fun calculateStreak(logs: List<PrayerLog>): Int {
-        val dates = logs.map { it.dateKey }.toSet().sorted()
-        val cal = Calendar.getInstance()
-        val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        var currentDate = fmt.format(Date())
-        var streak = 0
-        while (dates.contains(currentDate)) {
-            streak++
-            cal.time = fmt.parse(currentDate)!!
-            cal.add(Calendar.DAY_OF_YEAR, -1)
-            currentDate = fmt.format(cal.time)
-        }
-        return streak
     }
 
     private fun getPrayerDisplayName(key: String) = getString(
