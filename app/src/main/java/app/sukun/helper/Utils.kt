@@ -582,6 +582,71 @@ suspend fun getTodaysWallpaper(wallType: String, firstOpenTime: Long): String {
     }
 }
 
+suspend fun getLocationSuggestions(query: String, maxResults: Int = 5): List<String> {
+    return withContext(Dispatchers.IO) {
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.length < 2) return@withContext emptyList()
+
+        val geocodeUrl = Uri.parse(Constants.URL_WEATHER_GEOCODING).buildUpon()
+            .appendQueryParameter("name", normalizedQuery)
+            .appendQueryParameter("count", maxResults.coerceIn(1, 10).toString())
+            .appendQueryParameter("language", Locale.getDefault().language.ifBlank { "en" })
+            .appendQueryParameter("format", "json")
+            .toString()
+
+        val json = getJsonObject(geocodeUrl) ?: return@withContext emptyList()
+        val results: JSONArray = json.optJSONArray("results") ?: return@withContext emptyList()
+
+        buildList {
+            for (index in 0 until results.length().coerceAtMost(maxResults.coerceAtLeast(1))) {
+                val result = results.optJSONObject(index) ?: continue
+                val label = listOf(
+                    result.optString("name"),
+                    result.optString("admin1"),
+                    result.optString("country_code")
+                ).filter { it.isNotBlank() }.distinct().joinToString(", ")
+                if (label.isNotBlank() && label !in this) add(label)
+            }
+        }
+    }
+}
+
+suspend fun getCurrentDeviceLocationLabel(context: Context): String? {
+    return withContext(Dispatchers.IO) {
+        if (!context.hasWeatherLocationPermission()) return@withContext null
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+            ?: return@withContext null
+
+        val providers = buildList {
+            add(LocationManager.PASSIVE_PROVIDER)
+            add(LocationManager.NETWORK_PROVIDER)
+            add(LocationManager.GPS_PROVIDER)
+        }.filter {
+            try {
+                locationManager.isProviderEnabled(it)
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+        val bestLocation = providers.mapNotNull { provider ->
+            try {
+                locationManager.getLastKnownLocation(provider)
+            } catch (_: Exception) {
+                null
+            }
+        }.maxByOrNull(Location::getTime)
+
+        if (bestLocation == null) return@withContext null
+
+        reverseGeocodeWeatherLocation(
+            context = context,
+            latitude = bestLocation.latitude,
+            longitude = bestLocation.longitude,
+        )
+    }
+}
+
 fun getBackupWallpaper(wallType: String): String {
     return if (wallType == Constants.WALL_TYPE_LIGHT)
         Constants.URL_DEFAULT_LIGHT_WALLPAPER

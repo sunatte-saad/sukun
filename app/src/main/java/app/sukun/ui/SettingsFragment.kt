@@ -45,6 +45,15 @@ import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hasWeatherLocationPermission
 import app.sukun.helper.isLocationServicesEnabled
 import app.sukun.helper.hideKeyboard
+import app.sukun.helper.getCurrentDeviceLocationLabel
+import app.sukun.helper.getLocationSuggestions
+import android.widget.ArrayAdapter
+import android.widget.Filter
+import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import app.sukun.helper.isAccessServiceEnabled
 import app.sukun.helper.isDarkThemeOn
 import app.sukun.helper.isEinkDisplay
@@ -69,6 +78,23 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private val binding get() = _binding!!
     private var pendingScreenTimePermissionRequest = false
 
+    private val locationSuggestions = mutableListOf<String>()
+    private val locationAdapter by lazy {
+        object : ArrayAdapter<String>(requireContext(), android.R.layout.simple_dropdown_item_1line, locationSuggestions) {
+            override fun getFilter() = object : Filter() {
+                override fun performFiltering(constraint: CharSequence?) = FilterResults().apply {
+                    values = locationSuggestions
+                    count = locationSuggestions.size
+                }
+                override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                    notifyDataSetChanged()
+                }
+            }
+        }
+    }
+    private var locationSuggestionJob: Job? = null
+    private var cachedDeviceLocationLabel: String? = null
+
     private val customChimePickerLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@registerForActivityResult
@@ -83,6 +109,17 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             prefs.hourlyChimeCustomUri = uri.toString()
             populateHourlyChime()
             requireContext().showToast(R.string.chime_sound_saved)
+        }
+
+    private val locationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
+                    || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            if (granted) {
+                setAppLocationDevice()
+            } else {
+                requireContext().showToast(R.string.weather_permission_needed)
+            }
         }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -134,6 +171,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             populateRemindersSettings()
             populatePremiumStatus()
             populatePrayerSettings()
+            populateLocationSettings()
+            setupLocationAutocomplete()
             populateHourlyChime()
             populateStatusBar()
             populateDateTime()
@@ -174,6 +213,16 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             binding.focusCustomLayout.visibility = View.GONE
             binding.etFocusCustomMinutes.hideKeyboard()
         }
+        if (view.id != R.id.locationSettings
+            && view.id != R.id.chipLocationDevice
+            && view.id != R.id.chipLocationManual
+            && view.id != R.id.btnSaveLocationSettings
+            && view.id != R.id.btnCloseLocationSettings
+            && view.id != R.id.etLocationSettings
+        ) {
+            binding.locationEditorLayout?.visibility = View.GONE
+            binding.etLocationSettings?.hideKeyboard()
+        }
         if (view.id != R.id.alignmentBottom)
             binding.alignmentSelectLayout.visibility = View.GONE
 
@@ -208,6 +257,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.goPremium -> showUpgradeDialog()
             R.id.weatherSettings -> showWeatherSettingsSheet()
             R.id.prayerSettings -> showPrayerSettingsSheet()
+            R.id.locationSettings -> openLocationEditor()
+            R.id.chipLocationDevice -> selectLocationDevice()
+            R.id.chipLocationManual -> selectLocationManual()
+            R.id.btnSaveLocationSettings -> saveLocationManual()
+            R.id.btnCloseLocationSettings -> closeLocationEditor()
             R.id.remindersOnOff -> toggleReminders()
             R.id.focusMode -> {
                 if (prefs.isFocusModeActive()) requireContext().showToast(R.string.focus_mode_blocked)
@@ -336,6 +390,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.goPremium.setOnClickListener(this)
         binding.weatherSettings?.setOnClickListener(this)
         binding.prayerSettings?.setOnClickListener(this)
+        binding.locationSettings?.setOnClickListener(this)
+        binding.chipLocationDevice?.setOnClickListener(this)
+        binding.chipLocationManual?.setOnClickListener(this)
+        binding.btnSaveLocationSettings?.setOnClickListener(this)
+        binding.btnCloseLocationSettings?.setOnClickListener(this)
         binding.focusMode.setOnClickListener(this)
         binding.focus15m.setOnClickListener(this)
         binding.focus30m.setOnClickListener(this)
@@ -609,22 +668,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.weatherSettingsSummary?.text = if (prefs.showWeatherOnHome) buildWeatherSummary() else getString(R.string.off)
     }
 
-    private fun buildWeatherSummary(): String {
-        val source = getString(
-            when (prefs.weatherSourceMode) {
-                Constants.WeatherSource.DEVICE -> R.string.device_location
-                Constants.WeatherSource.GOOGLE -> R.string.google_weather
-                else -> R.string.manual_location
-            }
-        )
-        val units = getString(
-            if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT)
-                R.string.fahrenheit_short
-            else
-                R.string.celsius_short
-        )
-        return "$source · $units"
-    }
+    private fun buildWeatherSummary(): String = getString(
+        if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT)
+            R.string.fahrenheit_short
+        else
+            R.string.celsius_short
+    )
 
     private fun showWeatherSettingsSheet() {
         WeatherSettingsSheet.newInstance().also { sheet ->
@@ -671,19 +720,171 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun buildPrayerSummary(): String {
-        val source = getString(
-            if (prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
-                R.string.device_location
-            else
-                R.string.manual_location
-        )
         val azan = when (prefs.azanSound) {
             Constants.AzanSound.OFF -> null
             Constants.AzanSound.MARYLEBONE -> getString(R.string.azan_sound_marylebone)
             Constants.AzanSound.CUSTOM -> getString(R.string.custom)
             else -> getString(R.string.azan_sound_makkah)
         }
-        return if (azan != null) "$source · $azan" else source
+        return azan ?: getString(R.string.on)
+    }
+
+    private fun populateLocationSettings() {
+        val summary = when {
+            prefs.weatherSourceMode == Constants.WeatherSource.DEVICE
+                    || prefs.prayerSourceMode == Constants.PrayerSource.DEVICE ->
+                getString(R.string.device_location)
+            prefs.weatherLocationLabel.isNotBlank() -> prefs.weatherLocationLabel
+            prefs.prayerLocationLabel.isNotBlank() -> prefs.prayerLocationLabel
+            else -> getString(R.string.not_set)
+        }
+        binding.locationSettingsSummary?.text = summary
+    }
+
+    private fun openLocationEditor() {
+        val isDevice = requireContext().hasWeatherLocationPermission()
+                && (prefs.weatherSourceMode == Constants.WeatherSource.DEVICE
+                    || prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
+        binding.locationEditorLayout?.visibility = View.VISIBLE
+        updateLocationChips()
+        val showInput = prefs.weatherSourceMode != Constants.WeatherSource.DEVICE
+                && prefs.prayerSourceMode != Constants.PrayerSource.DEVICE
+        binding.locationInputRow?.visibility = if (showInput) View.VISIBLE else View.GONE
+        if (showInput) {
+            val prefill = prefs.weatherLocationLabel.ifBlank { prefs.prayerLocationLabel }
+            binding.etLocationSettings?.setText(prefill)
+            binding.etLocationSettings?.setSelection(binding.etLocationSettings?.text?.length ?: 0)
+            binding.etLocationSettings?.showKeyboard()
+            prefetchDeviceLocation()
+        }
+    }
+
+    private fun updateLocationChips() {
+        val isDevice = prefs.weatherSourceMode == Constants.WeatherSource.DEVICE
+                || prefs.prayerSourceMode == Constants.PrayerSource.DEVICE
+        setLocationChipState(binding.chipLocationDevice, isDevice)
+        setLocationChipState(binding.chipLocationManual, !isDevice)
+    }
+
+    private fun setLocationChipState(chip: TextView?, selected: Boolean) {
+        chip ?: return
+        chip.setTextColor(
+            requireContext().getColorFromAttr(
+                if (selected) R.attr.primaryColor else R.attr.primaryColorTrans50
+            )
+        )
+        chip.paint.isFakeBoldText = selected
+    }
+
+    private fun selectLocationDevice() {
+        if (requireContext().hasWeatherLocationPermission()) {
+            setAppLocationDevice()
+        } else {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    private fun setAppLocationDevice() {
+        prefs.weatherSourceMode = Constants.WeatherSource.DEVICE
+        prefs.prayerSourceMode = Constants.PrayerSource.DEVICE
+        prefs.clearWeatherCache()
+        prefs.clearPrayerCache()
+        binding.locationInputRow?.visibility = View.GONE
+        binding.etLocationSettings?.hideKeyboard()
+        updateLocationChips()
+        populateLocationSettings()
+        populateWeatherSettings()
+        populatePrayerSettings()
+        refreshWeatherIfConfigured()
+        viewModel.refreshPrayerData(forceLocationRefresh = true)
+        viewModel.refreshHome(false)
+    }
+
+    private fun selectLocationManual() {
+        binding.locationInputRow?.visibility = View.VISIBLE
+        val prefill = prefs.weatherLocationLabel.ifBlank { prefs.prayerLocationLabel }
+        binding.etLocationSettings?.setText(prefill)
+        binding.etLocationSettings?.setSelection(binding.etLocationSettings?.text?.length ?: 0)
+        binding.etLocationSettings?.showKeyboard()
+        updateLocationChips()
+        prefetchDeviceLocation()
+    }
+
+    private fun saveLocationManual() {
+        val query = binding.etLocationSettings?.text?.toString()?.trim().orEmpty()
+        if (query.isBlank()) {
+            requireContext().showToast(R.string.weather_location_required)
+            binding.etLocationSettings?.showKeyboard()
+            return
+        }
+        prefs.weatherSourceMode = Constants.WeatherSource.MANUAL
+        prefs.weatherLocationQuery = query
+        prefs.weatherLocationLabel = query
+        prefs.weatherLatitude = ""
+        prefs.weatherLongitude = ""
+        prefs.clearWeatherCache()
+        prefs.prayerSourceMode = Constants.PrayerSource.MANUAL
+        prefs.prayerLocationQuery = query
+        prefs.prayerLocationLabel = query
+        prefs.prayerLatitude = ""
+        prefs.prayerLongitude = ""
+        prefs.clearPrayerCache()
+        closeLocationEditor()
+        populateLocationSettings()
+        populateWeatherSettings()
+        populatePrayerSettings()
+        refreshWeatherIfConfigured()
+        if (prefs.showPrayerOnHome) viewModel.refreshPrayerData()
+        viewModel.refreshHome(false)
+        requireContext().showToast(R.string.location_saved)
+    }
+
+    private fun closeLocationEditor() {
+        binding.locationEditorLayout?.visibility = View.GONE
+        binding.etLocationSettings?.hideKeyboard()
+    }
+
+    private fun setupLocationAutocomplete() {
+        val et = binding.etLocationSettings ?: return
+        et.setAdapter(locationAdapter)
+        et.threshold = 1
+        et.setOnItemClickListener { _, _, position, _ ->
+            val selected = locationAdapter.getItem(position).orEmpty()
+            if (selected.isNotBlank()) {
+                et.setText(selected, false)
+                et.setSelection(selected.length)
+            }
+        }
+        et.addTextChangedListener { text ->
+            locationSuggestionJob?.cancel()
+            val query = text?.toString().orEmpty()
+            locationSuggestionJob = viewLifecycleOwner.lifecycleScope.launch {
+                delay(250)
+                val deviceLabel = cachedDeviceLocationLabel
+                val suggestions = buildList {
+                    if (!deviceLabel.isNullOrBlank()) add(deviceLabel)
+                    addAll(getLocationSuggestions(query))
+                }.distinct()
+                locationSuggestions.clear()
+                locationSuggestions.addAll(suggestions)
+                locationAdapter.notifyDataSetChanged()
+                if (et.hasFocus() && suggestions.isNotEmpty()) {
+                    et.showDropDown()
+                }
+            }
+        }
+    }
+
+    private fun prefetchDeviceLocation() {
+        if (cachedDeviceLocationLabel != null) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            cachedDeviceLocationLabel = getCurrentDeviceLocationLabel(requireContext())
+        }
     }
 
     private fun showPrayerSettingsSheet() {

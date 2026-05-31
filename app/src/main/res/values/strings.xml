@@ -85,6 +85,8 @@
     <string name="weather_configure">Configure</string>
     <string name="weather_source">Weather source</string>
     <string name="weather_location">Weather location</string>
+    <string name="location">Location</string>
+    <string name="location_saved">Location saved</string>
     <string name="weather_units">Weather units</string>
     <string name="manual_location">Manual</string>
     <string name="device_location">Device</string>

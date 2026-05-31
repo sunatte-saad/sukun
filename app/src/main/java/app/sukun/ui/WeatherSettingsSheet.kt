@@ -1,18 +1,12 @@
 package app.sukun.ui
 
-import android.Manifest
-import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
@@ -21,11 +15,7 @@ import app.sukun.R
 import app.sukun.data.Constants
 import app.sukun.data.Prefs
 import app.sukun.databinding.BottomSheetWeatherSettingsBinding
-import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hasWeatherLocationPermission
-import app.sukun.helper.hideKeyboard
-import app.sukun.helper.isLocationServicesEnabled
-import app.sukun.helper.showKeyboard
 import app.sukun.helper.showToast
 
 class WeatherSettingsSheet : DialogFragment() {
@@ -39,21 +29,6 @@ class WeatherSettingsSheet : DialogFragment() {
     private lateinit var prefs: Prefs
     private lateinit var viewModel: MainViewModel
     private var listener: Listener? = null
-
-    private val locationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
-                    || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            if (granted) {
-                prefs.weatherSourceMode = Constants.WeatherSource.DEVICE
-                prefs.clearWeatherCache()
-                refreshWeather()
-                updateUI()
-                listener?.onWeatherSettingsChanged()
-            } else {
-                requireContext().showToast(R.string.weather_permission_needed)
-            }
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,16 +69,6 @@ class WeatherSettingsSheet : DialogFragment() {
 
     private fun setupClickListeners() {
         binding.weatherToggleRow.setOnClickListener { toggleWeather() }
-        binding.chipManual.setOnClickListener { selectManualSource() }
-        binding.chipDevice.setOnClickListener { selectDeviceSource() }
-        binding.chipGoogle.setOnClickListener { selectSource(Constants.WeatherSource.GOOGLE) }
-        binding.locationRow.setOnClickListener { openLocationEditor() }
-        binding.locationValueLabel.setOnClickListener { openLocationEditor() }
-        binding.btnSaveLocation.setOnClickListener { saveLocation() }
-        binding.btnCloseLocation.setOnClickListener {
-            binding.locationEditLayout.isVisible = false
-            binding.etLocation.hideKeyboard()
-        }
         binding.weatherUnitsRow.setOnClickListener { toggleUnits() }
     }
 
@@ -112,8 +77,6 @@ class WeatherSettingsSheet : DialogFragment() {
         binding.weatherToggle.text = getString(if (isOn) R.string.on else R.string.off)
         binding.weatherSubSettings.isVisible = isOn
         if (isOn) {
-            updateSourceChips()
-            updateLocationSection()
             updateUnitChips()
         }
     }
@@ -127,38 +90,6 @@ class WeatherSettingsSheet : DialogFragment() {
         updateUI()
         refreshWeather()
         listener?.onWeatherSettingsChanged()
-    }
-
-    private fun updateSourceChips() {
-        val source = prefs.weatherSourceMode
-        binding.weatherSourceSummary.text = weatherSourceLabel(source)
-        setOptionState(binding.chipManual, source == Constants.WeatherSource.MANUAL)
-        setOptionState(binding.chipDevice, source == Constants.WeatherSource.DEVICE)
-        setOptionState(binding.chipGoogle, source == Constants.WeatherSource.GOOGLE)
-    }
-
-    private fun weatherSourceLabel(source: String): String = getString(
-        when (source) {
-            Constants.WeatherSource.DEVICE -> R.string.device_location
-            Constants.WeatherSource.GOOGLE -> R.string.google_weather_short
-            else -> R.string.manual_location
-        }
-    )
-
-    private fun updateLocationSection() {
-        val source = prefs.weatherSourceMode
-        binding.locationSection.isVisible = source != Constants.WeatherSource.GOOGLE
-        if (source == Constants.WeatherSource.DEVICE) {
-            binding.locationEditLayout.isVisible = false
-            binding.locationValueLabel.text =
-                prefs.weatherLocationLabel.ifBlank { getString(R.string.current_location) }
-        } else if (source == Constants.WeatherSource.MANUAL) {
-            binding.locationValueLabel.text = when {
-                prefs.weatherLocationQuery.isBlank() -> getString(R.string.not_set)
-                prefs.weatherLocationLabel.isNotBlank() -> prefs.weatherLocationLabel
-                else -> prefs.weatherLocationQuery
-            }
-        }
     }
 
     private fun updateUnitChips() {
@@ -177,116 +108,6 @@ class WeatherSettingsSheet : DialogFragment() {
             Constants.WeatherUnit.FAHRENHEIT
         }
         selectUnits(next)
-    }
-
-    private fun setOptionState(option: TextView, selected: Boolean) {
-        option.setTextColor(
-            requireContext().getColorFromAttr(
-                if (selected) R.attr.primaryColor else R.attr.primaryColorTrans50
-            )
-        )
-        option.paint.isFakeBoldText = selected
-    }
-
-    private fun selectSource(source: String) {
-        if (source == Constants.WeatherSource.MANUAL) {
-            selectManualSource()
-            return
-        }
-        if (prefs.weatherSourceMode == source) return
-        prefs.weatherSourceMode = source
-        prefs.clearWeatherCache()
-        updateUI()
-        refreshWeather()
-        listener?.onWeatherSettingsChanged()
-        if (source == Constants.WeatherSource.MANUAL && prefs.weatherLocationQuery.isBlank()) {
-            binding.locationEditLayout.isVisible = true
-            binding.etLocation.setText(prefs.weatherLocationLabel)
-            binding.etLocation.showKeyboard()
-        }
-    }
-
-    private fun selectManualSource() {
-        if (prefs.weatherSourceMode != Constants.WeatherSource.MANUAL) {
-            prefs.weatherSourceMode = Constants.WeatherSource.MANUAL
-            prefs.clearWeatherCache()
-            updateUI()
-            listener?.onWeatherSettingsChanged()
-        }
-        openLocationEditor()
-    }
-
-    private fun selectDeviceSource() {
-        if (requireContext().hasWeatherLocationPermission()) {
-            selectSource(Constants.WeatherSource.DEVICE)
-            return
-        }
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-    }
-
-    private fun openLocationEditor() {
-        when (prefs.weatherSourceMode) {
-            Constants.WeatherSource.DEVICE -> {
-                if (!requireContext().hasWeatherLocationPermission()) {
-                    locationPermissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                } else if (!requireContext().isLocationServicesEnabled()) {
-                    requireContext().showToast(R.string.location_services_disabled)
-                    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                }
-            }
-            Constants.WeatherSource.MANUAL -> {
-                binding.locationEditLayout.isVisible = true
-                val prefill = prefs.weatherLocationQuery.ifBlank { prefs.weatherLocationLabel }
-                binding.etLocation.setText(prefill)
-                binding.etLocation.setSelection(binding.etLocation.text?.length ?: 0)
-                binding.etLocation.showKeyboard()
-            }
-        }
-    }
-
-    private fun saveLocation() {
-        val query = binding.etLocation.text?.toString()?.trim().orEmpty()
-        if (query.isBlank()) {
-            requireContext().showToast(R.string.weather_location_required)
-            binding.etLocation.showKeyboard()
-            return
-        }
-        prefs.weatherLocationQuery = query
-        prefs.weatherLocationLabel = query
-        prefs.weatherLatitude = ""
-        prefs.weatherLongitude = ""
-        prefs.clearWeatherCache()
-        binding.locationEditLayout.isVisible = false
-        binding.etLocation.hideKeyboard()
-        refreshWeather()
-        updateLocationSection()
-        listener?.onWeatherSettingsChanged()
-        requireContext().showToast(R.string.weather_saved)
-
-        if (prefs.showPrayerOnHome && prefs.prayerSourceMode == Constants.PrayerSource.MANUAL
-            && prefs.prayerLocationQuery.isBlank()
-        ) {
-            AlertDialog.Builder(requireContext())
-                .setMessage(R.string.use_same_location_for_prayer)
-                .setPositiveButton(R.string.yes) { _, _ ->
-                    prefs.prayerLocationQuery = query
-                    prefs.prayerLocationLabel = query
-                    prefs.clearPrayerCache()
-                    listener?.onWeatherSettingsChanged()
-                }
-                .setNegativeButton(R.string.no, null)
-                .show()
-        }
     }
 
     private fun selectUnits(units: String) {

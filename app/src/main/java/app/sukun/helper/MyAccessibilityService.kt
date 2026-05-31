@@ -18,6 +18,7 @@ class MyAccessibilityService : AccessibilityService() {
         getSystemService(KEYGUARD_SERVICE) as KeyguardManager
     }
     private var notificationShadeActive = false
+    private var lastBlockedPackage: String? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return START_STICKY
@@ -26,8 +27,9 @@ class MyAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         val packageName = event.packageName?.toString().orEmpty()
         updateNotificationShadeState(packageName, event.eventType)
-        if (shouldBlockPackage(packageName)) {
+        if (shouldBlockPackage(packageName, event)) {
             notificationShadeActive = false
+            lastBlockedPackage = packageName
             performGlobalAction(GLOBAL_ACTION_HOME)
             return
         }
@@ -54,10 +56,13 @@ class MyAccessibilityService : AccessibilityService() {
 
     }
 
-    private fun shouldBlockPackage(packageName: String): Boolean {
+    private fun shouldBlockPackage(packageName: String, event: AccessibilityEvent): Boolean {
         if (!prefs.isFocusModeActive() || packageName.isBlank()) return false
         if (packageName == SYSTEM_UI_PACKAGE) {
             return !prefs.canOpenNotificationsInFocusMode()
+        }
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && packageName == lastBlockedPackage) {
+            return true
         }
         if (notificationShadeActive
             && packageName != BuildConfig.APPLICATION_ID
@@ -83,12 +88,14 @@ class MyAccessibilityService : AccessibilityService() {
                 ) -> {
                 notificationShadeActive = true
                 if (!prefs.canOpenNotificationsInFocusMode()) {
+                    lastBlockedPackage = null
                     performGlobalAction(GLOBAL_ACTION_HOME)
                 }
             }
 
             packageName == BuildConfig.APPLICATION_ID || packageName == ANDROID_PACKAGE -> {
                 notificationShadeActive = false
+                lastBlockedPackage = null
             }
         }
     }

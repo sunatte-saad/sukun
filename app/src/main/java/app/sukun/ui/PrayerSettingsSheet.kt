@@ -17,7 +17,6 @@ import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
@@ -31,9 +30,6 @@ import app.sukun.databinding.BottomSheetPrayerSettingsBinding
 import app.sukun.helper.PrayerReminderScheduler
 import app.sukun.helper.getColorFromAttr
 import app.sukun.helper.hasWeatherLocationPermission
-import app.sukun.helper.hideKeyboard
-import app.sukun.helper.isLocationServicesEnabled
-import app.sukun.helper.showKeyboard
 import app.sukun.helper.showToast
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -59,21 +55,6 @@ class PrayerSettingsSheet : DialogFragment() {
         Constants.Prayer.MAGHRIB,
         Constants.Prayer.ISHA,
     )
-
-    private val locationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
-                    || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            if (granted) {
-                prefs.prayerSourceMode = Constants.PrayerSource.DEVICE
-                prefs.clearPrayerCache()
-                refreshPrayer(forceLocationRefresh = true, promptForAlarmPermission = true)
-                updateUI()
-                listener?.onPrayerSettingsChanged()
-            } else {
-                requireContext().showToast(R.string.prayer_permission_needed)
-            }
-        }
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
@@ -142,14 +123,6 @@ class PrayerSettingsSheet : DialogFragment() {
 
     private fun setupClickListeners() {
         binding.prayerToggleRow.setOnClickListener { togglePrayer() }
-        binding.chipManual.setOnClickListener { selectManualSource() }
-        binding.chipDevice.setOnClickListener { selectDeviceSource() }
-        binding.locationValueLabel.setOnClickListener { openLocationEditor() }
-        binding.btnSaveLocation.setOnClickListener { saveLocation() }
-        binding.btnCloseLocation.setOnClickListener {
-            binding.locationEditLayout.isVisible = false
-            binding.etLocation.hideKeyboard()
-        }
         binding.chipAzanOff.setOnClickListener { selectAzan(Constants.AzanSound.OFF) }
         binding.chipAzanMakkah.setOnClickListener { selectAzan(Constants.AzanSound.MAKKAH) }
         binding.chipAzanMarylebone.setOnClickListener { selectAzan(Constants.AzanSound.MARYLEBONE) }
@@ -164,8 +137,6 @@ class PrayerSettingsSheet : DialogFragment() {
         binding.prayerToggle.text = getString(if (isOn) R.string.on else R.string.off)
         binding.prayerSubSettings.isVisible = isOn
         if (isOn) {
-            updateSourceChips()
-            updateLocationSection()
             updateAzanChips()
             updateCustomAzanRow()
         }
@@ -185,48 +156,11 @@ class PrayerSettingsSheet : DialogFragment() {
         updateUI()
         if (prefs.showPrayerOnHome) {
             requestNotificationPermissionIfNeeded()
-            when (prefs.prayerSourceMode) {
-                Constants.PrayerSource.DEVICE -> {
-                    if (requireContext().hasWeatherLocationPermission()) {
-                        refreshPrayer(forceLocationRefresh = true, promptForAlarmPermission = true)
-                    } else {
-                        selectDeviceSource()
-                    }
-                }
-                else -> {
-                    if (prefs.prayerLocationQuery.isBlank()) {
-                        requireContext().showToast(R.string.prayer_location_required)
-                    } else {
-                        refreshPrayer(promptForAlarmPermission = true)
-                    }
-                }
-            }
+            refreshPrayer(promptForAlarmPermission = true)
         } else {
             refreshPrayer()
         }
         listener?.onPrayerSettingsChanged()
-    }
-
-    private fun updateSourceChips() {
-        val isDevice = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE
-        setChipState(binding.chipManual, !isDevice)
-        setChipState(binding.chipDevice, isDevice)
-    }
-
-    private fun updateLocationSection() {
-        val source = prefs.prayerSourceMode
-        binding.locationSection.isVisible = true
-        if (source == Constants.PrayerSource.DEVICE) {
-            binding.locationEditLayout.isVisible = false
-            binding.locationValueLabel.text =
-                prefs.prayerLocationLabel.ifBlank { getString(R.string.current_location) }
-        } else {
-            binding.locationValueLabel.text = when {
-                prefs.prayerLocationQuery.isBlank() -> getString(R.string.not_set)
-                prefs.prayerLocationLabel.isNotBlank() -> prefs.prayerLocationLabel
-                else -> prefs.prayerLocationQuery
-            }
-        }
     }
 
     private fun updateAzanChips() {
@@ -254,104 +188,6 @@ class PrayerSettingsSheet : DialogFragment() {
                 if (selected) R.attr.primaryInverseColor else R.attr.primaryColor
             )
         )
-    }
-
-    private fun selectSource(source: String) {
-        if (source == Constants.PrayerSource.MANUAL) {
-            selectManualSource()
-            return
-        }
-        if (prefs.prayerSourceMode == source) return
-        prefs.prayerSourceMode = source
-        prefs.clearPrayerCache()
-        refreshPrayer(forceLocationRefresh = source == Constants.PrayerSource.DEVICE)
-        updateSourceChips()
-        updateLocationSection()
-        listener?.onPrayerSettingsChanged()
-    }
-
-    private fun selectManualSource() {
-        if (prefs.prayerSourceMode != Constants.PrayerSource.MANUAL) {
-            prefs.prayerSourceMode = Constants.PrayerSource.MANUAL
-            prefs.clearPrayerCache()
-            updateSourceChips()
-            updateLocationSection()
-            listener?.onPrayerSettingsChanged()
-        }
-        openLocationEditor()
-    }
-
-    private fun selectDeviceSource() {
-        if (requireContext().hasWeatherLocationPermission()) {
-            selectSource(Constants.PrayerSource.DEVICE)
-            return
-        }
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-    }
-
-    private fun openLocationEditor() {
-        when (prefs.prayerSourceMode) {
-            Constants.PrayerSource.DEVICE -> {
-                if (!requireContext().hasWeatherLocationPermission()) {
-                    locationPermissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                } else if (!requireContext().isLocationServicesEnabled()) {
-                    requireContext().showToast(R.string.location_services_disabled)
-                    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                }
-            }
-            Constants.PrayerSource.MANUAL -> {
-                binding.locationEditLayout.isVisible = true
-                val prefill = prefs.prayerLocationQuery.ifBlank { prefs.prayerLocationLabel }
-                binding.etLocation.setText(prefill)
-                binding.etLocation.setSelection(binding.etLocation.text?.length ?: 0)
-                binding.etLocation.showKeyboard()
-            }
-        }
-    }
-
-    private fun saveLocation() {
-        val query = binding.etLocation.text?.toString()?.trim().orEmpty()
-        if (query.isBlank()) {
-            requireContext().showToast(R.string.prayer_location_required)
-            binding.etLocation.showKeyboard()
-            return
-        }
-        prefs.prayerLocationQuery = query
-        prefs.prayerLocationLabel = query
-        prefs.prayerLatitude = ""
-        prefs.prayerLongitude = ""
-        prefs.clearPrayerCache()
-        binding.locationEditLayout.isVisible = false
-        binding.etLocation.hideKeyboard()
-        refreshPrayer()
-        updateLocationSection()
-        listener?.onPrayerSettingsChanged()
-        requireContext().showToast(R.string.prayer_saved)
-
-        if (prefs.showWeatherOnHome && prefs.weatherSourceMode == Constants.WeatherSource.MANUAL
-            && prefs.weatherLocationQuery.isBlank()
-        ) {
-            AlertDialog.Builder(requireContext())
-                .setMessage(R.string.use_same_location_for_weather)
-                .setPositiveButton(R.string.yes) { _, _ ->
-                    prefs.weatherLocationQuery = query
-                    prefs.weatherLocationLabel = query
-                    prefs.clearWeatherCache()
-                    listener?.onPrayerSettingsChanged()
-                }
-                .setNegativeButton(R.string.no, null)
-                .show()
-        }
     }
 
     private fun selectAzan(sound: String) {
