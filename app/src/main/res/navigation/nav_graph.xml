@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/mainFragment"
-        android:name="app.sukun.ui.HomeFragment"
+        android:name="sukun.minimalist.app.launcher.com.ui.HomeFragment"
         android:label="main_fragment"
         tools:layout="@layout/fragment_home">
         <action
@@ -42,7 +42,7 @@
 
     <fragment
         android:id="@+id/appListFragment"
-        android:name="app.sukun.ui.AppDrawerFragment"
+        android:name="sukun.minimalist.app.launcher.com.ui.AppDrawerFragment"
         android:label="app_list_fragment"
         tools:layout="@layout/fragment_app_drawer">
         <action
@@ -57,7 +57,7 @@
     </fragment>
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="app.sukun.ui.SettingsFragment"
+        android:name="sukun.minimalist.app.launcher.com.ui.SettingsFragment"
         android:label="SettingsFragment"
         tools:layout="@layout/fragment_settings">
         <action
@@ -92,25 +92,25 @@
 
     <fragment
         android:id="@+id/prayerAnalyticsFragment"
-        android:name="app.sukun.ui.PrayerAnalyticsFragment"
+        android:name="sukun.minimalist.app.launcher.com.ui.PrayerAnalyticsFragment"
         android:label="PrayerAnalyticsFragment"
         tools:layout="@layout/fragment_prayer_analytics" />
 
     <fragment
         android:id="@+id/remindersFragment"
-        android:name="app.sukun.ui.RemindersFragment"
+        android:name="sukun.minimalist.app.launcher.com.ui.RemindersFragment"
         android:label="RemindersFragment"
         tools:layout="@layout/fragment_reminders" />
 
     <fragment
         android:id="@+id/todoFragment"
-        android:name="app.sukun.ui.TodoFragment"
+        android:name="sukun.minimalist.app.launcher.com.ui.TodoFragment"
         android:label="TodoFragment"
         tools:layout="@layout/fragment_todo" />
 
     <fragment
         android:id="@+id/languageFragment"
-        android:name="app.sukun.ui.LanguageFragment"
+        android:name="sukun.minimalist.app.launcher.com.ui.LanguageFragment"
         android:label="LanguageFragment"
         tools:layout="@layout/fragment_language" />
 

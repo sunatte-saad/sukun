@@ -72,7 +72,7 @@
             android:requiresFadingEdge="vertical"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-        <app.sukun.widget.AlphabetFastScrollerView
+        <sukun.minimalist.app.launcher.com.widget.AlphabetFastScrollerView
             android:id="@+id/fastScroller"
             android:layout_width="28dp"
             android:layout_height="match_parent"

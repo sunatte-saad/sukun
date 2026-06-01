@@ -14,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "app.sukun"
+        applicationId "sukun.minimalist.app.launcher.com"
         minSdkVersion 24
         targetSdkVersion 35
         versionCode 105
@@ -46,7 +46,7 @@ android {
             assets.srcDirs += ['src/main/wallpapers']
         }
     }
-    namespace 'app.sukun'
+    namespace 'sukun.minimalist.app.launcher.com'
 }
 
 dependencies {

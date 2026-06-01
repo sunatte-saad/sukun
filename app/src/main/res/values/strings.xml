@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Sukun</string>
+    <string name="app_name" translatable="false">Sukun Minimalistic Launcher</string>
     <string name="github" translatable="false">Github</string>
     <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
     <string name="recents_layout_description" translatable="false">recents layout description to be used a unique id to show recent apps</string>
