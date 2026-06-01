@@ -1,6 +1,6 @@
-# Sukun
+# Sukun Minimalistic Launcher
 
-Sukun is a minimal Android launcher built around a calm home screen, low visual noise, and quick access to the features you actually use every day.
+Sukun Minimalistic Launcher is a minimal Android launcher built around a calm home screen, low visual noise, and quick access to the features you actually use every day.
 
 ## Highlights
 
@@ -114,9 +114,9 @@ On Windows, use:
 
 ## Project identity
 
-- App name: `Sukun`
-- Android application ID: `app.sukun`
-- Namespace: `app.sukun`
+- App name: `Sukun Minimalistic Launcher`
+- Android application ID: `sukun.minimalist.app.launcher.com`
+- Namespace: `sukun.minimalist.app.launcher.com`
 
 ## Notes
 

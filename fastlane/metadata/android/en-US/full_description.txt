@@ -1,5 +1,5 @@
 <p><b>Are you using your phone, or is your phone using you?</b></p>
-<p><i>Sukun</i> is a minimal Android launcher focused on calm defaults, low visual noise, and faster everyday navigation.</p>
+<p><i>Sukun Minimalistic Launcher</i> is a minimal Android launcher focused on calm defaults, low visual noise, and faster everyday navigation.</p>
 <p><br><b>FEATURES:</b></p>
 <ul>
 <li><b>Minimal home screen:</b> Keep your launcher clean and distraction-light.</li>
@@ -9,5 +9,5 @@
 <li><b>Optional extras:</b> Weather, prayer times, azan reminders, daily notes, and wallpaper support.</li>
 <li><b>Privacy:</b> Your data stays on your device.</li>
 </ul>
-<p>Sukun aims to stay simple while still offering practical features for daily use.</p>
+<p>Sukun Minimalistic Launcher aims to stay simple while still offering practical features for daily use.</p>
 <p><b>Accessibility Service:</b> Accessibility is only used for gesture-related features such as screen lock and recent-app actions. It is optional and does not collect or share personal data.</p>
