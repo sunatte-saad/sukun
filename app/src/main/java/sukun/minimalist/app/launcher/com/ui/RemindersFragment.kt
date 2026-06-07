@@ -1,6 +1,7 @@
 package sukun.minimalist.app.launcher.com.ui
 
 import android.Manifest
+import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -28,7 +29,9 @@ import sukun.minimalist.app.launcher.com.databinding.FragmentRemindersBinding
 import sukun.minimalist.app.launcher.com.databinding.ItemReminderBinding
 import sukun.minimalist.app.launcher.com.helper.ReminderScheduler
 import sukun.minimalist.app.launcher.com.helper.showToast
+import java.text.DateFormat
 import java.util.Calendar
+import java.util.Date
 
 class RemindersFragment : Fragment() {
 
@@ -141,6 +144,7 @@ class RemindersFragment : Fragment() {
         var selectedMinute = existing?.minute ?: 0
         var selectedInterval = existing?.intervalHours ?: 1
         val selectedDays = existing?.days?.toMutableSet() ?: mutableSetOf()
+        var selectedDateMillis: Long = existing?.dateMillis?.takeIf { it > 0L } ?: 0L
 
         dialogBinding.etReminderTitle.setText(existing?.title ?: "")
         dialogBinding.etReminderMessage.setText(existing?.message ?: "")
@@ -149,7 +153,8 @@ class RemindersFragment : Fragment() {
             val buttons = listOf(
                 dialogBinding.typeDailyBtn to Reminder.Type.DAILY,
                 dialogBinding.typeHourlyBtn to Reminder.Type.HOURLY,
-                dialogBinding.typeWeeklyBtn to Reminder.Type.WEEKLY
+                dialogBinding.typeWeeklyBtn to Reminder.Type.WEEKLY,
+                dialogBinding.typeOnceBtn to Reminder.Type.ONCE
             )
             buttons.forEach { (btn, type) ->
                 btn.alpha = if (type == selectedType) 1f else 0.35f
@@ -158,6 +163,15 @@ class RemindersFragment : Fragment() {
                 if (selectedType == Reminder.Type.HOURLY) View.VISIBLE else View.GONE
             dialogBinding.daysRow.visibility =
                 if (selectedType == Reminder.Type.WEEKLY) View.VISIBLE else View.GONE
+            dialogBinding.dateRow.visibility =
+                if (selectedType == Reminder.Type.ONCE) View.VISIBLE else View.GONE
+        }
+
+        fun updateDateUI() {
+            dialogBinding.tvSelectedDate.text =
+                if (selectedDateMillis > 0L)
+                    DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(selectedDateMillis))
+                else getString(R.string.reminder_pick_date)
         }
 
         fun updateTimeUI() {
@@ -189,10 +203,36 @@ class RemindersFragment : Fragment() {
         updateTimeUI()
         updateIntervalUI()
         updateDaysUI()
+        updateDateUI()
 
         dialogBinding.typeDailyBtn.setOnClickListener { selectedType = Reminder.Type.DAILY; updateTypeUI() }
         dialogBinding.typeHourlyBtn.setOnClickListener { selectedType = Reminder.Type.HOURLY; updateTypeUI() }
         dialogBinding.typeWeeklyBtn.setOnClickListener { selectedType = Reminder.Type.WEEKLY; updateTypeUI() }
+        dialogBinding.typeOnceBtn.setOnClickListener { selectedType = Reminder.Type.ONCE; updateTypeUI() }
+
+        dialogBinding.tvSelectedDate.setOnClickListener {
+            val cal = Calendar.getInstance()
+            if (selectedDateMillis > 0L) cal.timeInMillis = selectedDateMillis
+            DatePickerDialog(
+                requireContext(),
+                { _, y, m, d ->
+                    val picked = Calendar.getInstance().apply {
+                        set(Calendar.YEAR, y)
+                        set(Calendar.MONTH, m)
+                        set(Calendar.DAY_OF_MONTH, d)
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                    selectedDateMillis = picked.timeInMillis
+                    updateDateUI()
+                },
+                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)
+            ).apply {
+                datePicker.minDate = System.currentTimeMillis() - 1000
+            }.show()
+        }
 
         dialogBinding.tvSelectedTime.setOnClickListener {
             TimePickerDialog(requireContext(), { _, h, m ->
@@ -242,6 +282,25 @@ class RemindersFragment : Fragment() {
                 requireContext().showToast(R.string.reminder_days_required)
                 return@setOnClickListener
             }
+            var onceFireMillis = 0L
+            if (selectedType == Reminder.Type.ONCE) {
+                if (selectedDateMillis <= 0L) {
+                    requireContext().showToast(R.string.reminder_date_required)
+                    return@setOnClickListener
+                }
+                val cal = Calendar.getInstance().apply {
+                    timeInMillis = selectedDateMillis
+                    set(Calendar.HOUR_OF_DAY, selectedHour)
+                    set(Calendar.MINUTE, selectedMinute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                if (cal.timeInMillis <= System.currentTimeMillis()) {
+                    requireContext().showToast(R.string.reminder_once_in_past)
+                    return@setOnClickListener
+                }
+                onceFireMillis = cal.timeInMillis
+            }
             if (!ReminderScheduler.canScheduleExact(requireContext())) {
                 requireContext().showToast(R.string.reminder_exact_alarm_needed)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -259,7 +318,8 @@ class RemindersFragment : Fragment() {
                 minute = selectedMinute,
                 intervalHours = selectedInterval,
                 days = selectedDays.toSet(),
-                enabled = existing?.enabled ?: true,
+                dateMillis = onceFireMillis,
+                enabled = if (selectedType == Reminder.Type.ONCE) true else (existing?.enabled ?: true),
                 fireCount = existing?.fireCount ?: 0,
                 doneCount = existing?.doneCount ?: 0
             )

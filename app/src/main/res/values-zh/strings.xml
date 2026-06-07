@@ -15,7 +15,7 @@
     <string name="tag_6" translatable="false">6</string>
     <string name="tag_7" translatable="false">7</string>
     <string name="tag_8" translatable="false">8</string>
-    <string name="time_spent_min" translatable="false" />
+    <string name="time_spent_min" translatable="false">%1$s分钟</string>
     <string name="time_spent_hour" translatable="false">%1$s小时 %2$s分钟</string>
     <string name="app">应用</string>
     <string name="set_as_default_launcher">设为默认启动器</string>

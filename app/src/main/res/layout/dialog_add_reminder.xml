@@ -99,6 +99,47 @@
                         android:paddingVertical="6dp"
                         android:text="@string/schedule_weekly" />
 
+                    <TextView
+                        android:id="@+id/typeOnceBtn"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="6dp"
+                        android:text="@string/schedule_once" />
+
+                </LinearLayout>
+
+                <!-- Date row (ONCE only) -->
+                <LinearLayout
+                    android:id="@+id/dateRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reminder_date"
+                        android:textColor="?attr/primaryColor" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/tvSelectedDate"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="@string/reminder_pick_date" />
+
                 </LinearLayout>
 
                 <!-- Time row -->

@@ -16,6 +16,7 @@ import sukun.minimalist.app.launcher.com.MainActivity
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
+import sukun.minimalist.app.launcher.com.data.Reminder
 import sukun.minimalist.app.launcher.com.data.toJsonString
 import sukun.minimalist.app.launcher.com.data.toReminderList
 
@@ -32,9 +33,14 @@ class ReminderReceiver : BroadcastReceiver() {
         val allReminders = prefs.remindersJson.toReminderList().toMutableList()
         val idx = allReminders.indexOfFirst { it.id == id }
         if (idx >= 0) {
-            allReminders[idx] = allReminders[idx].copy(fireCount = allReminders[idx].fireCount + 1)
+            val isOnce = allReminders[idx].type == Reminder.Type.ONCE
+            allReminders[idx] = allReminders[idx].copy(
+                fireCount = allReminders[idx].fireCount + 1,
+                enabled = if (isOnce) false else allReminders[idx].enabled
+            )
             prefs.remindersJson = allReminders.toJsonString()
             if (allReminders[idx].enabled) ReminderScheduler.schedule(context, allReminders[idx])
+            else ReminderScheduler.cancel(context, allReminders[idx].id)
         }
 
         showNotification(context, id, title, message)

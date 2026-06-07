@@ -38,6 +38,13 @@
             app:exitAnim="@anim/fade_exit"
             app:popEnterAnim="@anim/fade_enter"
             app:popExitAnim="@anim/fade_exit" />
+        <action
+            android:id="@+id/action_mainFragment_to_signInFragment"
+            app:destination="@id/signInFragment"
+            app:enterAnim="@anim/fade_enter"
+            app:exitAnim="@anim/fade_exit"
+            app:popEnterAnim="@anim/fade_enter"
+            app:popExitAnim="@anim/fade_exit" />
     </fragment>
 
     <fragment
@@ -113,5 +120,11 @@
         android:name="sukun.minimalist.app.launcher.com.ui.LanguageFragment"
         android:label="LanguageFragment"
         tools:layout="@layout/fragment_language" />
+
+    <fragment
+        android:id="@+id/signInFragment"
+        android:name="sukun.minimalist.app.launcher.com.ui.SignInFragment"
+        android:label="SignInFragment"
+        tools:layout="@layout/fragment_sign_in" />
 
 </navigation>

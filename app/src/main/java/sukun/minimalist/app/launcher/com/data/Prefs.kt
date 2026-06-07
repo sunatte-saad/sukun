@@ -177,6 +177,12 @@ class Prefs(context: Context) {
     private val SHORTCUT_ID_SWIPE_RIGHT = "SHORTCUT_ID_SWIPE_RIGHT"
     private val IS_SHORTCUT_SWIPE_RIGHT = "IS_SHORTCUT_SWIPE_RIGHT"
 
+    private val SIGN_IN_PROMPT_SHOWN = "SIGN_IN_PROMPT_SHOWN"
+    private val ACCOUNT_ID = "ACCOUNT_ID"
+    private val ACCOUNT_NAME = "ACCOUNT_NAME"
+    private val ACCOUNT_EMAIL = "ACCOUNT_EMAIL"
+    private val ACCOUNT_PHOTO_URL = "ACCOUNT_PHOTO_URL"
+
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_FILENAME, 0)
 
     var firstOpen: Boolean
@@ -190,6 +196,51 @@ class Prefs(context: Context) {
     var firstSettingsOpen: Boolean
         get() = prefs.getBoolean(FIRST_SETTINGS_OPEN, true)
         set(value) = prefs.edit { putBoolean(FIRST_SETTINGS_OPEN, value).apply() }
+
+    // Whether the onboarding "Sign in with Google" prompt has been shown/dismissed
+    var signInPromptShown: Boolean
+        get() = prefs.getBoolean(SIGN_IN_PROMPT_SHOWN, false)
+        set(value) = prefs.edit { putBoolean(SIGN_IN_PROMPT_SHOWN, value).apply() }
+
+    // Signed-in Google account details (local only — no backend)
+    var accountId: String
+        get() = prefs.getString(ACCOUNT_ID, "").orEmpty()
+        set(value) = prefs.edit { putString(ACCOUNT_ID, value).apply() }
+
+    var accountName: String
+        get() = prefs.getString(ACCOUNT_NAME, "").orEmpty()
+        set(value) = prefs.edit { putString(ACCOUNT_NAME, value).apply() }
+
+    var accountEmail: String
+        get() = prefs.getString(ACCOUNT_EMAIL, "").orEmpty()
+        set(value) = prefs.edit { putString(ACCOUNT_EMAIL, value).apply() }
+
+    var accountPhotoUrl: String
+        get() = prefs.getString(ACCOUNT_PHOTO_URL, "").orEmpty()
+        set(value) = prefs.edit { putString(ACCOUNT_PHOTO_URL, value).apply() }
+
+    val isSignedIn: Boolean
+        get() = accountEmail.isNotBlank()
+
+    fun saveAccount(id: String, name: String, email: String, photoUrl: String) {
+        prefs.edit {
+            putString(ACCOUNT_ID, id)
+            putString(ACCOUNT_NAME, name)
+            putString(ACCOUNT_EMAIL, email)
+            putString(ACCOUNT_PHOTO_URL, photoUrl)
+            apply()
+        }
+    }
+
+    fun clearAccount() {
+        prefs.edit {
+            remove(ACCOUNT_ID)
+            remove(ACCOUNT_NAME)
+            remove(ACCOUNT_EMAIL)
+            remove(ACCOUNT_PHOTO_URL)
+            apply()
+        }
+    }
 
     var firstHide: Boolean
         get() = prefs.getBoolean(FIRST_HIDE, true)

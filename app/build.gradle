@@ -68,4 +68,9 @@ dependencies {
     //Material dependency
     implementation libs.material
 
+    // Google Sign-In via Credential Manager
+    implementation libs.credentials
+    implementation libs.credentials.play.services.auth
+    implementation libs.googleid
+
 }

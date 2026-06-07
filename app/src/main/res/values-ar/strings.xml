@@ -15,7 +15,7 @@
     <string name="tag_6" translatable="false">6</string>
     <string name="tag_7" translatable="false">7</string>
     <string name="tag_8" translatable="false">8</string>
-    <string name="time_spent_min" translatable="false" />
+    <string name="time_spent_min" translatable="false">%1$sد</string>
     <string name="time_spent_hour" translatable="false">%1$sس %2$sد</string>
     <string name="app">التطبيق</string>
     <string name="set_as_default_launcher">تعيين كمشغل افتراضي</string>

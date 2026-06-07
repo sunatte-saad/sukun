@@ -11,7 +11,9 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\SaadRehman\\\\Desktop\\\\github\\\\launcher\\\\Olauncher\" -Recurse -Directory)",
       "Bash(Select-Object -First 20)",
       "Bash(Format-Table FullName)",
-      "Bash(git show *)"
+      "Bash(git show *)",
+      "Bash(./gradlew.bat :app:compileDebugKotlin)",
+      "Bash(./gradlew.bat :app:assembleDebug)"
     ]
   }
 }

@@ -15,7 +15,7 @@
     <string name="tag_6" translatable="false">6</string>
     <string name="tag_7" translatable="false">7</string>
     <string name="tag_8" translatable="false">8</string>
-    <string name="time_spent_min" translatable="false" />
+    <string name="time_spent_min" translatable="false">%1$sm</string>
     <string name="time_spent_hour" translatable="false">%1$sh %2$sm</string>
     <string name="app">Aplikacja</string>
     <string name="set_as_default_launcher">Ustaw jako domyślny program uruchamiający</string>

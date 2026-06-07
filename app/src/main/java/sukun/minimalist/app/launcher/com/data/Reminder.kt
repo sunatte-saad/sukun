@@ -1,6 +1,8 @@
 package sukun.minimalist.app.launcher.com.data
 
+import java.text.DateFormat
 import java.util.Calendar
+import java.util.Date
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -13,6 +15,7 @@ data class Reminder(
     val minute: Int,
     val intervalHours: Int = 1,
     val days: Set<Int> = emptySet(),
+    val dateMillis: Long = 0L,
     val enabled: Boolean = true,
     val fireCount: Int = 0,
     val doneCount: Int = 0
@@ -21,6 +24,7 @@ data class Reminder(
         const val DAILY = "DAILY"
         const val HOURLY = "HOURLY"
         const val WEEKLY = "WEEKLY"
+        const val ONCE = "ONCE"
     }
 
     fun toJson(): JSONObject = JSONObject().apply {
@@ -32,6 +36,7 @@ data class Reminder(
         put("minute", minute)
         put("intervalHours", intervalHours)
         put("days", JSONArray(days.toList()))
+        put("dateMillis", dateMillis)
         put("enabled", enabled)
         put("fireCount", fireCount)
         put("doneCount", doneCount)
@@ -50,6 +55,7 @@ data class Reminder(
                 minute = obj.getInt("minute"),
                 intervalHours = obj.optInt("intervalHours", 1),
                 days = days,
+                dateMillis = obj.optLong("dateMillis", 0L),
                 enabled = obj.optBoolean("enabled", true),
                 fireCount = obj.optInt("fireCount", 0),
                 doneCount = obj.optInt("doneCount", 0)
@@ -85,6 +91,13 @@ fun Reminder.scheduleDescription(): String {
         Reminder.Type.WEEKLY -> {
             val names = days.sorted().joinToString(", ") { calDayAbbr(it) }
             if (names.isEmpty()) "Weekly at $timeStr" else "$names at $timeStr"
+        }
+        Reminder.Type.ONCE -> {
+            if (dateMillis <= 0L) "Once at $timeStr"
+            else {
+                val dateFmt = DateFormat.getDateInstance(DateFormat.MEDIUM)
+                "${dateFmt.format(Date(dateMillis))} at $timeStr"
+            }
         }
         else -> timeStr
     }

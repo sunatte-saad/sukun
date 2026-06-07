@@ -108,6 +108,11 @@ class MainActivity : AppCompatActivity() {
             viewModel.setDefaultClockApp()
         }
 
+        // Show the one-time Google sign-in onboarding screen on first launch.
+        if (!prefs.signInPromptShown && navController.currentDestination?.id == R.id.mainFragment) {
+            navController.navigate(R.id.action_mainFragment_to_signInFragment)
+        }
+
         initClickListeners()
         initObservers(viewModel)
         viewModel.getAppList()

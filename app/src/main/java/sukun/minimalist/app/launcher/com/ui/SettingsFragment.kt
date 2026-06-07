@@ -39,6 +39,7 @@ import sukun.minimalist.app.launcher.com.helper.PrayerReminderScheduler
 import sukun.minimalist.app.launcher.com.helper.ReminderScheduler
 import sukun.minimalist.app.launcher.com.helper.animateAlpha
 import sukun.minimalist.app.launcher.com.helper.appUsagePermissionGranted
+import sukun.minimalist.app.launcher.com.helper.GoogleAuthHelper
 import sukun.minimalist.app.launcher.com.helper.getFocusModeStatus
 import sukun.minimalist.app.launcher.com.helper.AmbientThemeController
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
@@ -77,6 +78,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
     private var pendingScreenTimePermissionRequest = false
+
+    private val googleAuthHelper by lazy { GoogleAuthHelper(requireContext().applicationContext) }
 
     private val locationSuggestions = mutableListOf<String>()
     private val locationAdapter by lazy {
@@ -121,6 +124,55 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 requireContext().showToast(R.string.weather_permission_needed)
             }
         }
+
+    private val backupExportLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri == null) return@registerForActivityResult
+            val ok = sukun.minimalist.app.launcher.com.helper.BackupHelper
+                .exportToUri(requireContext(), uri)
+            requireContext().showToast(
+                if (ok) R.string.backup_exported else R.string.backup_export_failed
+            )
+        }
+
+    private val backupImportLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri == null) return@registerForActivityResult
+            if (!sukun.minimalist.app.launcher.com.helper.BackupHelper
+                    .isValidBackup(requireContext(), uri)) {
+                requireContext().showToast(R.string.backup_import_invalid)
+                return@registerForActivityResult
+            }
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.backup_import_confirm_title)
+                .setMessage(R.string.backup_import_confirm_message)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.restore) { _, _ -> performImport(uri) }
+                .show()
+        }
+
+    private fun performImport(uri: Uri) {
+        val ok = sukun.minimalist.app.launcher.com.helper.BackupHelper
+            .importFromUri(requireContext(), uri)
+        if (!ok) {
+            requireContext().showToast(R.string.backup_import_failed)
+            return
+        }
+        sukun.minimalist.app.launcher.com.helper.ReminderScheduler
+            .scheduleAll(requireContext())
+        requireContext().showToast(R.string.backup_imported)
+        Process.killProcess(Process.myPid())
+    }
+
+    private fun launchBackupExport() {
+        val ts = java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US)
+            .format(java.util.Date())
+        backupExportLauncher.launch("${getString(R.string.backup_file_prefix)}-$ts.json")
+    }
+
+    private fun launchBackupImport() {
+        backupImportLauncher.launch(arrayOf("application/json", "*/*"))
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
@@ -170,6 +222,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             populateTodoSettings()
             populateRemindersSettings()
             populatePremiumStatus()
+            populateAccount()
             populatePrayerSettings()
             populateLocationSettings()
             setupLocationAutocomplete()
@@ -227,6 +280,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             binding.alignmentSelectLayout.visibility = View.GONE
 
         when (view.id) {
+            R.id.accountAction -> onAccountActionClick()
             R.id.sukunHiddenApps -> showHiddenApps()
             R.id.screenTimeOnOff -> toggleScreenTime()
             R.id.appInfo -> openAppInfo(requireContext(), Process.myUserHandle(), BuildConfig.APPLICATION_ID)
@@ -370,6 +424,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun initClickListeners() {
+        binding.accountAction.setOnClickListener(this)
         binding.sukunHiddenApps.setOnClickListener(this)
         binding.scrollLayout.setOnClickListener(this)
         binding.appInfo.setOnClickListener(this)
@@ -457,6 +512,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.appLanguageText?.setOnClickListener(this)
 
         binding.dailyWallpaper.setOnLongClickListener(this)
+
+        binding.backupExport?.setOnClickListener { launchBackupExport() }
+        binding.backupImport?.setOnClickListener { launchBackupImport() }
 
         binding.alignment.setOnLongClickListener(this)
         binding.appThemeText.setOnLongClickListener(this)
@@ -556,6 +614,63 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateRemindersSettings() {
         binding.remindersOnOff?.text = getString(if (prefs.showRemindersOnHome) R.string.on else R.string.off)
+    }
+
+    private fun populateAccount() {
+        val signedIn = prefs.isSignedIn
+        binding.accountName.isVisible = signedIn && prefs.accountName.isNotBlank()
+        binding.accountEmail.isVisible = signedIn
+        if (signedIn) {
+            binding.accountName.text = prefs.accountName
+            binding.accountEmail.text = prefs.accountEmail
+            binding.accountAction.text = getString(R.string.sign_out)
+            binding.accountAction.setTextColor(
+                requireContext().getColorFromAttr(R.attr.primaryColorTrans50)
+            )
+        } else {
+            binding.accountAction.text = getString(R.string.sign_in_with_google)
+            binding.accountAction.setTextColor(
+                requireContext().getColorFromAttr(R.attr.primaryColor)
+            )
+        }
+    }
+
+    private fun onAccountActionClick() {
+        if (prefs.isSignedIn) confirmSignOut() else signIn()
+    }
+
+    private fun signIn() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = googleAuthHelper.signIn(requireActivity())) {
+                is GoogleAuthHelper.SignInResult.Success -> {
+                    val account = result.account
+                    prefs.saveAccount(account.id, account.name, account.email, account.photoUrl)
+                    populateAccount()
+                    requireContext().showToast(getString(R.string.signed_in_as, account.email))
+                }
+                is GoogleAuthHelper.SignInResult.Cancelled -> Unit
+                is GoogleAuthHelper.SignInResult.Error ->
+                    requireContext().showToast(result.message)
+            }
+        }
+    }
+
+    private fun confirmSignOut() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.sign_out)
+            .setMessage(R.string.sign_out_confirmation)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.sign_out) { _, _ -> signOut() }
+            .show()
+    }
+
+    private fun signOut() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            googleAuthHelper.signOut()
+            prefs.clearAccount()
+            populateAccount()
+            requireContext().showToast(R.string.signed_out)
+        }
     }
 
     private fun populatePremiumStatus() {

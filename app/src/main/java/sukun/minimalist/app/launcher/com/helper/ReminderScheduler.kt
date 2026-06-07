@@ -107,6 +107,9 @@ object ReminderScheduler {
                 }
                 null
             }
+            Reminder.Type.ONCE -> {
+                if (reminder.dateMillis > now) reminder.dateMillis else null
+            }
             else -> null
         }
     }

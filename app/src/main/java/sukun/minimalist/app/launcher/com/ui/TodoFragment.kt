@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Prefs
@@ -69,6 +71,8 @@ class TodoFragment : Fragment() {
                     }
                 }
                 itemBinding.ivTodoDelete.setOnClickListener { deleteTodo(todo) }
+                itemBinding.root.setOnLongClickListener { editTodo(todo); true }
+                itemBinding.tvTodoTitle.setOnLongClickListener { editTodo(todo); true }
             }
             binding.tvClearCompleted.visibility = if (todos.any { it.completed }) View.VISIBLE else View.GONE
         }
@@ -89,6 +93,36 @@ class TodoFragment : Fragment() {
         binding.etTodoInput.text?.clear()
         refreshList()
         requireContext().showToast(R.string.todo_added)
+    }
+
+    private fun editTodo(todo: TodoItem) {
+        val input = EditText(requireContext()).apply {
+            setText(todo.text)
+            setSelection(todo.text.length)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        }
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val container = android.widget.FrameLayout(requireContext()).apply {
+            setPadding(padding, padding / 2, padding, 0)
+            addView(input)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.todo_edit)
+            .setView(container)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val text = input.text?.toString()?.trim().orEmpty()
+                if (text.isBlank()) return@setPositiveButton
+                val index = todos.indexOfFirst { it.id == todo.id }
+                if (index >= 0) {
+                    todos[index] = todo.copy(text = text)
+                    saveTodos()
+                    refreshList()
+                    requireContext().showToast(R.string.todo_updated)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun deleteTodo(todo: TodoItem) {
