@@ -62,7 +62,20 @@ class AzanPlaybackService : Service() {
         mediaPlayer?.release()
 
         val prefs = Prefs(applicationContext)
-        val mediaUri = resolveAzanUri(prefs)
+        val cachedFile = getAzanPlaybackFile(applicationContext, prefs.azanSound)
+        val customUri = if (prefs.azanSound == Constants.AzanSound.CUSTOM) {
+            resolveAzanCustomUri(prefs)
+        } else {
+            null
+        }
+        if (cachedFile == null && customUri == null) {
+            if (isBundledAzanSound(prefs.azanSound)) {
+                scheduleAzanDownloadWhenOnline(applicationContext, prefs.azanSound)
+            }
+            stopSelf()
+            return
+        }
+
         val player = MediaPlayer()
         mediaPlayer = player
         try {
@@ -74,7 +87,11 @@ class AzanPlaybackService : Service() {
                     .build()
             )
             player.setVolume(1f, 1f)
-            player.setDataSource(applicationContext, mediaUri)
+            if (cachedFile != null) {
+                player.setDataSource(cachedFile.absolutePath)
+            } else {
+                player.setDataSource(applicationContext, customUri!!)
+            }
             player.setOnCompletionListener { stopSelf() }
             player.setOnErrorListener { _, _, _ ->
                 stopSelf()
@@ -85,24 +102,6 @@ class AzanPlaybackService : Service() {
         } catch (_: Exception) {
             stopSelf()
         }
-    }
-
-    private fun resolveAzanUri(prefs: Prefs): Uri {
-        return when (prefs.azanSound) {
-            Constants.AzanSound.CUSTOM -> {
-                prefs.azanCustomUri.takeIf { it.isNotBlank() }?.let(Uri::parse)
-                    ?: defaultAzanUri()
-            }
-
-            Constants.AzanSound.MARYLEBONE -> rawUri(R.raw.azan_marylebone)
-            else -> rawUri(R.raw.azan_makkah)
-        }
-    }
-
-    private fun defaultAzanUri(): Uri = rawUri(R.raw.azan_makkah)
-
-    private fun rawUri(rawRes: Int): Uri {
-        return Uri.parse("android.resource://$packageName/$rawRes")
     }
 
     private fun registerScreenOffStopReceiver() {

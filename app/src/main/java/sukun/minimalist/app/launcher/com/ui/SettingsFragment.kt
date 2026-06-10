@@ -29,6 +29,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import sukun.minimalist.app.launcher.com.BuildConfig
 import sukun.minimalist.app.launcher.com.MainViewModel
+import sukun.minimalist.app.launcher.com.data.OnboardingAction
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
@@ -58,6 +59,7 @@ import kotlinx.coroutines.launch
 import sukun.minimalist.app.launcher.com.helper.isAccessServiceEnabled
 import sukun.minimalist.app.launcher.com.helper.isDarkThemeOn
 import sukun.minimalist.app.launcher.com.helper.isEinkDisplay
+import sukun.minimalist.app.launcher.com.helper.isNetworkAvailable
 import sukun.minimalist.app.launcher.com.helper.isSukunDefault
 import sukun.minimalist.app.launcher.com.helper.isTablet
 import sukun.minimalist.app.launcher.com.helper.openAppInfo
@@ -78,6 +80,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
     private var pendingScreenTimePermissionRequest = false
+    private var onboardingHighlightView: View? = null
+    private var onboardingHighlightOriginalBackground: android.graphics.drawable.Drawable? = null
+    private var scrollLayoutBaseBottomPadding = 0
 
     private val googleAuthHelper by lazy { GoogleAuthHelper(requireContext().applicationContext) }
 
@@ -282,7 +287,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         when (view.id) {
             R.id.accountAction -> onAccountActionClick()
             R.id.sukunHiddenApps -> showHiddenApps()
-            R.id.screenTimeOnOff -> toggleScreenTime()
+            R.id.screenTimeOnOff -> {
+                val action = OnboardingAction.TAP_SCREEN_TIME
+                viewModel.reportOnboardingAction(action)
+                if (!isOnboardingDiscoveryStep(action)) {
+                    toggleScreenTime()
+                }
+            }
             R.id.appInfo -> openAppInfo(requireContext(), Process.myUserHandle(), BuildConfig.APPLICATION_ID)
             R.id.setLauncher -> {
                 if (viewModel.isSukunDefault.value == true) {
@@ -291,6 +302,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                     viewModel.resetLauncherLiveData.call()
                 }
             }
+            R.id.startTour -> startOnboardingTour()
             R.id.homeAppsNum -> binding.appsNumSelectLayout.visibility = View.VISIBLE
             R.id.dailyWallpaperUrl -> {
                 if (prefs.dailyWallpaperUrl.isNotBlank()) {
@@ -310,7 +322,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.todoOnOff -> toggleTodo()
             R.id.goPremium -> showUpgradeDialog()
             R.id.weatherSettings -> showWeatherSettingsSheet()
-            R.id.prayerSettings -> showPrayerSettingsSheet()
+            R.id.prayerSettings -> {
+                val action = OnboardingAction.TAP_PRAYER_SETTINGS
+                viewModel.reportOnboardingAction(action)
+                if (!isOnboardingDiscoveryStep(action)) {
+                    showPrayerSettingsSheet()
+                }
+            }
             R.id.locationSettings -> openLocationEditor()
             R.id.chipLocationDevice -> selectLocationDevice()
             R.id.chipLocationManual -> selectLocationManual()
@@ -318,8 +336,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.btnCloseLocationSettings -> closeLocationEditor()
             R.id.remindersOnOff -> toggleReminders()
             R.id.focusMode -> {
-                if (prefs.isFocusModeActive()) requireContext().showToast(R.string.focus_mode_blocked)
-                else binding.focusModeSelectLayout?.visibility = View.VISIBLE
+                val action = OnboardingAction.TAP_FOCUS_MODE
+                viewModel.reportOnboardingAction(action)
+                if (!isOnboardingDiscoveryStep(action)) {
+                    if (prefs.isFocusModeActive()) requireContext().showToast(R.string.focus_mode_blocked)
+                    else binding.focusModeSelectLayout?.visibility = View.VISIBLE
+                }
             }
             R.id.focus15m -> startFocusMode(Constants.FocusModeDuration.FIFTEEN_MIN)
             R.id.focus30m -> startFocusMode(Constants.FocusModeDuration.THIRTY_MIN)
@@ -350,11 +372,25 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.clockStyleDayRing -> selectClockStyle(Constants.ClockStyle.DAY_RING)
             R.id.dayStartHour -> showDayHourEditor(isStartHour = true)
             R.id.dayEndHour -> showDayHourEditor(isStartHour = false)
-            R.id.appThemeText -> binding.appThemeSelectLayout.visibility = View.VISIBLE
+            R.id.appThemeText -> {
+                val action = OnboardingAction.TAP_APPEARANCE
+                viewModel.reportOnboardingAction(action)
+                if (!isOnboardingDiscoveryStep(action)) {
+                    binding.appThemeSelectLayout.visibility = View.VISIBLE
+                }
+            }
             R.id.themeLight -> updateTheme(AppCompatDelegate.MODE_NIGHT_NO)
             R.id.themeDark -> updateTheme(AppCompatDelegate.MODE_NIGHT_YES)
             R.id.themeAmbient -> updateTheme(Constants.THEME_MODE_AMBIENT_LIGHT)
-            R.id.appLanguageText -> findNavController().navigate(R.id.action_settingsFragment_to_languageFragment)
+            R.id.appLanguageText -> {
+                val isLanguageOnboardingStep = viewModel.isOnboardingActive() &&
+                    viewModel.currentOnboardingStep().requiredAction == OnboardingAction.TAP_LANGUAGE
+                if (isLanguageOnboardingStep) {
+                    viewModel.reportOnboardingAction(OnboardingAction.TAP_LANGUAGE)
+                } else {
+                    findNavController().navigate(R.id.action_settingsFragment_to_languageFragment)
+                }
+            }
             R.id.textSizeValue -> binding.textSizesLayout.visibility = View.VISIBLE
             R.id.actionAccessibility -> openAccessibilityService()
             R.id.closeAccessibility -> toggleAccessibilityVisibility(false)
@@ -413,7 +449,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
             R.id.dailyWallpaper -> removeWallpaper()
             R.id.appThemeText -> {
-                binding.appThemeSelectLayout.visibility = View.VISIBLE
+                val action = OnboardingAction.TAP_APPEARANCE
+                if (!isOnboardingDiscoveryStep(action)) {
+                    binding.appThemeSelectLayout.visibility = View.VISIBLE
+                }
             }
 
             R.id.swipeLeftApp -> toggleSwipeLeft()
@@ -429,6 +468,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.scrollLayout.setOnClickListener(this)
         binding.appInfo.setOnClickListener(this)
         binding.setLauncher.setOnClickListener(this)
+        binding.startTour?.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.remindersOnOff?.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
@@ -524,7 +564,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun initObservers() {
-        val showWelcomeDialog = prefs.firstSettingsOpen
+        val showWelcomeDialog = prefs.firstSettingsOpen && !viewModel.isOnboardingActive()
         if (showWelcomeDialog) {
             prefs.firstSettingsOpen = false
         }
@@ -550,6 +590,107 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 }
             }
         }
+        setupOnboardingObservers()
+    }
+
+    private fun setupOnboardingObservers() {
+        viewModel.onboardingActive.observe(viewLifecycleOwner) { active ->
+            binding.startTour?.visibility = if (active == true) View.GONE else View.VISIBLE
+            updateOnboardingScrollPadding(active == true)
+            if (active != true) {
+                clearOnboardingHighlight()
+            }
+        }
+        viewModel.onboardingStepIndex.observe(viewLifecycleOwner) {
+            if (!viewModel.isOnboardingActive()) return@observe
+            prepareOnboardingSettingsStep(viewModel.currentOnboardingStep().requiredAction)
+        }
+        viewModel.onboardingPerformSettingsAction.observe(viewLifecycleOwner) { action ->
+            performOnboardingSettingsAction(action)
+        }
+    }
+
+    private fun onboardingTargetView(action: OnboardingAction): View? = when (action) {
+        OnboardingAction.TAP_PRAYER_SETTINGS -> binding.prayerSettings
+        OnboardingAction.TAP_FOCUS_MODE -> binding.focusMode
+        OnboardingAction.TAP_SCREEN_TIME -> binding.screenTimeOnOff
+        OnboardingAction.TAP_LANGUAGE -> binding.appLanguageText
+        OnboardingAction.TAP_APPEARANCE -> binding.appThemeText
+        else -> null
+    }
+
+    private fun isOnboardingDiscoveryStep(action: OnboardingAction): Boolean {
+        return viewModel.isOnboardingActive() && viewModel.currentOnboardingStep().requiredAction == action
+    }
+
+    private fun prepareOnboardingSettingsStep(action: OnboardingAction) {
+        val target = onboardingTargetView(action)
+        if (target == null) {
+            clearOnboardingHighlight()
+            return
+        }
+        updateOnboardingScrollPadding(true)
+        binding.scrollView.post {
+            scrollToShowOnboardingTarget(target)
+            highlightOnboardingTarget(target)
+        }
+    }
+
+    private fun performOnboardingSettingsAction(action: OnboardingAction) {
+        onboardingTargetView(action)?.performClick()
+    }
+
+    private fun startOnboardingTour() {
+        if (viewModel.isOnboardingActive()) return
+        viewModel.startOnboarding()
+        try {
+            findNavController().popBackStack(R.id.mainFragment, false)
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun updateOnboardingScrollPadding(active: Boolean) {
+        if (scrollLayoutBaseBottomPadding == 0) {
+            scrollLayoutBaseBottomPadding = binding.scrollLayout.paddingBottom
+        }
+        val extra = if (active) (resources.displayMetrics.heightPixels * 0.38f).toInt() else 0
+        binding.scrollLayout.setPadding(
+            binding.scrollLayout.paddingLeft,
+            binding.scrollLayout.paddingTop,
+            binding.scrollLayout.paddingRight,
+            scrollLayoutBaseBottomPadding + extra,
+        )
+    }
+
+    private fun scrollToShowOnboardingTarget(target: View) {
+        val scrollView = binding.scrollView
+        val scrollContent = binding.scrollLayout
+        var offsetTop = 0
+        var view: View? = target
+        while (view != null && view !== scrollContent) {
+            offsetTop += view.top
+            view = view.parent as? View
+        }
+        val reserveAbovePanel = (resources.displayMetrics.heightPixels * 0.40f).toInt()
+        val targetScrollY = (offsetTop - reserveAbovePanel / 2).coerceAtLeast(0)
+        scrollView.smoothScrollTo(0, targetScrollY)
+    }
+
+    private fun highlightOnboardingTarget(view: View) {
+        clearOnboardingHighlight()
+        onboardingHighlightView = view
+        onboardingHighlightOriginalBackground = view.background
+        view.setBackgroundResource(R.drawable.bg_onboarding_target_highlight)
+        view.elevation = resources.getDimension(R.dimen.onboarding_target_elevation)
+    }
+
+    private fun clearOnboardingHighlight() {
+        onboardingHighlightView?.let { view ->
+            view.background = onboardingHighlightOriginalBackground
+            view.elevation = 0f
+        }
+        onboardingHighlightView = null
+        onboardingHighlightOriginalBackground = null
     }
 
     private fun toggleSwipeLeft() {
@@ -1181,10 +1322,21 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun showWallpaperToasts() {
-        if (isSukunDefault(requireContext()))
-            requireContext().showToast(getString(R.string.your_wallpaper_will_update_shortly))
-        else
+        if (!isSukunDefault(requireContext())) {
             requireContext().showToast(getString(R.string.sukun_is_not_default_launcher), Toast.LENGTH_LONG)
+            return
+        }
+        showWallpaperStatusToast()
+    }
+
+    private fun showWallpaperStatusToast() {
+        val message = if (requireContext().isNetworkAvailable()) {
+            R.string.your_wallpaper_will_update_shortly
+        } else {
+            R.string.wallpaper_will_update_when_online
+        }
+        val duration = if (requireContext().isNetworkAvailable()) Toast.LENGTH_SHORT else Toast.LENGTH_LONG
+        requireContext().showToast(getString(message), duration)
     }
 
     private fun changeWallpaperNow() {
@@ -1192,7 +1344,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         prefs.dailyWallpaper = true
         populateWallpaperText()
         viewModel.refreshWallpaperNow()
-        requireContext().showToast(R.string.your_wallpaper_will_update_shortly)
+        showWallpaperStatusToast()
     }
 
     private fun updateHomeAppsNum(num: Int) {
@@ -1480,6 +1632,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     override fun onDestroyView() {
+        clearOnboardingHighlight()
         super.onDestroyView()
         _binding = null
     }
@@ -1512,6 +1665,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateRemindersSettings()
         if (prefs.showPrayerOnHome) {
             viewModel.refreshPrayerData(forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
+        }
+        if (viewModel.isOnboardingActive()) {
+            prepareOnboardingSettingsStep(viewModel.currentOnboardingStep().requiredAction)
         }
     }
 

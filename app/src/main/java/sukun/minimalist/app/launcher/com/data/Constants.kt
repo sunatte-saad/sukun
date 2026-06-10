@@ -160,9 +160,13 @@ object Constants {
 
     const val URL_DOUBLE_TAP = ""
     const val URL_SUKUN_PLAY_STORE = ""
-    const val URL_WALLPAPERS = "https://unsplash.com/s/photos/phone-wallpaper"
-    const val URL_DEFAULT_DARK_WALLPAPER = "https://images.unsplash.com/photo-1512551980832-13df02babc9e"
-    const val URL_DEFAULT_LIGHT_WALLPAPER = "https://images.unsplash.com/photo-1515549832467-8783363e19b6"
+    const val URL_WALLPAPER_BASE =
+        "https://raw.githubusercontent.com/Samia14/WallPapers-And-Media/main/wallpapers/"
+    const val URL_AZAN_BASE =
+        "https://raw.githubusercontent.com/Samia14/WallPapers-And-Media/main/azan/"
+    const val WALLPAPER_NUMBER_MIN = 1
+    const val WALLPAPER_NUMBER_MAX = 30
+    const val WALLPAPER_DEFAULT_NUMBER = 1
     const val URL_DUCK_SEARCH = "https://duck.co/?q="
     const val URL_GOOGLE_WEATHER = "https://www.google.com/search?q=weather"
     const val URL_WEATHER_GEOCODING = "https://geocoding-api.open-meteo.com/v1/search"
@@ -174,6 +178,8 @@ object Constants {
     const val DIGITAL_WELLBEING_SAMSUNG_ACTIVITY = "com.samsung.android.forest.launcher.LauncherActivity"
     const val WALLPAPER_WORKER_NAME = "WALLPAPER_WORKER_NAME"
     const val WALLPAPER_REFRESH_NOW_WORKER_NAME = "WALLPAPER_REFRESH_NOW_WORKER_NAME"
+    const val WALLPAPER_SYNC_WORKER_NAME = "WALLPAPER_SYNC_WORKER_NAME"
+    const val AZAN_DOWNLOAD_WORKER_NAME = "AZAN_DOWNLOAD_WORKER_NAME"
     const val WEATHER_WORKER_NAME = "WEATHER_WORKER_NAME"
     const val WEATHER_REFRESH_HOURS = 4L
     const val WEATHER_STALE_MINUTES = 30

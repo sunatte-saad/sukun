@@ -1,6 +1,6 @@
 param(
-    [string]$Source = "C:\Users\jtc\.cursor\projects\d-sukun\assets\sukun_logo_calm_orbit_refined.png",
-    [string]$ProjectRoot = "D:\sukun"
+    [string]$ProjectRoot = "D:\sukun",
+    [string]$Source = ""
 )
 
 Add-Type -AssemblyName System.Drawing
@@ -94,6 +94,10 @@ function Write-LegacyLauncherIcon {
     Write-Host "Wrote legacy icon $OutputPath ($Size px, aspect-fit)"
 }
 
+if ([string]::IsNullOrWhiteSpace($Source)) {
+    $Source = Join-Path $ProjectRoot "assets\sukun_logo_master.png"
+}
+
 if (-not (Test-Path $Source)) {
     Write-Error "Source image not found: $Source"
     exit 1
@@ -103,7 +107,7 @@ $src = [System.Drawing.Image]::FromFile($Source)
 Write-Host "Source: $($src.Width)x$($src.Height)"
 
 $foregroundTargets = @(
-    @{ Path = "$ProjectRoot\app\src\main\res\drawable\ic_launcher_image.png"; Size = 432 },
+    @{ Path = "$ProjectRoot\app\src\main\res\drawable\sukun_logo.png"; Size = 512; Legacy = $true },
     @{ Path = "$ProjectRoot\app\src\main\res\mipmap-mdpi\ic_launcher_foreground.png"; Size = 108 },
     @{ Path = "$ProjectRoot\app\src\main\res\mipmap-hdpi\ic_launcher_foreground.png"; Size = 162 },
     @{ Path = "$ProjectRoot\app\src\main\res\mipmap-xhdpi\ic_launcher_foreground.png"; Size = 216 },
@@ -126,7 +130,11 @@ $legacyTargets = @(
 )
 
 foreach ($t in $foregroundTargets) {
-    Write-AdaptiveForeground -Src $src -OutputPath $t.Path -Size $t.Size
+    if ($t.Legacy) {
+        Write-LegacyLauncherIcon -Src $src -OutputPath $t.Path -Size $t.Size
+    } else {
+        Write-AdaptiveForeground -Src $src -OutputPath $t.Path -Size $t.Size
+    }
 }
 
 foreach ($t in $legacyTargets) {

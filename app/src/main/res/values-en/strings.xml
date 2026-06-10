@@ -136,6 +136,9 @@ Tap to open forecast</string>
     <string name="azan_sound_marylebone">Marylebone</string>
     <string name="custom_azan_file">Custom azan file</string>
     <string name="prayer_azan_saved">Custom azan updated</string>
+    <string name="azan_audio_downloaded">Azan audio downloaded</string>
+    <string name="azan_will_download_when_online">Azan audio will download when internet connection is available</string>
+    <string name="azan_download_failed">Could not download azan audio. Try again later.</string>
     <string name="daily_wallpaper_update">Daily new wallpaper</string>
     <string name="change_wallpaper_now">Change wallpaper now</string>
     <string name="left">Left</string>
@@ -238,6 +241,7 @@ Tap to open forecast</string>
     <string name="lock">Lock</string>
     <string name="focus">Focus</string>
     <string name="search">Search</string>
+    <string name="search_apps_hint">Search apps</string>
     <string name="notifications">Notifications</string>
     <string name="accessibility_disclosure">Please turn on Sukun\'s accessibility service in your device\'s settings to enable Double tap to lock or Home button for recent apps gestures.
     \n\nPlease note that this service is only used for these gestures. Our accessibility service does not collect or share any data.</string>
@@ -267,6 +271,7 @@ Tap to open forecast</string>
     <string name="swipe_left_app_disabled">Swipe left app disabled</string>
     <string name="swipe_right_app_disabled">Swipe right app disabled</string>
     <string name="your_wallpaper_will_update_shortly">Your wallpaper will update shortly</string>
+    <string name="wallpaper_will_update_when_online">Wallpaper will update when internet connection is available</string>
     <string name="sukun_is_not_default_launcher">Sukun is not default. Wallpaper update will fail.</string>
     <string name="long_press_to_enable">Long press to enable</string>
     <string name="no_hidden_apps">No hidden apps</string>
@@ -348,4 +353,58 @@ Tap to open forecast</string>
     <string name="cooldown_config_save">Save</string>
     <string name="cooldown_config_remove">Remove limit</string>
     <string name="cooldown_no_limits_set">Set at least one limit (opens or duration)</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_skip_tour">Skip tour</string>
+    <string name="onboarding_step_counter">%1$d of %2$d</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_action_start">Tap Get started below when you are ready.</string>
+    <string name="onboarding_action_home_apps">Tap any empty spot on the home screen above to pick an app.</string>
+    <string name="onboarding_action_launcher">Tap the button below. When your phone asks, choose Sukun and tap Always.</string>
+    <string name="onboarding_action_settings">Try it: long press anywhere on your home screen to open Settings.</string>
+    <string name="onboarding_action_prayer">Tap the highlighted Prayer times row above, or use Open below.</string>
+    <string name="onboarding_action_focus">Tap the highlighted Focus mode row above, or use Open below.</string>
+    <string name="onboarding_action_screen_time">Tap the highlighted Screen time row above, or use Open below.</string>
+    <string name="onboarding_action_language">Tap the highlighted Language row above, or use Open below.</string>
+    <string name="onboarding_action_hide_apps">Swipe up to open all your apps, then long-press one and choose Hide.</string>
+    <string name="onboarding_action_search_apps">Try it: type an app name in the search bar at the top of the app list.</string>
+    <string name="onboarding_action_appearance">Tap the highlighted Theme mode row above, or use Open below.</string>
+    <string name="onboarding_open_prayer">Open Prayer times</string>
+    <string name="onboarding_open_focus">Open Focus mode</string>
+    <string name="onboarding_open_screen_time">Open Screen time</string>
+    <string name="onboarding_open_language">Open Language</string>
+    <string name="onboarding_open_appearance">Open Theme mode</string>
+    <string name="onboarding_action_finish">Tap Finish when you are ready to begin.</string>
+    <string name="settings_start_tour">Start tour again</string>
+    <string name="onboarding_start_tour">Start tour</string>
+    <string name="onboarding_finish">Finish</string>
+    <string name="onboarding_welcome_title">Welcome to Sukun</string>
+    <string name="onboarding_welcome_body">A calm, minimalist home screen designed to help you focus and use your phone with intention. Less noise. More presence.</string>
+    <string name="onboarding_home_apps_title">Your favourite apps, one tap away</string>
+    <string name="onboarding_home_apps_body">Tap an empty spot on the home screen to place an app you use every day. You can show up to 8 apps here.</string>
+    <string name="onboarding_launcher_title">Make Sukun your home screen</string>
+    <string name="onboarding_launcher_body">For gestures, daily wallpapers, and the full experience, set Sukun as your default home app.</string>
+    <string name="onboarding_launcher_set">Set Sukun as default</string>
+    <string name="onboarding_launcher_done">Sukun is now your home app. The tour will continue when you return.</string>
+    <string name="onboarding_settings_title">Find everything in Settings</string>
+    <string name="onboarding_settings_body">Long-press anywhere on the home screen to open Settings. Most options live here. Swipe up from home to see all your apps.</string>
+    <string name="onboarding_prayer_title">Prayer times on your home</string>
+    <string name="onboarding_prayer_body">Show the five daily prayers on your home screen, set your location, get gentle reminders, and mark what you prayed.</string>
+    <string name="onboarding_focus_title">Focus when you need quiet</string>
+    <string name="onboarding_focus_body">Block or hide distracting apps for a while. Double-tap the home screen later to start Focus mode quickly.</string>
+    <string name="onboarding_screen_time_title">See your screen time</string>
+    <string name="onboarding_screen_time_body">Check how much you use your phone today. All the data stays private on your device.</string>
+    <string name="onboarding_language_title">Use your language</string>
+    <string name="onboarding_language_body">Sukun supports many languages. Choose yours and the interface updates right away.</string>
+    <string name="onboarding_hide_apps_title">Hide apps you don\'t want to see</string>
+    <string name="onboarding_hide_apps_body">Swipe up from the home screen to open your full list of apps (the app drawer). Long-press any app and choose Hide. Find or unhide them later in Settings by tapping the Sukun title at the top.</string>
+    <string name="onboarding_search_apps_title">Find apps in a second</string>
+    <string name="onboarding_search_apps_body">Swipe up to open all apps, then just start typing. The list filters as you type.</string>
+    <string name="onboarding_appearance_title">Make it look the way you like</string>
+    <string name="onboarding_appearance_body">Choose light or dark, let it follow the time of day, or adjust text size and clock style.</string>
+    <string name="onboarding_done_title">You\'re all set</string>
+    <string name="onboarding_done_body">Long-press the home screen anytime to open Settings. Enjoy a calmer phone.</string>
+    <string name="onboarding_home_app_slot_chosen">Perfect — you can place apps you use every day right here.</string>
 </resources>

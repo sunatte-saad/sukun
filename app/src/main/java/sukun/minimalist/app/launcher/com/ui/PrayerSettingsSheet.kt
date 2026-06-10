@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import sukun.minimalist.app.launcher.com.MainViewModel
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Constants
@@ -28,9 +29,15 @@ import sukun.minimalist.app.launcher.com.data.PrayerLog
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.BottomSheetPrayerSettingsBinding
 import sukun.minimalist.app.launcher.com.helper.PrayerReminderScheduler
+import sukun.minimalist.app.launcher.com.helper.downloadAzan
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
+import sukun.minimalist.app.launcher.com.helper.isAzanCached
+import sukun.minimalist.app.launcher.com.helper.isBundledAzanSound
+import sukun.minimalist.app.launcher.com.helper.isNetworkAvailable
+import sukun.minimalist.app.launcher.com.helper.scheduleAzanDownloadWhenOnline
 import sukun.minimalist.app.launcher.com.helper.showToast
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -139,6 +146,7 @@ class PrayerSettingsSheet : DialogFragment() {
         if (isOn) {
             updateAzanChips()
             updateCustomAzanRow()
+            ensureAzanDownloaded()
         }
         val hasLogs = prefs.getPrayerLogs().isNotEmpty()
         val showAnalytics = isOn || hasLogs
@@ -200,9 +208,36 @@ class PrayerSettingsSheet : DialogFragment() {
         prefs.azanEnabled = sound != Constants.AzanSound.OFF
         updateAzanChips()
         updateCustomAzanRow()
-        if (prefs.azanEnabled) ensureExactAlarmPermissionIfNeeded()
+        if (prefs.azanEnabled) {
+            ensureExactAlarmPermissionIfNeeded()
+            requestAzanDownload(sound)
+        }
         refreshPrayer(promptForAlarmPermission = true)
         listener?.onPrayerSettingsChanged()
+    }
+
+    private fun ensureAzanDownloaded() {
+        val sound = prefs.azanSound
+        if (!prefs.azanEnabled || !isBundledAzanSound(sound) || isAzanCached(requireContext(), sound)) return
+        requestAzanDownload(sound, showOnlineToast = false)
+    }
+
+    private fun requestAzanDownload(sound: String, showOnlineToast: Boolean = true) {
+        if (!isBundledAzanSound(sound)) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val downloaded = downloadAzan(requireContext(), sound)
+            when {
+                downloaded && showOnlineToast ->
+                    requireContext().showToast(R.string.azan_audio_downloaded)
+                downloaded -> Unit
+                requireContext().isNetworkAvailable() ->
+                    requireContext().showToast(R.string.azan_download_failed, Toast.LENGTH_LONG)
+                else -> {
+                    scheduleAzanDownloadWhenOnline(requireContext(), sound)
+                    requireContext().showToast(R.string.azan_will_download_when_online, Toast.LENGTH_LONG)
+                }
+            }
+        }
     }
 
     private fun refreshPrayer(

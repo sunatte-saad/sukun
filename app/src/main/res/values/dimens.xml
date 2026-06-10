@@ -3,4 +3,7 @@
     <dimen name="alphabet_recycler_margin_bottom">16dp</dimen>
     <dimen name="alphabet_recycler_margin_end">10dp</dimen>
     <dimen name="alphabet_recycler_margin_start">320dp</dimen>
+    <dimen name="onboarding_dot_size">7dp</dimen>
+    <dimen name="onboarding_dot_margin">6dp</dimen>
+    <dimen name="onboarding_target_elevation">4dp</dimen>
 </resources>

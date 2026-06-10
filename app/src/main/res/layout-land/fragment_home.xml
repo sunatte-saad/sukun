@@ -160,103 +160,109 @@
         tools:text="Focus mode active"
         tools:visibility="visible" />
 
-    <FrameLayout
-        android:id="@+id/remindersBellContainer"
+    <LinearLayout
+        android:id="@+id/topCornerStack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
-        android:layout_marginEnd="14dp"
-        android:layout_marginTop="72dp"
-        android:clickable="true"
-        android:contentDescription="@string/reminders"
+        android:layout_marginEnd="24dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:elevation="8dp"
-        android:focusable="true">
-
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/remindersBell"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/rounded_rect_shade_color"
-            android:padding="10dp"
-            android:src="@drawable/ic_bell" />
-
-        <TextView
-            android:id="@+id/remindersBellCount"
-            style="@style/TextSmallBold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="2dp"
-            android:background="@drawable/badge_reminder_count"
-            android:gravity="center"
-            android:minWidth="18dp"
-            android:minHeight="18dp"
-            android:paddingHorizontal="4dp"
-            android:textColor="@android:color/black"
-            android:textSize="11sp"
-            android:visibility="gone"
-            tools:text="3"
-            tools:visibility="visible" />
-    </FrameLayout>
-
-    <FrameLayout
-        android:id="@+id/todoIconContainer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:layout_marginEnd="14dp"
-        android:layout_marginTop="126dp"
-        android:clickable="true"
-        android:contentDescription="@string/todo_list"
-        android:elevation="8dp"
-        android:focusable="true"
+        android:gravity="end"
+        android:orientation="vertical"
         android:visibility="gone"
         tools:visibility="visible">
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/todoIcon"
+        <FrameLayout
+            android:id="@+id/remindersBellContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/rounded_rect_shade_color"
-            android:padding="10dp"
-            android:src="@drawable/ic_todo" />
+            android:clickable="true"
+            android:contentDescription="@string/reminders"
+            android:focusable="true">
 
-        <TextView
-            android:id="@+id/todoIconCount"
-            style="@style/TextSmallBold"
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/remindersBell"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_rect_shade_color"
+                android:padding="10dp"
+                android:src="@drawable/ic_bell" />
+
+            <TextView
+                android:id="@+id/remindersBellCount"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="2dp"
+                android:background="@drawable/badge_reminder_count"
+                android:gravity="center"
+                android:minWidth="18dp"
+                android:minHeight="18dp"
+                android:paddingHorizontal="4dp"
+                android:textColor="@android:color/black"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:text="3"
+                tools:visibility="visible" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/todoIconContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="2dp"
-            android:background="@drawable/badge_reminder_count"
-            android:gravity="center"
-            android:minWidth="18dp"
-            android:minHeight="18dp"
-            android:paddingHorizontal="4dp"
-            android:textColor="@android:color/black"
-            android:textSize="11sp"
+            android:layout_marginTop="6dp"
+            android:clickable="true"
+            android:contentDescription="@string/todo_list"
+            android:focusable="true"
             android:visibility="gone"
-            tools:text="2"
-            tools:visibility="visible" />
-    </FrameLayout>
+            tools:visibility="visible">
 
-    <!-- Screen time-->
-    <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/tvScreenTime"
-        style="@style/TextSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:layout_marginTop="110dp"
-        android:layout_marginEnd="14dp"
-        android:gravity="center"
-        android:padding="10dp"
-        android:textSize="@dimen/date_size"
-        android:visibility="gone"
-        tools:text="2h 11m"
-        tools:visibility="visible" />
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/todoIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_rect_shade_color"
+                android:padding="10dp"
+                android:src="@drawable/ic_todo" />
+
+            <TextView
+                android:id="@+id/todoIconCount"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="2dp"
+                android:background="@drawable/badge_reminder_count"
+                android:gravity="center"
+                android:minWidth="18dp"
+                android:minHeight="18dp"
+                android:paddingHorizontal="4dp"
+                android:textColor="@android:color/black"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:text="2"
+                tools:visibility="visible" />
+        </FrameLayout>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tvScreenTime"
+            style="@style/TextSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="end"
+            android:padding="10dp"
+            android:textSize="@dimen/date_size"
+            android:visibility="gone"
+            tools:text="2h 11m"
+            tools:visibility="visible" />
+
+    </LinearLayout>
 
     <!-- Home apps-->
     <LinearLayout

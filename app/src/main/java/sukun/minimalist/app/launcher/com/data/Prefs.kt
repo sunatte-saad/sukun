@@ -26,6 +26,8 @@ class Prefs(context: Context) {
     private val KEYBOARD_MESSAGE = "KEYBOARD_MESSAGE"
     private val DAILY_WALLPAPER = "DAILY_WALLPAPER"
     private val DAILY_WALLPAPER_URL = "DAILY_WALLPAPER_URL"
+    private val LAST_WALLPAPER_UPDATE_TIME = "LAST_WALLPAPER_UPDATE_TIME"
+    private val WALLPAPER_PENDING_SYNC = "WALLPAPER_PENDING_SYNC"
     private val HOME_ALIGNMENT = "HOME_ALIGNMENT"
     private val HOME_BOTTOM_ALIGNMENT = "HOME_BOTTOM_ALIGNMENT"
     private val SHOW_HOME_APP_ICONS = "SHOW_HOME_APP_ICONS"
@@ -178,6 +180,9 @@ class Prefs(context: Context) {
     private val IS_SHORTCUT_SWIPE_RIGHT = "IS_SHORTCUT_SWIPE_RIGHT"
 
     private val SIGN_IN_PROMPT_SHOWN = "SIGN_IN_PROMPT_SHOWN"
+    private val ONBOARDING_COMPLETE = "ONBOARDING_COMPLETE"
+    private val ONBOARDING_TOUR_ACTIVE = "ONBOARDING_TOUR_ACTIVE"
+    private val ONBOARDING_TOUR_STEP = "ONBOARDING_TOUR_STEP"
     private val ACCOUNT_ID = "ACCOUNT_ID"
     private val ACCOUNT_NAME = "ACCOUNT_NAME"
     private val ACCOUNT_EMAIL = "ACCOUNT_EMAIL"
@@ -201,6 +206,18 @@ class Prefs(context: Context) {
     var signInPromptShown: Boolean
         get() = prefs.getBoolean(SIGN_IN_PROMPT_SHOWN, false)
         set(value) = prefs.edit { putBoolean(SIGN_IN_PROMPT_SHOWN, value).apply() }
+
+    var onboardingComplete: Boolean
+        get() = prefs.getBoolean(ONBOARDING_COMPLETE, false)
+        set(value) = prefs.edit { putBoolean(ONBOARDING_COMPLETE, value).apply() }
+
+    var onboardingTourActive: Boolean
+        get() = prefs.getBoolean(ONBOARDING_TOUR_ACTIVE, false)
+        set(value) = prefs.edit { putBoolean(ONBOARDING_TOUR_ACTIVE, value).apply() }
+
+    var onboardingTourStep: Int
+        get() = prefs.getInt(ONBOARDING_TOUR_STEP, 0)
+        set(value) = prefs.edit { putInt(ONBOARDING_TOUR_STEP, value).apply() }
 
     // Signed-in Google account details (local only — no backend)
     var accountId: String
@@ -269,6 +286,14 @@ class Prefs(context: Context) {
     var dailyWallpaperUrl: String
         get() = prefs.getString(DAILY_WALLPAPER_URL, "").toString()
         set(value) = prefs.edit { putString(DAILY_WALLPAPER_URL, value).apply() }
+
+    var lastWallpaperUpdateTime: Long
+        get() = prefs.getLong(LAST_WALLPAPER_UPDATE_TIME, 0L)
+        set(value) = prefs.edit { putLong(LAST_WALLPAPER_UPDATE_TIME, value).apply() }
+
+    var wallpaperPendingSync: Boolean
+        get() = prefs.getBoolean(WALLPAPER_PENDING_SYNC, false)
+        set(value) = prefs.edit { putBoolean(WALLPAPER_PENDING_SYNC, value).apply() }
 
     var homeAppsNum: Int
         get() = prefs.getInt(HOME_APPS_NUM, 4).coerceIn(0, 8)
@@ -536,11 +561,11 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putLong(PRAYER_LAST_UPDATED, value).apply() }
 
     var azanEnabled: Boolean
-        get() = prefs.getBoolean(AZAN_ENABLED, true)
+        get() = prefs.getBoolean(AZAN_ENABLED, false)
         set(value) = prefs.edit { putBoolean(AZAN_ENABLED, value).apply() }
 
     var azanSound: String
-        get() = prefs.getString(AZAN_SOUND, Constants.AzanSound.MAKKAH).toString()
+        get() = prefs.getString(AZAN_SOUND, Constants.AzanSound.OFF).toString()
         set(value) = prefs.edit { putString(AZAN_SOUND, value).apply() }
 
     var azanCustomUri: String

@@ -43,6 +43,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import sukun.minimalist.app.launcher.com.MainViewModel
+import sukun.minimalist.app.launcher.com.data.OnboardingAction
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.AppModel
 import sukun.minimalist.app.launcher.com.data.Constants
@@ -99,6 +100,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private var currentPrayerState: PrayerState? = null
     private var defaultHomeAppsPaddingTop = 0
     private var defaultHomeAppsPaddingBottom = 0
+    private var topCornerStackRunnable: Runnable? = null
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
@@ -125,8 +127,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         initSwipeTouchListener()
         initClickListeners()
         applyReadableHomeTextColors()
-        binding.remindersBellContainer.bringToFront()
-        binding.todoIconContainer.bringToFront()
+        binding.topCornerStack.bringToFront()
         updateRemindersBellCount()
         updateTodoIconCount()
     }
@@ -256,7 +257,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun initObservers() {
-        if (prefs.firstSettingsOpen) {
+        if (prefs.firstSettingsOpen && !prefs.onboardingComplete && !viewModel.isOnboardingActive()) {
             binding.firstRunTips.visibility = View.VISIBLE
             binding.setDefaultLauncher.visibility = View.GONE
         } else binding.firstRunTips.visibility = View.GONE
@@ -417,13 +418,6 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.homeApp6.gravity = horizontalGravity
         binding.homeApp7.gravity = horizontalGravity
         binding.homeApp8.gravity = horizontalGravity
-        val iconsAlignment = if (horizontalGravity == Gravity.END) Gravity.START else Gravity.END
-        safeBinding?.remindersBellContainer?.layoutParams = (safeBinding?.remindersBellContainer?.layoutParams as? FrameLayout.LayoutParams)?.apply {
-            gravity = iconsAlignment
-        }
-        safeBinding?.todoIconContainer?.layoutParams = (safeBinding?.todoIconContainer?.layoutParams as? FrameLayout.LayoutParams)?.apply {
-            gravity = iconsAlignment
-        }
         positionTopCornerStack()
         positionOverlayText(horizontalGravity)
         adjustHomeAppsLayoutForTextScale()
@@ -445,9 +439,11 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (binding.dateTimeLayout.isVisible) startDateTimeTicker()
         else stopDateTimeTicker()
         positionOverlayText()
+        scheduleTopCornerStackLayout()
         binding.dateTimeLayout.doOnLayout {
             if (safeBinding == null) return@doOnLayout
             positionOverlayText()
+            scheduleTopCornerStackLayout()
         }
     }
 
@@ -625,14 +621,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                     binding.weatherText.isVisible -> weatherTopMargin + binding.weatherText.height
                     else -> getDateTimeBottom() ?: 0
                 }
-                val topCornerBottom = listOfNotNull(
-                    binding.remindersBellContainer.takeIf { it.isVisible }
-                        ?.let { it.top + it.height },
-                    binding.todoIconContainer.takeIf { it.isVisible }
-                        ?.let { it.top + it.height },
-                    binding.tvScreenTime?.takeIf { it.isVisible }
-                        ?.let { it.top + it.height },
-                ).maxOrNull() ?: 0
+                val topCornerBottom = binding.topCornerStack.takeIf { it.isVisible }
+                    ?.let { it.top + it.height } ?: 0
                 val topOverlayBottom = max(overlayBottom, topCornerBottom)
                 updateHomeAppsTopPadding(topOverlayBottom + spacing)
             } catch (_: Throwable) {
@@ -851,12 +841,58 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
 
+        viewModel.screenTimeValue.value?.let { cached ->
+            binding.tvScreenTime?.text = cached
+            binding.tvScreenTime?.visibility = View.VISIBLE
+        }
         viewModel.getTodaysScreenTime()
         positionTopCornerStack()
     }
 
-    private fun topCornerHorizontalGravity(): Int =
-        if (prefs.homeAlignment == Gravity.END) Gravity.START else Gravity.END
+    private fun topCornerHorizontalGravity(): Int = prefs.homeAlignment
+
+    private fun topCornerHorizontalMargin(): Int = 24.dpToPx()
+
+    private fun measuredOrDimen(view: View?, dimenRes: Int, scaleWithTextSize: Boolean = false): Int {
+        if (view != null && view.height > 0) return view.height
+        var size = resources.getDimensionPixelSize(dimenRes)
+        if (scaleWithTextSize) size = (size * prefs.textSizeScale).toInt()
+        return size
+    }
+
+    private fun estimatedDateTimeBottom(binding: FragmentHomeBinding): Int {
+        val top = if (binding.dateTimeLayout.top > 0) binding.dateTimeLayout.top else 56.dpToPx()
+        val contentHeight = when {
+            binding.ringClockLayout.isVisible -> 220.dpToPx()
+            else -> {
+                var height = 0
+                if (binding.clock.isVisible) {
+                    height += measuredOrDimen(binding.clock, R.dimen.time_size, scaleWithTextSize = true)
+                }
+                if (binding.date?.isVisible == true) {
+                    height += measuredOrDimen(binding.date, R.dimen.date_size, scaleWithTextSize = true)
+                }
+                height
+            }
+        }
+        return top + contentHeight
+    }
+
+    private fun dateTimeBottomForCornerStack(binding: FragmentHomeBinding): Int {
+        if (!binding.dateTimeLayout.isVisible) return 0
+        if (binding.dateTimeLayout.height > 0) {
+            return getDateTimeBottom() ?: estimatedDateTimeBottom(binding)
+        }
+        return estimatedDateTimeBottom(binding)
+    }
+
+    private fun topCornerStackTopMargin(binding: FragmentHomeBinding): Int {
+        val spacing = 6.dpToPx()
+        if (binding.dateTimeLayout.isVisible) {
+            return dateTimeBottomForCornerStack(binding) + spacing
+        }
+        return screenTimeFallbackTopMargin()
+    }
 
     private fun screenTimeFallbackTopMargin(): Int {
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -867,94 +903,71 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
     }
 
+    private fun updateTopCornerStackVisibility(binding: FragmentHomeBinding) {
+        binding.topCornerStack.isVisible =
+            binding.remindersBellContainer.isVisible ||
+            binding.todoIconContainer.isVisible ||
+            binding.tvScreenTime?.isVisible == true
+    }
+
     private fun positionTopCornerStack() {
+        scheduleTopCornerStackLayout()
+    }
+
+    private fun scheduleTopCornerStackLayout() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
         val binding = safeBinding ?: return
-        val horizontalMargin = 14.dpToPx()
-        val spacing = 6.dpToPx()
+        val layout = binding.mainLayout
+
+        applyTopCornerStackPositionsNow()
+
+        topCornerStackRunnable?.let { layout.removeCallbacks(it) }
+        val runnable = Runnable {
+            topCornerStackRunnable = null
+            applyTopCornerStackPositions()
+        }
+        topCornerStackRunnable = runnable
+        layout.post(runnable)
+    }
+
+    private fun applyTopCornerStackPositions() {
+        val binding = safeBinding ?: return
+        if (binding.dateTimeLayout.isVisible && binding.dateTimeLayout.height == 0) {
+            binding.dateTimeLayout.doOnLayout {
+                safeBinding?.mainLayout?.post { applyTopCornerStackPositionsNow() }
+            }
+            return
+        }
+        applyTopCornerStackPositionsNow()
+    }
+
+    private fun applyTopCornerStackPositionsNow() {
+        val binding = safeBinding ?: return
+        val horizontalMargin = topCornerHorizontalMargin()
         val iconsGravity = topCornerHorizontalGravity()
 
-        fun applyPositions() {
-            val currentBinding = safeBinding ?: return
-            try {
-                positionTodoBelowBell(currentBinding, iconsGravity, horizontalMargin, spacing)
-                val todo = currentBinding.todoIconContainer
-                if (todo.isVisible) {
-                    todo.doOnLayout {
-                        positionScreenTimeBelowStack(currentBinding, iconsGravity, horizontalMargin, spacing)
-                        positionOverlayText()
-                    }
-                } else {
-                    positionScreenTimeBelowStack(currentBinding, iconsGravity, horizontalMargin, spacing)
-                    positionOverlayText()
+        try {
+            updateTopCornerStackVisibility(binding)
+            binding.topCornerStack.gravity = iconsGravity
+            binding.tvScreenTime?.gravity = iconsGravity
+
+            binding.topCornerStack.layoutParams =
+                (binding.topCornerStack.layoutParams as? FrameLayout.LayoutParams)?.apply {
+                    topMargin = topCornerStackTopMargin(binding)
+                    marginStart = horizontalMargin
+                    marginEnd = horizontalMargin
+                    gravity = iconsGravity or Gravity.TOP
+                } ?: FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                ).apply {
+                    topMargin = topCornerStackTopMargin(binding)
+                    marginStart = horizontalMargin
+                    marginEnd = horizontalMargin
+                    gravity = iconsGravity or Gravity.TOP
                 }
-            } catch (_: Throwable) {
-            }
+        } catch (_: Throwable) {
         }
-
-        if (binding.remindersBellContainer.isVisible) {
-            binding.remindersBellContainer.doOnLayout { applyPositions() }
-        } else {
-            binding.mainLayout.post { applyPositions() }
-        }
-    }
-
-    private fun positionTodoBelowBell(
-        binding: FragmentHomeBinding,
-        iconsGravity: Int,
-        horizontalMargin: Int,
-        spacing: Int,
-    ) {
-        val todo = binding.todoIconContainer
-        if (!todo.isVisible) return
-
-        val topMargin = if (binding.remindersBellContainer.isVisible) {
-            binding.remindersBellContainer.top + binding.remindersBellContainer.height + spacing
-        } else {
-            126.dpToPx()
-        }
-        todo.layoutParams = (todo.layoutParams as? FrameLayout.LayoutParams)?.apply {
-            this.topMargin = topMargin
-            marginStart = horizontalMargin
-            marginEnd = horizontalMargin
-            gravity = iconsGravity or Gravity.TOP
-        } ?: FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-        ).apply {
-            this.topMargin = topMargin
-            marginStart = horizontalMargin
-            marginEnd = horizontalMargin
-            gravity = iconsGravity or Gravity.TOP
-        }
-    }
-
-    private fun positionScreenTimeBelowStack(
-        binding: FragmentHomeBinding,
-        iconsGravity: Int,
-        horizontalMargin: Int,
-        spacing: Int,
-    ) {
-        val screenTime = binding.tvScreenTime
-        if (screenTime == null || !screenTime.isVisible) return
-
-        val topMargin = when {
-            binding.todoIconContainer.isVisible ->
-                binding.todoIconContainer.top + binding.todoIconContainer.height + spacing
-            binding.remindersBellContainer.isVisible ->
-                binding.remindersBellContainer.top + binding.remindersBellContainer.height + spacing
-            else -> screenTimeFallbackTopMargin()
-        }
-        screenTime.layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-        ).apply {
-            this.topMargin = topMargin
-            marginStart = horizontalMargin
-            marginEnd = horizontalMargin
-            gravity = iconsGravity or Gravity.TOP
-        }
-        screenTime.setPadding(10.dpToPx())
     }
 
     private fun populateHomeScreen(appCountUpdated: Boolean) {
@@ -1324,6 +1337,24 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             requireContext().showToast(R.string.focus_mode_blocked)
             return
         }
+
+        val isHomeAppSlotStep = flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_HOME_APP_8 &&
+            viewModel.isOnboardingActive() &&
+            viewModel.currentOnboardingStep().requiredAction == OnboardingAction.TAP_HOME_APP_SLOT
+
+        when {
+            flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_HOME_APP_8 ->
+                viewModel.reportOnboardingAction(OnboardingAction.TAP_HOME_APP_SLOT)
+            flag == Constants.FLAG_LAUNCH_APP ->
+                viewModel.reportOnboardingAction(OnboardingAction.OPEN_APP_DRAWER)
+        }
+
+        if (isHomeAppSlotStep) {
+            // Do not open the app picker during the tour. The highlight + tap teaches the feature.
+            requireContext().showToast(getString(R.string.onboarding_home_app_slot_chosen))
+            return
+        }
+
         viewModel.getAppList(includeHiddenApps)
         val navController = try {
             findNavController()
@@ -1594,6 +1625,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 else ->
                     navController.navigate(R.id.settingsFragment, null, options)
             }
+            viewModel.reportOnboardingAction(OnboardingAction.OPEN_SETTINGS)
             viewModel.firstOpen(false)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -1702,6 +1734,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     override fun onDestroyView() {
+        topCornerStackRunnable?.let { safeBinding?.mainLayout?.removeCallbacks(it) }
+        topCornerStackRunnable = null
         stopFocusModeTicker()
         unregisterSystemTimeReceiver()
         super.onDestroyView()

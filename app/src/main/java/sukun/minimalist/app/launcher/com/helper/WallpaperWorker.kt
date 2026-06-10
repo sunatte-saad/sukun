@@ -2,8 +2,14 @@ package sukun.minimalist.app.launcher.com.helper
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
 import kotlinx.coroutines.coroutineScope
@@ -17,37 +23,54 @@ class WallpaperWorker(appContext: Context, workerParams: WorkerParameters) : Cor
         if (prefs.isEffectivelyDarkTheme() && !isSukunDefault(applicationContext))
             return@coroutineScope Result.retry()
 
-        val success =
-            run {
-                val wallType = checkWallpaperType()
-                val localWallpaper = getRandomLocalWallpaperAsset(applicationContext, prefs.dailyWallpaperUrl)
-                if (localWallpaper != null) {
-                    val (assetName, wallpaperKey) = localWallpaper
-                    prefs.dailyWallpaperUrl = wallpaperKey
-                    setWallpaperFromAsset(
-                        appContext = applicationContext,
-                        assetName = assetName,
-                        darkWallpaper = wallType == Constants.WALL_TYPE_DARK
-                    )
-                } else {
-                    val wallpaperUrl = getTodaysWallpaper(wallType, prefs.firstOpenTime)
-                    if (prefs.dailyWallpaperUrl == wallpaperUrl)
-                        true
-                    else {
-                        prefs.dailyWallpaperUrl = wallpaperUrl
-                        setWallpaper(
-                            appContext = applicationContext,
-                            url = wallpaperUrl,
-                            darkWallpaper = wallType == Constants.WALL_TYPE_DARK
-                        )
-                    }
-                }
+        val forceRefresh = inputData.getBoolean(KEY_FORCE_REFRESH, false)
+        if (!forceRefresh && prefs.lastWallpaperUpdateTime > 0L &&
+            System.currentTimeMillis() - prefs.lastWallpaperUpdateTime < Constants.ONE_DAY_IN_MILLIS
+        ) {
+            return@coroutineScope Result.success()
+        }
+
+        if (!applicationContext.isNetworkAvailable()) {
+            applyOfflineFallback()
+            return@coroutineScope Result.success()
+        }
+
+        val wallType = checkWallpaperType()
+        val wallpaperUrl = getRandomWallpaperUrl(prefs.dailyWallpaperUrl)
+        val success = when {
+            prefs.dailyWallpaperUrl == wallpaperUrl -> true
+            applyWallpaper(wallpaperUrl, wallType) -> true
+            applyWallpaper(getDefaultWallpaperUrl(), wallType) -> true
+            else -> {
+                applyOfflineFallback()
+                false
             }
+        }
 
         if (success)
             Result.success()
         else
             Result.retry()
+    }
+
+    private suspend fun applyWallpaper(url: String, wallType: String): Boolean {
+        val applied = setWallpaper(
+            appContext = applicationContext,
+            url = url,
+            darkWallpaper = wallType == Constants.WALL_TYPE_DARK
+        )
+        if (applied) {
+            prefs.dailyWallpaperUrl = url
+            prefs.lastWallpaperUpdateTime = System.currentTimeMillis()
+            prefs.wallpaperPendingSync = false
+        }
+        return applied
+    }
+
+    private fun applyOfflineFallback() {
+        setPlainWallpaperByTheme(applicationContext, prefs.appTheme)
+        prefs.wallpaperPendingSync = true
+        scheduleSyncWhenOnline(applicationContext)
     }
 
     private fun checkWallpaperType(): String {
@@ -64,6 +87,25 @@ class WallpaperWorker(appContext: Context, workerParams: WorkerParameters) : Cor
             } else {
                 Constants.WALL_TYPE_LIGHT
             }
+        }
+    }
+
+    companion object {
+        const val KEY_FORCE_REFRESH = "force_refresh"
+
+        fun scheduleSyncWhenOnline(context: Context) {
+            if (!Prefs(context).dailyWallpaper) return
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                Constants.WALLPAPER_SYNC_WORKER_NAME,
+                ExistingWorkPolicy.KEEP,
+                OneTimeWorkRequestBuilder<WallpaperWorker>()
+                    .setConstraints(constraints)
+                    .setInputData(workDataOf(KEY_FORCE_REFRESH to true))
+                    .build()
+            )
         }
     }
 }

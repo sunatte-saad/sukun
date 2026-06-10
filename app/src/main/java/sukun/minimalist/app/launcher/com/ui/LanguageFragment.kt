@@ -6,7 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import sukun.minimalist.app.launcher.com.MainViewModel
+import sukun.minimalist.app.launcher.com.data.OnboardingAction
 import sukun.minimalist.app.launcher.com.databinding.FragmentLanguageBinding
 import sukun.minimalist.app.launcher.com.databinding.ItemLanguageBinding
 import sukun.minimalist.app.launcher.com.helper.LocaleHelper
@@ -64,13 +67,25 @@ class LanguageFragment : Fragment() {
     }
 
     private fun selectLanguage(language: LocaleHelper.Language) {
+        val viewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
+        val onLanguageStep = viewModel.isOnboardingActive()
+            && viewModel.currentOnboardingStep().requiredAction == OnboardingAction.TAP_LANGUAGE
         val currentLanguage = LocaleHelper.getSelectedLanguage(requireContext())
         if (currentLanguage == language) {
-            findNavController().navigateUp()
+            if (onLanguageStep) {
+                viewModel.reportOnboardingAction(OnboardingAction.TAP_LANGUAGE)
+            } else {
+                findNavController().navigateUp()
+            }
             return
         }
         LocaleHelper.applyAppLocale(requireContext(), language.code)
-        findNavController().popBackStack()
+        if (onLanguageStep) {
+            viewModel.reportOnboardingAction(OnboardingAction.TAP_LANGUAGE)
+            // Avoid activity recreate during the tour — it would kick the user out of the flow.
+            try { findNavController().navigateUp() } catch (_: Exception) {}
+            return
+        }
         requireActivity().recreate()
     }
 }

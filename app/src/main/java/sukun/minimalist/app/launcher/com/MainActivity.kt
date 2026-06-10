@@ -3,15 +3,19 @@ package sukun.minimalist.app.launcher.com
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -21,9 +25,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import sukun.minimalist.app.launcher.com.data.Constants
+import sukun.minimalist.app.launcher.com.data.OnboardingAction
+import sukun.minimalist.app.launcher.com.data.OnboardingManager
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.ActivityMainBinding
 import sukun.minimalist.app.launcher.com.helper.AmbientThemeController
+import sukun.minimalist.app.launcher.com.helper.FakeHomeActivity
 import sukun.minimalist.app.launcher.com.helper.applyLauncherBrightnessForTheme
 import sukun.minimalist.app.launcher.com.helper.clearLauncherBrightnessOverride
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
@@ -34,6 +41,7 @@ import sukun.minimalist.app.launcher.com.helper.isDarkThemeOn
 import sukun.minimalist.app.launcher.com.helper.isDaySince
 import sukun.minimalist.app.launcher.com.helper.isDefaultLauncher
 import sukun.minimalist.app.launcher.com.helper.isEinkDisplay
+import sukun.minimalist.app.launcher.com.helper.isNetworkAvailable
 import sukun.minimalist.app.launcher.com.helper.isSukunDefault
 import sukun.minimalist.app.launcher.com.helper.isTablet
 import sukun.minimalist.app.launcher.com.helper.openUrl
@@ -79,6 +87,24 @@ class MainActivity : AppCompatActivity() {
         prefs.migrateLegacyAppTheme(nightMask == Configuration.UI_MODE_NIGHT_YES)
         AppCompatDelegate.setDefaultNightMode(prefs.resolveLaunchNightMode())
         super.onCreate(savedInstanceState)
+
+        // Ensure any previously enabled FakeHomeActivity (used only temporarily to force the
+        // home chooser during "set as default") is disabled. This prevents duplicate HOME
+        // handlers that can leave the chooser in a broken state (unselectable Sukun entry,
+        // unresponsive Remember/Cancel) on subsequent home presses or re-install flows.
+        try {
+            val fakeComponent = ComponentName(this, FakeHomeActivity::class.java)
+            val current = packageManager.getComponentEnabledSetting(fakeComponent)
+            if (current != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+                packageManager.setComponentEnabledSetting(
+                    fakeComponent,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
+        } catch (_: Exception) {
+        }
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
@@ -87,12 +113,14 @@ class MainActivity : AppCompatActivity() {
 
         val onBackPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (navController.currentDestination?.id != R.id.mainFragment) {
-                    // then we might want to finish the activity or disable this callback.
+                if (viewModel.isOnboardingActive() && viewModel.onboardingGoBack()) {
+                    handleOnboardingBackNavigation(viewModel.onboardingStepIndex.value ?: 0)
+                    return
+                }
+                val destinationId = navController.currentDestination?.id
+                if (destinationId != R.id.mainFragment) {
                     if (navController.popBackStack()) {
                         // Successfully popped back
-                    } else {
-                        // if you want other system/activity level handling
                     }
                 } else {
                     binding.messageLayout.visibility = View.GONE
@@ -108,13 +136,12 @@ class MainActivity : AppCompatActivity() {
             viewModel.setDefaultClockApp()
         }
 
-        // Show the one-time Google sign-in onboarding screen on first launch.
-        if (!prefs.signInPromptShown && navController.currentDestination?.id == R.id.mainFragment) {
-            navController.navigate(R.id.action_mainFragment_to_signInFragment)
-        }
+        showFirstRunFlowIfNeeded()
 
         initClickListeners()
+        initOnboardingPanel()
         initObservers(viewModel)
+        restoreOnboardingTourUi()
         viewModel.getAppList()
         setupOrientation()
 
@@ -159,6 +186,16 @@ class MainActivity : AppCompatActivity() {
         if (viewModel.appList.value.isNullOrEmpty()) {
             viewModel.getAppList()
         }
+        showFirstRunFlowIfNeeded()
+        // Query before the check so that a return-from-chooser or home press while on the
+        // launcher step can see the fresh default status and advance the tour (and populate home).
+        viewModel.isSukunDefault()
+        checkOnboardingLauncherStep()
+        if (viewModel.isOnboardingActive()) {
+            restoreOnboardingTourUi()
+        }
+        viewModel.syncWallpaperIfPending()
+        viewModel.syncAzanIfNeeded()
     }
 
     override fun onPause() {
@@ -182,7 +219,20 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         val alreadyHome = navController.currentDestination?.id == R.id.mainFragment
-        backToHomeScreen()
+        if (viewModel.isOnboardingActive()) {
+            // A HOME intent arrived (e.g. after choosing Sukun in the system launcher picker
+            // while on the home-apps step, or user pressed home during tour, or after the
+            // default role/chooser grant completed). Re-assert the correct screen for the
+            // current onboarding step so the tour UI + home content aren't stuck or blank.
+            // Also query + check the launcher step here so that "return from chooser" can
+            // advance the tour (and the advance will see a freshly populated home).
+            restoreOnboardingTourUi()
+            viewModel.refreshHome.postValue(false)
+            viewModel.isSukunDefault()
+            checkOnboardingLauncherStep()
+        } else {
+            backToHomeScreen()
+        }
         if (alreadyHome && isResumed && prefs.homeButtonShowRecents)
             viewModel.showRecentApps.call()
         super.onNewIntent(intent)
@@ -228,7 +278,12 @@ class MainActivity : AppCompatActivity() {
                     showMessageDialog(R.string.did_you_know, R.string.wallpaper_message, R.string.enable) {
                         prefs.dailyWallpaper = true
                         viewModel.setWallpaperWorker()
-                        showToast(getString(R.string.your_wallpaper_will_update_shortly))
+                        val message = if (isNetworkAvailable()) {
+                            R.string.your_wallpaper_will_update_shortly
+                        } else {
+                            R.string.wallpaper_will_update_when_online
+                        }
+                        showToast(getString(message))
                     }
                 }
 
@@ -274,6 +329,234 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+            }
+        }
+        viewModel.onboardingActive.observe(this) { active ->
+            binding.onboardingLayout.visibility = if (active == true) View.VISIBLE else View.GONE
+            if (active == true) {
+                updateOnboardingPanel(viewModel.onboardingStepIndex.value ?: 0)
+            }
+        }
+        viewModel.onboardingStepIndex.observe(this) { stepIndex ->
+            if (!viewModel.isOnboardingActive()) return@observe
+            val index = stepIndex ?: 0
+            updateOnboardingPanel(index)
+            syncOnboardingNavigation(index)
+            // If we just arrived at the launcher step (e.g. via "Next" from home-apps, or back nav,
+            // or physical home while on that step), query so the pill visibility and any panel
+            // "done" state checks see the latest default status promptly.
+            if (OnboardingManager.stepAt(index).requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER) {
+                viewModel.isSukunDefault()
+                // Opportunistically advance if default is already true (covers user who set
+                // Sukun as default via the physical home button or the home pill while still
+                // on the prior step, then tapped Next to reach here). We will show the "done"
+                // state briefly (from updateOnboardingPanel above) then move the tour forward
+                // without requiring an extra home press/return.
+                checkOnboardingLauncherStep()
+            }
+        }
+        // Note: we no longer auto-advance the launcher onboarding step from this observer.
+        // Advancing on SET_DEFAULT_LAUNCHER is done only on "return" (onResume / onNewIntent)
+        // via checkOnboardingLauncherStep + restore paths. This prevents advancing/navigating
+        // while the system chooser/role UI is still in flight, and ensures HomeFragment has a
+        // chance to populate (clock, home apps, etc.) before we potentially move to the next
+        // tour step (settings). The LD is still observed by HomeFragment for the pill visibility.
+        viewModel.isSukunDefault.observe(this) { /* no-op for onboarding advance; see checkOnboardingLauncherStep */ }
+    }
+
+    private fun initOnboardingPanel() {
+        binding.btnOnboardingBack.setOnClickListener {
+            if (viewModel.onboardingGoBack()) {
+                handleOnboardingBackNavigation(viewModel.onboardingStepIndex.value ?: 0)
+            }
+        }
+        binding.btnOnboardingSkip.setOnClickListener {
+            viewModel.skipOnboarding()
+        }
+        binding.btnOnboardingPrimary.setOnClickListener {
+            val step = viewModel.currentOnboardingStep()
+            when (step.requiredAction) {
+                OnboardingAction.TAP_START ->
+                    viewModel.reportOnboardingAction(OnboardingAction.TAP_START)
+                OnboardingAction.SET_DEFAULT_LAUNCHER ->
+                    requestDefaultLauncherForOnboarding()
+                OnboardingAction.TAP_FINISH ->
+                    viewModel.reportOnboardingAction(OnboardingAction.TAP_FINISH)
+                OnboardingAction.TAP_HOME_APP_SLOT,
+                OnboardingAction.SEARCH_APPS,
+                OnboardingAction.OPEN_APP_DRAWER ->
+                    viewModel.reportOnboardingAction(step.requiredAction)
+                OnboardingAction.TAP_PRAYER_SETTINGS,
+                OnboardingAction.TAP_FOCUS_MODE,
+                OnboardingAction.TAP_SCREEN_TIME,
+                OnboardingAction.TAP_LANGUAGE,
+                OnboardingAction.TAP_APPEARANCE,
+                -> advanceOnboardingDiscoveryStep(step.requiredAction)
+                else -> Unit
+            }
+        }
+    }
+
+    private fun requestDefaultLauncherForOnboarding() {
+        when {
+            isSukunDefault(this) -> {
+                viewModel.reportOnboardingAction(OnboardingAction.SET_DEFAULT_LAUNCHER)
+                viewModel.refreshHome.postValue(false)
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
+                showLauncherSelector(Constants.REQUEST_CODE_LAUNCHER_SELECTOR)
+            else -> resetLauncherViaFakeActivity()
+        }
+    }
+
+    private fun updateOnboardingPanel(stepIndex: Int) {
+        val step = OnboardingManager.stepAt(stepIndex)
+        val total = OnboardingManager.steps.size
+        val current = stepIndex + 1
+
+        // Minimalist progress + counter
+        binding.onboardingProgress?.progress = (current * 100) / total
+        binding.onboardingStepCounter?.text = "$current / $total"
+
+        binding.onboardingTitle.setText(step.titleRes)
+        binding.onboardingBody.setText(step.bodyRes)
+        binding.onboardingActionHint.setText(step.actionHintRes)
+        binding.btnOnboardingBack.isEnabled = stepIndex > 0
+        binding.btnOnboardingBack.alpha = if (stepIndex > 0) 1f else 0.35f
+        binding.btnOnboardingSkip.visibility = if (step.isDone) View.GONE else View.VISIBLE
+        val isLauncherStep = step.requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER
+        val isSettingsStep = isSettingsTargetStep(step.requiredAction)
+        val isHomeAppsStep = step.requiredAction == OnboardingAction.TAP_HOME_APP_SLOT
+        val isDrawerStep = step.requiredAction == OnboardingAction.SEARCH_APPS || step.requiredAction == OnboardingAction.OPEN_APP_DRAWER
+        // Keep the explanation body visible for minimalist purpose-driven cards.
+        // Only the launcher "done" state temporarily overrides the body text.
+        binding.onboardingBody.visibility = View.VISIBLE
+        val showPrimary = step.isWelcome || step.isDone || isLauncherStep || isSettingsStep || isHomeAppsStep || isDrawerStep
+        binding.btnOnboardingPrimary.visibility = if (showPrimary) View.VISIBLE else View.GONE
+        binding.btnOnboardingPrimary.setText(
+            when {
+                step.isWelcome -> R.string.onboarding_start_tour
+                step.isDone -> R.string.onboarding_finish
+                isLauncherStep -> R.string.onboarding_launcher_set
+                isHomeAppsStep || isDrawerStep || isSettingsStep -> R.string.onboarding_next
+                else -> R.string.onboarding_next
+            },
+        )
+        if (isLauncherStep && isSukunDefault(this)) {
+            binding.onboardingBody.setText(R.string.onboarding_launcher_done)
+            binding.onboardingActionHint.visibility = View.GONE
+            binding.btnOnboardingPrimary.visibility = View.GONE
+        } else {
+            binding.onboardingActionHint.visibility =
+                if (showPrimary && !isLauncherStep && !isSettingsStep && !isHomeAppsStep && !isDrawerStep) View.GONE else View.VISIBLE
+        }
+    }
+
+    private fun isSettingsTargetStep(action: OnboardingAction) = when (action) {
+        OnboardingAction.TAP_PRAYER_SETTINGS,
+        OnboardingAction.TAP_FOCUS_MODE,
+        OnboardingAction.TAP_SCREEN_TIME,
+        OnboardingAction.TAP_LANGUAGE,
+        OnboardingAction.TAP_APPEARANCE,
+        -> true
+        else -> false
+    }
+
+    private fun advanceOnboardingDiscoveryStep(action: OnboardingAction) {
+        // For discovery steps in Settings, just advance the tour without opening
+        // heavy sheets, dialogs, permission prompts, or other fragments.
+        viewModel.reportOnboardingAction(action)
+    }
+
+    private fun settingsStepPrimaryButtonRes(action: OnboardingAction) = R.string.onboarding_next
+
+    private fun restoreOnboardingTourUi() {
+        if (!viewModel.isOnboardingActive()) return
+        binding.onboardingLayout.visibility = View.VISIBLE
+        updateOnboardingPanel(viewModel.onboardingStepIndex.value ?: 0)
+        syncOnboardingNavigation(viewModel.onboardingStepIndex.value ?: 0)
+        // Always refresh home content when restoring tour UI (e.g. after home press or
+        // return from chooser/settings during tour). This ensures clock, home apps slots,
+        // weather/prayer etc. are populated even if a prior nav or chooser flow left us
+        // on mainFragment with uninitialized HomeFragment state (the "blank" symptom).
+        if (navController.currentDestination?.id == R.id.mainFragment) {
+            viewModel.refreshHome.postValue(false)
+        }
+    }
+
+    private fun syncOnboardingNavigation(stepIndex: Int) {
+        when (OnboardingManager.stepAt(stepIndex).requiredAction) {
+            OnboardingAction.TAP_PRAYER_SETTINGS,
+            OnboardingAction.TAP_FOCUS_MODE,
+            OnboardingAction.TAP_SCREEN_TIME,
+            OnboardingAction.TAP_LANGUAGE,
+            OnboardingAction.TAP_APPEARANCE,
+            -> openSettingsForOnboarding()
+            OnboardingAction.SEARCH_APPS,
+            OnboardingAction.OPEN_APP_DRAWER -> openAppDrawerForOnboarding()
+            OnboardingAction.TAP_HOME_APP_SLOT,
+            OnboardingAction.SET_DEFAULT_LAUNCHER,
+            OnboardingAction.OPEN_SETTINGS,
+            OnboardingAction.TAP_FINISH -> navController.popBackStack(R.id.mainFragment, false)
+            else -> Unit
+        }
+    }
+
+    private fun handleOnboardingBackNavigation(stepIndex: Int) {
+        val action = OnboardingManager.stepAt(stepIndex).requiredAction
+        when (action) {
+            OnboardingAction.TAP_START,
+            OnboardingAction.TAP_HOME_APP_SLOT,
+            OnboardingAction.SET_DEFAULT_LAUNCHER,
+            OnboardingAction.OPEN_SETTINGS,
+            OnboardingAction.TAP_FINISH -> navController.popBackStack(R.id.mainFragment, false)
+            OnboardingAction.SEARCH_APPS,
+            OnboardingAction.OPEN_APP_DRAWER -> openAppDrawerForOnboarding()
+            OnboardingAction.TAP_PRAYER_SETTINGS,
+            OnboardingAction.TAP_FOCUS_MODE,
+            OnboardingAction.TAP_SCREEN_TIME,
+            OnboardingAction.TAP_LANGUAGE,
+            OnboardingAction.TAP_APPEARANCE -> openSettingsForOnboarding()
+        }
+    }
+
+    private fun openAppDrawerForOnboarding() {
+        if (navController.currentDestination?.id == R.id.appListFragment) return
+        navController.popBackStack(R.id.mainFragment, false)
+        if (navController.currentDestination?.id == R.id.mainFragment) {
+            navController.navigate(R.id.action_mainFragment_to_appListFragment)
+        }
+    }
+
+    private fun openSettingsForOnboarding() {
+        val destinationId = navController.currentDestination?.id
+        if (destinationId == R.id.settingsFragment || destinationId == R.id.languageFragment) return
+        navController.popBackStack(R.id.mainFragment, false)
+        if (navController.currentDestination?.id == R.id.mainFragment) {
+            navController.navigate(R.id.action_mainFragment_to_settingsFragment)
+        }
+    }
+
+    private fun checkOnboardingLauncherStep() {
+        if (viewModel.isOnboardingActive()
+            && viewModel.currentOnboardingStep().requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER
+            && isSukunDefault(this)
+        ) {
+            // Ensure we are on the home screen and have asked HomeFragment to populate
+            // (clock, date, home app slots, overlays, etc.). This prevents the "blank
+            // wallpaper only" state after returning from the launcher chooser/role grant.
+            // A tiny delay before the report gives the current destination a moment to
+            // layout; the report will then advance the step (to settings) via the observer.
+            navController.popBackStack(R.id.mainFragment, false)
+            viewModel.refreshHome.postValue(false)
+            lifecycleScope.launch {
+                delay(60)
+                if (viewModel.isOnboardingActive()
+                    && viewModel.currentOnboardingStep().requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER
+                    && isSukunDefault(this@MainActivity)
+                ) {
+                    viewModel.reportOnboardingAction(OnboardingAction.SET_DEFAULT_LAUNCHER)
+                }
             }
         }
     }
@@ -354,8 +637,16 @@ class MainActivity : AppCompatActivity() {
     private fun backToHomeScreen() {
         if (viewModel.isPrivateSpaceToggling) return
         binding.messageLayout.visibility = View.GONE
-        if (navController.currentDestination?.id != R.id.mainFragment)
-            navController.popBackStack(R.id.mainFragment, false)
+        if (viewModel.isOnboardingActive()) return
+        val destinationId = navController.currentDestination?.id ?: return
+        if (destinationId == R.id.mainFragment) return
+        navController.popBackStack(R.id.mainFragment, false)
+    }
+
+    private fun showFirstRunFlowIfNeeded() {
+        if (!viewModel.shouldOfferOnboarding()) return
+        if (viewModel.isOnboardingActive()) return
+        viewModel.startOnboarding()
     }
 
     private fun setPlainWallpaper() {
@@ -453,9 +744,25 @@ class MainActivity : AppCompatActivity() {
             }
 
             Constants.REQUEST_CODE_LAUNCHER_SELECTOR -> {
-                if (resultCode == Activity.RESULT_OK && !isSukunDefault(this))
-                    openLauncherChooser(true)
+                // Always query after the role/launcher chooser returns. Do NOT open the manage-defaults
+                // settings here — the isSukunDefault() check right after RESULT_OK is racy (role may
+                // not be reflected yet), and opening settings can leave the tour in a bad state or
+                // make the chooser reappear in a broken/interactionless way on the next home press.
                 viewModel.isSukunDefault()
+                viewModel.refreshHome.postValue(false)
+
+                // If we are still on the launcher onboarding step and the default is now held,
+                // reflect the "done" state in the panel immediately (shows the "tour continues
+                // when you return" message and hides the primary). We deliberately do NOT call
+                // reportOnboardingAction here — the actual advance happens on return (onNewIntent
+                // / onResume via checkOnboardingLauncherStep) so that the HomeFragment gets a
+                // chance to populate its content (preventing the "blank home after set default").
+                if (viewModel.isOnboardingActive()
+                    && viewModel.currentOnboardingStep().requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER
+                    && isSukunDefault(this)
+                ) {
+                    updateOnboardingPanel(viewModel.onboardingStepIndex.value ?: 0)
+                }
             }
         }
     }

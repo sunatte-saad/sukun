@@ -9,20 +9,23 @@ import android.os.Build
 import android.os.SystemClock
 import android.os.UserHandle
 import android.os.UserManager
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import sukun.minimalist.app.launcher.com.data.AppCooldownManager
 import sukun.minimalist.app.launcher.com.data.AppModel
 import sukun.minimalist.app.launcher.com.data.Constants
+import sukun.minimalist.app.launcher.com.data.OnboardingAction
+import sukun.minimalist.app.launcher.com.data.OnboardingManager
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.data.PrayerState
 import sukun.minimalist.app.launcher.com.data.WeatherData
@@ -30,14 +33,18 @@ import sukun.minimalist.app.launcher.com.helper.PrayerReminderScheduler
 import sukun.minimalist.app.launcher.com.helper.SingleLiveEvent
 import sukun.minimalist.app.launcher.com.helper.WeatherWorker
 import sukun.minimalist.app.launcher.com.helper.WallpaperWorker
+import sukun.minimalist.app.launcher.com.helper.downloadAzan
+import sukun.minimalist.app.launcher.com.helper.isAzanCached
+import sukun.minimalist.app.launcher.com.helper.isBundledAzanSound
+import sukun.minimalist.app.launcher.com.helper.scheduleAzanDownloadWhenOnline
 import sukun.minimalist.app.launcher.com.helper.formattedTimeSpent
 import sukun.minimalist.app.launcher.com.helper.getAppsList
 import sukun.minimalist.app.launcher.com.helper.getCachedPrayerState
 import sukun.minimalist.app.launcher.com.helper.getCachedWeatherData
-import sukun.minimalist.app.launcher.com.helper.getRandomLocalWallpaperAsset
 import sukun.minimalist.app.launcher.com.helper.getPrivateSpaceApps
 import sukun.minimalist.app.launcher.com.helper.getPrivateSpaceUserHandle
 import sukun.minimalist.app.launcher.com.helper.hasBeenMinutes
+import sukun.minimalist.app.launcher.com.helper.isNetworkAvailable
 import sukun.minimalist.app.launcher.com.helper.isSukunDefault
 import sukun.minimalist.app.launcher.com.helper.isDarkThemeOn
 import sukun.minimalist.app.launcher.com.helper.isPackageInstalled
@@ -45,7 +52,6 @@ import sukun.minimalist.app.launcher.com.helper.isPrivateSpaceLocked
 import sukun.minimalist.app.launcher.com.helper.isExpired
 import sukun.minimalist.app.launcher.com.helper.refreshPrayerState
 import sukun.minimalist.app.launcher.com.helper.refreshWeather
-import sukun.minimalist.app.launcher.com.helper.setWallpaperFromAsset
 import sukun.minimalist.app.launcher.com.helper.setPlainWallpaper
 import sukun.minimalist.app.launcher.com.helper.showToast
 import sukun.minimalist.app.launcher.com.helper.usageStats.EventLogWrapper
@@ -72,6 +78,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = Prefs(appContext)
     val cooldownManager by lazy { AppCooldownManager(prefs) }
 
+    init {
+        restoreOnboardingTourState()
+    }
+
     val firstOpen = MutableLiveData<Boolean>()
     val refreshHome = MutableLiveData<Boolean>()
     val toggleDateTime = MutableLiveData<Unit>()
@@ -97,6 +107,88 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val checkForMessages = SingleLiveEvent<Unit?>()
     val resetLauncherLiveData = SingleLiveEvent<Unit?>()
     val showRecentApps = SingleLiveEvent<Unit?>()
+
+    val onboardingActive = MutableLiveData(false)
+    val onboardingStepIndex = MutableLiveData(0)
+    val onboardingPerformSettingsAction = SingleLiveEvent<OnboardingAction>()
+
+    fun startOnboarding() {
+        onboardingStepIndex.value = 0
+        onboardingActive.value = true
+        persistOnboardingTourState()
+    }
+
+    fun isOnboardingActive(): Boolean = onboardingActive.value == true
+
+    fun currentOnboardingStep() = OnboardingManager.stepAt(onboardingStepIndex.value ?: 0)
+
+    private fun restoreOnboardingTourState() {
+        if (!prefs.onboardingTourActive) return
+        onboardingStepIndex.value = prefs.onboardingTourStep
+        onboardingActive.value = true
+    }
+
+    private fun persistOnboardingTourState() {
+        val active = onboardingActive.value == true
+        prefs.onboardingTourActive = active
+        if (active) {
+            prefs.onboardingTourStep = onboardingStepIndex.value ?: 0
+        }
+    }
+
+    fun performCurrentOnboardingSettingsAction() {
+        if (onboardingActive.value != true) return
+        when (currentOnboardingStep().requiredAction) {
+            OnboardingAction.TAP_PRAYER_SETTINGS,
+            OnboardingAction.TAP_FOCUS_MODE,
+            OnboardingAction.TAP_SCREEN_TIME,
+            OnboardingAction.TAP_LANGUAGE,
+            OnboardingAction.TAP_APPEARANCE,
+            -> onboardingPerformSettingsAction.value = currentOnboardingStep().requiredAction
+            else -> Unit
+        }
+    }
+
+    fun reportOnboardingAction(action: OnboardingAction) {
+        if (onboardingActive.value != true) return
+        val step = currentOnboardingStep()
+        if (step.requiredAction != action) return
+        val next = (onboardingStepIndex.value ?: 0) + 1
+        if (next >= OnboardingManager.steps.size) {
+            completeOnboarding()
+        } else {
+            onboardingStepIndex.value = next
+            persistOnboardingTourState()
+        }
+    }
+
+    fun onboardingGoBack(): Boolean {
+        if (onboardingActive.value != true) return false
+        val current = onboardingStepIndex.value ?: 0
+        if (current <= 0) return false
+        onboardingStepIndex.value = current - 1
+        persistOnboardingTourState()
+        return true
+    }
+
+    fun skipOnboarding() = completeOnboarding()
+
+    fun completeOnboarding() {
+        prefs.onboardingComplete = true
+        prefs.firstSettingsOpen = false
+        prefs.onboardingTourActive = false
+        onboardingActive.value = false
+    }
+
+    fun shouldOfferOnboarding(): Boolean {
+        if (prefs.onboardingComplete) return false
+        if (prefs.onboardingTourActive) return false
+        if (!prefs.firstSettingsOpen) {
+            prefs.onboardingComplete = true
+            return false
+        }
+        return true
+    }
 
     fun selectedApp(appModel: AppModel, flag: Int) {
         if (appModel is AppModel.PrivateSpaceHeader) return
@@ -478,8 +570,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         isSukunDefault.value = isSukunDefault(appContext)
     }
 
-    fun setWallpaperWorker() {
-        val uploadWorkRequest = PeriodicWorkRequestBuilder<WallpaperWorker>(4, TimeUnit.HOURS)
+    fun setWallpaperWorker(runImmediately: Boolean = true) {
+        val uploadWorkRequest = PeriodicWorkRequestBuilder<WallpaperWorker>(24, TimeUnit.HOURS)
             .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.HOURS)
             .build()
         WorkManager
@@ -489,49 +581,60 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
                 uploadWorkRequest
             )
+        if (runImmediately) {
+            enqueueWallpaperRefresh(force = false)
+        }
+        if (prefs.wallpaperPendingSync) {
+            WallpaperWorker.scheduleSyncWhenOnline(appContext)
+        }
     }
 
-    private fun isDarkWallpaper(): Boolean {
-        return when (prefs.appTheme) {
-            AppCompatDelegate.MODE_NIGHT_YES -> true
-            AppCompatDelegate.MODE_NIGHT_NO -> false
-            Constants.THEME_MODE_AMBIENT_LIGHT -> prefs.ambientThemeDark
-            else -> appContext.isDarkThemeOn()
+    private fun enqueueWallpaperRefresh(force: Boolean) {
+        val requestBuilder = OneTimeWorkRequestBuilder<WallpaperWorker>()
+        if (force) {
+            requestBuilder.setInputData(workDataOf(WallpaperWorker.KEY_FORCE_REFRESH to true))
+        }
+        WorkManager.getInstance(appContext).enqueueUniqueWork(
+            Constants.WALLPAPER_REFRESH_NOW_WORKER_NAME,
+            ExistingWorkPolicy.REPLACE,
+            requestBuilder.build()
+        )
+    }
+
+    fun syncWallpaperIfPending() {
+        if (prefs.dailyWallpaper && prefs.wallpaperPendingSync && appContext.isNetworkAvailable()) {
+            WallpaperWorker.scheduleSyncWhenOnline(appContext)
+        }
+    }
+
+    fun syncAzanIfNeeded() {
+        if (!prefs.showPrayerOnHome || !prefs.azanEnabled) return
+        val sound = prefs.azanSound
+        if (!isBundledAzanSound(sound) || isAzanCached(appContext, sound)) return
+        viewModelScope.launch {
+            if (appContext.isNetworkAvailable()) {
+                downloadAzan(appContext, sound)
+            } else {
+                scheduleAzanDownloadWhenOnline(appContext, sound)
+            }
         }
     }
 
     fun refreshWallpaperNow() {
         viewModelScope.launch {
             prefs.dailyWallpaper = true
-            val localWallpaper = getRandomLocalWallpaperAsset(appContext, prefs.dailyWallpaperUrl)
-            if (localWallpaper != null) {
-                val (assetName, wallpaperKey) = localWallpaper
-                val success = setWallpaperFromAsset(
-                    appContext = appContext,
-                    assetName = assetName,
-                    darkWallpaper = isDarkWallpaper()
-                )
-                if (success) {
-                    prefs.dailyWallpaperUrl = wallpaperKey
-                    setWallpaperWorker()
-                    return@launch
-                }
-            }
-
-            prefs.dailyWallpaperUrl = ""
-            WorkManager.getInstance(appContext).enqueueUniqueWork(
-                Constants.WALLPAPER_REFRESH_NOW_WORKER_NAME,
-                androidx.work.ExistingWorkPolicy.REPLACE,
-                OneTimeWorkRequestBuilder<WallpaperWorker>().build()
-            )
-            setWallpaperWorker()
+            enqueueWallpaperRefresh(force = true)
+            setWallpaperWorker(runImmediately = false)
         }
     }
 
     fun cancelWallpaperWorker() {
         WorkManager.getInstance(appContext).cancelUniqueWork(Constants.WALLPAPER_WORKER_NAME)
         WorkManager.getInstance(appContext).cancelUniqueWork(Constants.WALLPAPER_REFRESH_NOW_WORKER_NAME)
+        WorkManager.getInstance(appContext).cancelUniqueWork(Constants.WALLPAPER_SYNC_WORKER_NAME)
         prefs.dailyWallpaperUrl = ""
+        prefs.lastWallpaperUpdateTime = 0L
+        prefs.wallpaperPendingSync = false
         prefs.dailyWallpaper = false
     }
 

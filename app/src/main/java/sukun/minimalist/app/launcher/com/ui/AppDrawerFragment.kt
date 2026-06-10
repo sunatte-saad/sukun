@@ -25,6 +25,7 @@ import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.AppCooldownConfig
 import sukun.minimalist.app.launcher.com.data.AppModel
 import sukun.minimalist.app.launcher.com.data.Constants
+import sukun.minimalist.app.launcher.com.data.OnboardingAction
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.FragmentAppDrawerBinding
 import sukun.minimalist.app.launcher.com.helper.deletePinnedShortcut
@@ -94,6 +95,8 @@ class AppDrawerFragment : Fragment() {
             binding.search.queryHint = getString(R.string.hidden_apps)
         else if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_CALENDAR_APP)
             binding.search.queryHint = "Please select an app"
+        else
+            binding.search.queryHint = getString(R.string.search_apps_hint)
         try {
             val searchTextView = binding.search.findViewById<TextView>(R.id.search_src_text)
             if (searchTextView != null) {
@@ -121,6 +124,9 @@ class AppDrawerFragment : Fragment() {
 
             override fun onQueryTextChange(newText: String): Boolean {
                 try {
+                    if (newText.isNotBlank()) {
+                        viewModel.reportOnboardingAction(OnboardingAction.SEARCH_APPS)
+                    }
                     adapter.filter.filter(newText)
                     updateFastScroller()
                     binding.appRename.visibility =

@@ -8,6 +8,8 @@ import android.app.role.RoleManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
@@ -77,6 +79,14 @@ private data class WeatherLocationResult(
 )
 
 private const val NETWORK_TIMEOUT_MS = 10_000
+
+fun Context.isNetworkAvailable(): Boolean {
+    val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        ?: return false
+    val network = connectivityManager.activeNetwork ?: return false
+    val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+}
 
 fun Context.showToast(message: String?, duration: Int = Toast.LENGTH_SHORT) {
     if (message.isNullOrBlank()) return
@@ -547,39 +557,27 @@ fun getScreenDimensions(context: Context): Pair<Int, Int> {
     return Pair(point.x, point.y)
 }
 
-suspend fun getTodaysWallpaper(wallType: String, firstOpenTime: Long): String {
-    return withContext(Dispatchers.IO) {
-        var connection: HttpURLConnection? = null
-        try {
-            val key = if (firstOpenTime.isDaySince() < 10)
-                String.format("0_%s", firstOpenTime.isDaySince().toString())
-            else {
-                val month = SimpleDateFormat("M", Locale.ENGLISH).format(Date()) ?: "0"
-                val day = SimpleDateFormat("d", Locale.ENGLISH).format(Date()) ?: "0"
-                String.format("%s_%s", month, day)
-            }
+fun buildWallpaperUrl(number: Int): String =
+    "${Constants.URL_WALLPAPER_BASE}${number}.jpg"
 
-            val url = URL(Constants.URL_WALLPAPERS)
-            connection = url.openConnection() as HttpURLConnection
-            connection.connectTimeout = NETWORK_TIMEOUT_MS
-            connection.readTimeout = NETWORK_TIMEOUT_MS
-            connection.instanceFollowRedirects = true
-            connection.doInput = true
-            connection.connect()
-            if (connection.responseCode !in 200..299) return@withContext getBackupWallpaper(wallType)
+fun getDefaultWallpaperUrl(): String =
+    buildWallpaperUrl(Constants.WALLPAPER_DEFAULT_NUMBER)
 
-            val body = connection.inputStream.bufferedReader().use { it.readText() }
-            val json = JSONObject(body)
-            val wallpapers = json.optString(key)
-            val wallpapersJson = if (wallpapers.isNotBlank()) JSONObject(wallpapers) else return@withContext getBackupWallpaper(wallType)
-            wallpapersJson.optString(wallType).ifBlank { getBackupWallpaper(wallType) }
+fun getWallpaperNumberFromUrl(url: String): Int? {
+    val match = Regex("(\\d+)\\.jpg").find(url) ?: return null
+    return match.groupValues[1].toIntOrNull()
+}
 
-        } catch (e: Exception) {
-            getBackupWallpaper(wallType)
-        } finally {
-            connection?.disconnect()
-        }
+fun getRandomWallpaperUrl(currentWallpaperUrl: String?): String {
+    val currentNumber = currentWallpaperUrl?.let(::getWallpaperNumberFromUrl)
+    val available = (Constants.WALLPAPER_NUMBER_MIN..Constants.WALLPAPER_NUMBER_MAX)
+        .filter { it != currentNumber }
+    val number = if (available.isNotEmpty()) {
+        available.random()
+    } else {
+        (Constants.WALLPAPER_NUMBER_MIN..Constants.WALLPAPER_NUMBER_MAX).random()
     }
+    return buildWallpaperUrl(number)
 }
 
 suspend fun getLocationSuggestions(query: String, maxResults: Int = 5): List<String> {
@@ -647,11 +645,7 @@ suspend fun getCurrentDeviceLocationLabel(context: Context): String? {
     }
 }
 
-fun getBackupWallpaper(wallType: String): String {
-    return if (wallType == Constants.WALL_TYPE_LIGHT)
-        Constants.URL_DEFAULT_LIGHT_WALLPAPER
-    else Constants.URL_DEFAULT_DARK_WALLPAPER
-}
+fun getBackupWallpaper(wallType: String): String = getDefaultWallpaperUrl()
 
 fun Context.hasWeatherLocationPermission(): Boolean {
     val hasFineLocation = ContextCompat.checkSelfPermission(

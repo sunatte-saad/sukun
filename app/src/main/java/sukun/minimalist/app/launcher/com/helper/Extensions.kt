@@ -94,18 +94,22 @@ fun Context.resetDefaultLauncher() {
         val selector = Intent(Intent.ACTION_MAIN)
             .addCategory(Intent.CATEGORY_HOME)
         startActivity(selector)
-        // Delay disabling FakeHomeActivity so the chooser has time to render before it disappears
+        // Keep the fake enabled for a generous window so the chooser (and "Remember my choice")
+        // can fully render and let the user pick without the handler list changing mid-interaction.
+        // A too-short delay was causing the Sukun entry + Remember/Cancel to become unselectable
+        // until the user tapped the system launcher first (PackageManager/chooser state became
+        // inconsistent once the temp component was disabled while the dialog was still up).
+        // We always disable afterwards (the fake's only job is to force one disambiguation);
+        // the proactive cleanup in MainActivity.onCreate also ensures it never lingers.
         Handler(Looper.getMainLooper()).postDelayed({
             try {
-                if (getDefaultLauncherComponentName() != componentName) {
-                    packageManager.setComponentEnabledSetting(
-                        componentName,
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                        PackageManager.DONT_KILL_APP
-                    )
-                }
+                packageManager.setComponentEnabledSetting(
+                    componentName,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
             } catch (_: Exception) {}
-        }, 2500)
+        }, 6000)
     } catch (e: Exception) {
         e.printStackTrace()
     }
