@@ -40,6 +40,7 @@ sealed class AppModel : Comparable<AppModel> {
 
     data class SectionHeader(
         override val appLabel: String,
+        val sectionKey: String = appLabel,
         override val user: UserHandle = android.os.Process.myUserHandle(),
     ) : AppModel() {
         override val key: CollationKey? = null

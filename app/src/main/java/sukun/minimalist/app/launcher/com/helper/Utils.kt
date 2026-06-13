@@ -27,9 +27,12 @@ import android.graphics.Shader
 import android.location.Geocoder
 import android.graphics.Point
 import android.location.Location
+import android.location.LocationListener
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
+import android.os.CancellationSignal
+import android.os.Looper
 import android.os.UserHandle
 import android.os.UserManager
 import android.provider.AlarmClock
@@ -60,7 +63,10 @@ import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.data.WeatherData
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.resume
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -79,6 +85,8 @@ private data class WeatherLocationResult(
 )
 
 private const val NETWORK_TIMEOUT_MS = 10_000
+private const val LOCATION_MAX_AGE_MS = 15 * 60 * 1000L
+private const val LOCATION_FETCH_TIMEOUT_MS = 12_000L
 
 fun Context.isNetworkAvailable(): Boolean {
     val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
@@ -611,37 +619,8 @@ suspend fun getLocationSuggestions(query: String, maxResults: Int = 5): List<Str
 
 suspend fun getCurrentDeviceLocationLabel(context: Context): String? {
     return withContext(Dispatchers.IO) {
-        if (!context.hasWeatherLocationPermission()) return@withContext null
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-            ?: return@withContext null
-
-        val providers = buildList {
-            add(LocationManager.PASSIVE_PROVIDER)
-            add(LocationManager.NETWORK_PROVIDER)
-            add(LocationManager.GPS_PROVIDER)
-        }.filter {
-            try {
-                locationManager.isProviderEnabled(it)
-            } catch (_: Exception) {
-                false
-            }
-        }
-
-        val bestLocation = providers.mapNotNull { provider ->
-            try {
-                locationManager.getLastKnownLocation(provider)
-            } catch (_: Exception) {
-                null
-            }
-        }.maxByOrNull(Location::getTime)
-
-        if (bestLocation == null) return@withContext null
-
-        reverseGeocodeWeatherLocation(
-            context = context,
-            latitude = bestLocation.latitude,
-            longitude = bestLocation.longitude,
-        )
+        val location = awaitDeviceLocation(context) ?: return@withContext null
+        reverseGeocodeWeatherLocation(context, location.latitude, location.longitude)
     }
 }
 
@@ -667,6 +646,37 @@ fun Context.isLocationServicesEnabled(): Boolean {
         lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
     }
+}
+
+fun Context.openLocationSourceSettings() {
+    try {
+        startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+    } catch (_: Exception) {
+        showToast(R.string.unable_to_open_app)
+    }
+}
+
+fun Context.openAppPermissionSettings() {
+    openAppInfo(this, android.os.Process.myUserHandle(), packageName)
+}
+
+fun Context.showLocationServicesDisabledDialog() {
+    androidx.appcompat.app.AlertDialog.Builder(this)
+        .setMessage(R.string.location_services_disabled)
+        .setPositiveButton(R.string.permission) { _, _ -> openLocationSourceSettings() }
+        .setNegativeButton(R.string.cancel, null)
+        .show()
+}
+
+fun Context.showLocationPermissionRationaleDialog(
+    messageRes: Int = R.string.weather_permission_needed,
+    onOpenSettings: () -> Unit = { openAppPermissionSettings() },
+) {
+    androidx.appcompat.app.AlertDialog.Builder(this)
+        .setMessage(messageRes)
+        .setPositiveButton(R.string.permission) { _, _ -> onOpenSettings() }
+        .setNegativeButton(R.string.cancel, null)
+        .show()
 }
 
 fun Context.getFocusModeAllowedPackages(prefs: Prefs): Set<String> {
@@ -745,6 +755,7 @@ suspend fun getCachedWeatherData(prefs: Prefs): WeatherData? = withContext(Dispa
 }
 
 suspend fun refreshWeather(context: Context, prefs: Prefs): WeatherData? = withContext(Dispatchers.IO) {
+    if (prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE) return@withContext null
     val location = resolveWeatherLocation(context, prefs) ?: return@withContext null
     val weatherUrl = Uri.parse(Constants.URL_WEATHER_FORECAST).buildUpon()
         .appendQueryParameter("latitude", location.latitude)
@@ -801,6 +812,8 @@ private fun formatPrecipitationChance(precipitation: Double): String {
 private suspend fun resolveWeatherLocation(context: Context, prefs: Prefs): WeatherLocationResult? =
     withContext(Dispatchers.IO) {
         when (prefs.weatherSourceMode) {
+            Constants.WeatherSource.GOOGLE -> null
+
             Constants.WeatherSource.DEVICE -> {
                 resolveDeviceWeatherLocation(context, prefs)
                     ?: storedWeatherLocation(
@@ -866,47 +879,155 @@ private fun buildWeatherLocationLabel(city: String?, country: String?): String {
 
 @SuppressLint("MissingPermission")
 private suspend fun resolveDeviceWeatherLocation(context: Context, prefs: Prefs): WeatherLocationResult? {
-    if (!context.hasWeatherLocationPermission()) return null
-    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-        ?: return null
+    if (!context.hasWeatherLocationPermission() || !context.isLocationServicesEnabled()) return null
 
-    val providers = buildList {
-        add(LocationManager.PASSIVE_PROVIDER)
-        add(LocationManager.NETWORK_PROVIDER)
-        add(LocationManager.GPS_PROVIDER)
-    }.filter {
+    val bestLocation = awaitDeviceLocation(context)
+        ?: return storedWeatherLocation(
+            label = prefs.weatherLocationLabel.ifBlank { context.getString(R.string.current_location) },
+            prefs = prefs,
+        )
+
+    val locationLabel = reverseGeocodeWeatherLocation(
+        context,
+        bestLocation.latitude,
+        bestLocation.longitude,
+    ) ?: prefs.weatherLocationLabel.ifBlank { context.getString(R.string.current_location) }
+
+    return WeatherLocationResult(
+        label = locationLabel,
+        latitude = bestLocation.latitude.toString(),
+        longitude = bestLocation.longitude.toString(),
+    )
+}
+
+@SuppressLint("MissingPermission")
+private suspend fun awaitDeviceLocation(context: Context): Location? = withContext(Dispatchers.IO) {
+    if (!context.hasWeatherLocationPermission() || !context.isLocationServicesEnabled()) return@withContext null
+    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        ?: return@withContext null
+
+    getBestLastKnownLocation(locationManager)
+        ?.takeIf { isRecentLocation(it) }
+        ?.let { return@withContext it }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        awaitCurrentLocationApi30(context, locationManager)?.let { return@withContext it }
+    }
+
+    awaitLocationUpdates(locationManager) ?: getBestLastKnownLocation(locationManager)
+}
+
+private fun isRecentLocation(location: Location): Boolean {
+    return System.currentTimeMillis() - location.time <= LOCATION_MAX_AGE_MS
+}
+
+@SuppressLint("MissingPermission")
+private fun getBestLastKnownLocation(locationManager: LocationManager): Location? {
+    val providers = listOf(
+        LocationManager.GPS_PROVIDER,
+        LocationManager.NETWORK_PROVIDER,
+        LocationManager.PASSIVE_PROVIDER,
+    )
+    return providers.filter { provider ->
         try {
-            locationManager.isProviderEnabled(it)
+            locationManager.isProviderEnabled(provider)
         } catch (_: Exception) {
             false
         }
-    }
-
-    val bestLocation = providers.mapNotNull { provider ->
+    }.mapNotNull { provider ->
         try {
             locationManager.getLastKnownLocation(provider)
         } catch (_: Exception) {
             null
         }
-    }.maxByOrNull(Location::getTime)
-
-    if (bestLocation == null) return storedWeatherLocation(
-        label = prefs.weatherLocationLabel.ifBlank { context.getString(R.string.current_location) },
-        prefs = prefs
-    )
-
-    val locationLabel = reverseGeocodeWeatherLocation(
-        context,
-        bestLocation.latitude,
-        bestLocation.longitude
-    ) ?: context.getString(R.string.current_location)
-
-    return WeatherLocationResult(
-        label = locationLabel,
-        latitude = bestLocation.latitude.toString(),
-        longitude = bestLocation.longitude.toString()
-    )
+    }.maxByOrNull { it.time }
 }
+
+@RequiresApi(Build.VERSION_CODES.R)
+@SuppressLint("MissingPermission")
+private suspend fun awaitCurrentLocationApi30(
+    context: Context,
+    locationManager: LocationManager,
+): Location? = suspendCancellableCoroutine { continuation ->
+    val signal = CancellationSignal()
+    continuation.invokeOnCancellation { signal.cancel() }
+    val providers = buildList {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            add(LocationManager.FUSED_PROVIDER)
+        }
+        add(LocationManager.GPS_PROVIDER)
+        add(LocationManager.NETWORK_PROVIDER)
+    }.filter { provider ->
+        try {
+            locationManager.isProviderEnabled(provider)
+        } catch (_: Exception) {
+            false
+        }
+    }
+    if (providers.isEmpty()) {
+        continuation.resume(null)
+        return@suspendCancellableCoroutine
+    }
+
+    var pending = providers.size
+    var bestLocation: Location? = null
+    fun finishProvider(location: Location?) {
+        if (location != null && (bestLocation == null || location.time > bestLocation!!.time)) {
+            bestLocation = location
+        }
+        pending--
+        if (pending == 0 && continuation.isActive) {
+            continuation.resume(bestLocation)
+        }
+    }
+
+    providers.forEach { provider ->
+        try {
+            locationManager.getCurrentLocation(
+                provider,
+                signal,
+                ContextCompat.getMainExecutor(context),
+            ) { location -> finishProvider(location) }
+        } catch (_: Exception) {
+            finishProvider(null)
+        }
+    }
+}
+
+@SuppressLint("MissingPermission")
+private suspend fun awaitLocationUpdates(locationManager: LocationManager): Location? =
+    withTimeoutOrNull(LOCATION_FETCH_TIMEOUT_MS) {
+        suspendCancellableCoroutine { continuation ->
+            val provider = when {
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ->
+                    LocationManager.NETWORK_PROVIDER
+                locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ->
+                    LocationManager.GPS_PROVIDER
+                else -> {
+                    continuation.resume(null)
+                    return@suspendCancellableCoroutine
+                }
+            }
+            val listener = object : LocationListener {
+                override fun onLocationChanged(location: Location) {
+                    locationManager.removeUpdates(this)
+                    if (continuation.isActive) continuation.resume(location)
+                }
+            }
+            continuation.invokeOnCancellation { locationManager.removeUpdates(listener) }
+            try {
+                locationManager.requestLocationUpdates(
+                    provider,
+                    0L,
+                    0f,
+                    listener,
+                    Looper.getMainLooper(),
+                )
+            } catch (_: Exception) {
+                if (continuation.isActive) continuation.resume(null)
+            }
+        }
+    }
 
 private suspend fun reverseGeocodeWeatherLocation(
     context: Context,
@@ -1102,6 +1223,27 @@ fun Context.openUrl(url: String) {
         }
     } catch (e: Exception) {
         e.printStackTrace()
+    }
+}
+
+fun Context.openGoogleWeather(locationLabel: String = "", locationQuery: String = "") {
+    val location = locationLabel.ifBlank { locationQuery }.trim()
+    val query = if (location.isBlank()) "weather" else "weather $location"
+    val uri = Uri.parse("https://www.google.com/search")
+        .buildUpon()
+        .appendQueryParameter("q", query)
+        .build()
+    val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+        addCategory(Intent.CATEGORY_BROWSABLE)
+    }
+    try {
+        startActivity(intent)
+    } catch (_: Exception) {
+        try {
+            startActivity(Intent.createChooser(intent, getString(R.string.google_weather)))
+        } catch (_: Exception) {
+            showToast(R.string.weather_open_failed)
+        }
     }
 }
 

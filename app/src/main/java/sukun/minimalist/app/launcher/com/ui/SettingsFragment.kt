@@ -28,6 +28,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import sukun.minimalist.app.launcher.com.BuildConfig
+import sukun.minimalist.app.launcher.com.MainActivity
 import sukun.minimalist.app.launcher.com.MainViewModel
 import sukun.minimalist.app.launcher.com.data.OnboardingAction
 import sukun.minimalist.app.launcher.com.R
@@ -46,6 +47,8 @@ import sukun.minimalist.app.launcher.com.helper.AmbientThemeController
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
 import sukun.minimalist.app.launcher.com.helper.isLocationServicesEnabled
+import sukun.minimalist.app.launcher.com.helper.showLocationPermissionRationaleDialog
+import sukun.minimalist.app.launcher.com.helper.showLocationServicesDisabledDialog
 import sukun.minimalist.app.launcher.com.helper.hideKeyboard
 import sukun.minimalist.app.launcher.com.helper.getCurrentDeviceLocationLabel
 import sukun.minimalist.app.launcher.com.helper.getLocationSuggestions
@@ -56,6 +59,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.isAccessServiceEnabled
 import sukun.minimalist.app.launcher.com.helper.isDarkThemeOn
 import sukun.minimalist.app.launcher.com.helper.isEinkDisplay
@@ -102,6 +106,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
     private var locationSuggestionJob: Job? = null
     private var cachedDeviceLocationLabel: String? = null
+    private var pendingLocationAction: (() -> Unit)? = null
 
     private val customChimePickerLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -123,10 +128,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
             val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
                     || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            val action = pendingLocationAction
+            pendingLocationAction = null
             if (granted) {
-                setAppLocationDevice()
+                action?.invoke() ?: setAppLocationDevice()
             } else {
-                requireContext().showToast(R.string.weather_permission_needed)
+                requireContext().showLocationPermissionRationaleDialog()
             }
         }
 
@@ -212,6 +219,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             }
 
             binding.homeAppsNum.text = prefs.homeAppsNum.toString()
+            updateHomeAppsNumSelectorVisibility()
             migrateScreenTimePrefIfNeeded()
             migrateLegacyAppThemeIfNeeded()
             populateScreenTimeOnOff()
@@ -227,6 +235,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             populateTodoSettings()
             populateRemindersSettings()
             populatePremiumStatus()
+            applyPremiumVisuals()
             populateAccount()
             populatePrayerSettings()
             populateLocationSettings()
@@ -303,7 +312,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 }
             }
             R.id.startTour -> startOnboardingTour()
-            R.id.homeAppsNum -> binding.appsNumSelectLayout.visibility = View.VISIBLE
+            R.id.homeAppsNum -> {
+                updateHomeAppsNumSelectorVisibility()
+                binding.appsNumSelectLayout.visibility = View.VISIBLE
+            }
             R.id.dailyWallpaperUrl -> {
                 if (prefs.dailyWallpaperUrl.isNotBlank()) {
                     requireContext().openUrl(prefs.dailyWallpaperUrl)
@@ -322,6 +334,17 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.todoOnOff -> toggleTodo()
             R.id.goPremium -> showUpgradeDialog()
             R.id.weatherSettings -> showWeatherSettingsSheet()
+            R.id.weatherOnOff -> toggleInlineWeather()
+            R.id.weatherSource -> binding.weatherSourceSelectLayout?.visibility = View.VISIBLE
+            R.id.weatherSourceManual -> selectInlineWeatherSource(Constants.WeatherSource.MANUAL)
+            R.id.weatherSourceDevice -> selectInlineWeatherSource(Constants.WeatherSource.DEVICE)
+            R.id.weatherSourceGoogle -> selectInlineWeatherSource(Constants.WeatherSource.GOOGLE)
+            R.id.weatherLocation -> binding.weatherLocationEditLayout?.visibility = View.VISIBLE
+            R.id.weatherLocationSave -> saveInlineWeatherLocation()
+            R.id.weatherLocationClose -> closeInlineWeatherLocationEditor()
+            R.id.weatherUnits -> binding.weatherUnitsSelectLayout?.visibility = View.VISIBLE
+            R.id.weatherUnitCelsius -> selectInlineWeatherUnits(Constants.WeatherUnit.CELSIUS)
+            R.id.weatherUnitFahrenheit -> selectInlineWeatherUnits(Constants.WeatherUnit.FAHRENHEIT)
             R.id.prayerSettings -> {
                 val action = OnboardingAction.TAP_PRAYER_SETTINGS
                 viewModel.reportOnboardingAction(action)
@@ -339,15 +362,20 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 val action = OnboardingAction.TAP_FOCUS_MODE
                 viewModel.reportOnboardingAction(action)
                 if (!isOnboardingDiscoveryStep(action)) {
-                    if (prefs.isFocusModeActive()) requireContext().showToast(R.string.focus_mode_blocked)
-                    else binding.focusModeSelectLayout?.visibility = View.VISIBLE
+                    if (!PremiumAccess.hasPremiumAccess(prefs)) {
+                        showUpgradeDialog()
+                    } else if (prefs.isFocusModeActive()) {
+                        requireContext().showToast(R.string.focus_mode_blocked)
+                    } else {
+                        binding.focusModeSelectLayout?.visibility = View.VISIBLE
+                    }
                 }
             }
-            R.id.focus15m -> startFocusMode(Constants.FocusModeDuration.FIFTEEN_MIN)
-            R.id.focus30m -> startFocusMode(Constants.FocusModeDuration.THIRTY_MIN)
-            R.id.focus1h -> startFocusMode(Constants.FocusModeDuration.ONE_HOUR)
-            R.id.focus2h -> startFocusMode(Constants.FocusModeDuration.TWO_HOURS)
-            R.id.focusCustom -> showFocusCustomEditor()
+            R.id.focus15m -> if (canUsePremiumFeature()) startFocusMode(Constants.FocusModeDuration.FIFTEEN_MIN)
+            R.id.focus30m -> if (canUsePremiumFeature()) startFocusMode(Constants.FocusModeDuration.THIRTY_MIN)
+            R.id.focus1h -> if (canUsePremiumFeature()) startFocusMode(Constants.FocusModeDuration.ONE_HOUR)
+            R.id.focus2h -> if (canUsePremiumFeature()) startFocusMode(Constants.FocusModeDuration.TWO_HOURS)
+            R.id.focusCustom -> if (canUsePremiumFeature()) showFocusCustomEditor()
             R.id.focusCustomStart -> startCustomFocusMode()
             R.id.focusModeNotificationsLock -> toggleFocusModeNotificationsLock()
             R.id.focusModeHideStatusBar -> toggleFocusModeHideStatusBar()
@@ -361,7 +389,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.hourlyChimeSound -> binding.chimeSoundSelectLayout?.visibility = View.VISIBLE
             R.id.chimeSoundBundled -> updateChimeSound(Constants.ChimeSound.BUNDLED)
             R.id.chimeSoundDefault -> updateChimeSound(Constants.ChimeSound.DEFAULT)
-            R.id.chimeSoundCustom -> customChimePickerLauncher.launch(arrayOf("audio/*"))
+            R.id.chimeSoundCustom -> {
+                if (canUsePremiumFeature()) customChimePickerLauncher.launch(arrayOf("audio/*"))
+            }
             R.id.statusBar -> toggleStatusBar()
             R.id.dateTime -> binding.dateTimeSelectLayout.visibility = View.VISIBLE
             R.id.dateTimeOn -> toggleDateTime(Constants.DateTime.ON)
@@ -484,6 +514,17 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.todoOnOff?.setOnClickListener(this)
         binding.goPremium.setOnClickListener(this)
         binding.weatherSettings?.setOnClickListener(this)
+        binding.weatherOnOff?.setOnClickListener(this)
+        binding.weatherSource?.setOnClickListener(this)
+        binding.weatherSourceManual?.setOnClickListener(this)
+        binding.weatherSourceDevice?.setOnClickListener(this)
+        binding.weatherSourceGoogle?.setOnClickListener(this)
+        binding.weatherLocation?.setOnClickListener(this)
+        binding.weatherLocationSave?.setOnClickListener(this)
+        binding.weatherLocationClose?.setOnClickListener(this)
+        binding.weatherUnits?.setOnClickListener(this)
+        binding.weatherUnitCelsius?.setOnClickListener(this)
+        binding.weatherUnitFahrenheit?.setOnClickListener(this)
         binding.prayerSettings?.setOnClickListener(this)
         binding.locationSettings?.setOnClickListener(this)
         binding.chipLocationDevice?.setOnClickListener(this)
@@ -553,8 +594,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
         binding.dailyWallpaper.setOnLongClickListener(this)
 
-        binding.backupExport?.setOnClickListener { launchBackupExport() }
-        binding.backupImport?.setOnClickListener { launchBackupImport() }
+        binding.backupExport?.setOnClickListener { if (canUsePremiumFeature()) launchBackupExport() }
+        binding.backupImport?.setOnClickListener { if (canUsePremiumFeature()) launchBackupImport() }
 
         binding.alignment.setOnLongClickListener(this)
         binding.appThemeText.setOnLongClickListener(this)
@@ -814,29 +855,43 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
     }
 
-    private fun populatePremiumStatus() {
-        binding.premiumRow.isVisible = !prefs.isProUser
-        if (!prefs.isProUser) {
-            binding.goPremium.text = getString(R.string.upgrade_to_premium)
-            binding.goPremium.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
+    fun onPremiumStatusChanged() {
+        if (_binding != null) {
+            populatePremiumStatus()
+            applyPremiumVisuals()
         }
     }
 
-    private fun showUpgradeDialog() {
-        if (prefs.isProUser) {
-            requireContext().showToast(R.string.premium_already_active)
-            return
+    private fun populatePremiumStatus() {
+        binding.premiumRow.isVisible = !prefs.isProUser
+        if (prefs.isProUser) return
+        binding.goPremium.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
+        binding.goPremium.text = getString(R.string.upgrade_to_premium)
+        if (PremiumAccess.isTrialActive(prefs)) {
+            binding.premiumTrialStatus.isVisible = true
+            binding.premiumTrialStatus.text = getString(
+                R.string.premium_trial_days_left,
+                PremiumAccess.trialDaysRemaining(prefs),
+            )
+        } else {
+            binding.premiumTrialStatus.isVisible = false
         }
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.go_premium)
-            .setMessage(R.string.premium_feature_requires_upgrade)
-            .setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
-                prefs.unlockPremium()
-                populatePremiumStatus()
-                requireContext().showToast(R.string.premium_enabled)
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+    }
+
+    private fun applyPremiumVisuals() {
+        val alpha = PremiumAccess.lockedAlpha(prefs)
+        binding.focusMode.alpha = alpha
+        binding.focusModeNotificationsLock.alpha = alpha
+        binding.focusModeHideStatusBar.alpha = alpha
+        binding.backupRow.alpha = alpha
+        binding.dailyWallpaper.alpha = alpha
+        binding.dailyWallpaperUrl.alpha = alpha
+        binding.changeWallpaperNow.alpha = alpha
+        binding.chimeSoundCustom?.alpha = alpha
+    }
+
+    private fun showUpgradeDialog() {
+        (requireActivity() as? MainActivity)?.showUpgradeDialog()
     }
 
     private fun populateLanguage() {
@@ -845,8 +900,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun canUsePremiumFeature(): Boolean {
-        if (prefs.isProUser) return true
-        requireContext().showToast(R.string.premium_feature_requires_upgrade)
+        if (PremiumAccess.hasPremiumAccess(prefs)) return true
+        if (PremiumAccess.trialExpired(prefs)) {
+            requireContext().showToast(R.string.premium_trial_ended)
+        } else {
+            requireContext().showToast(R.string.premium_feature_requires_upgrade)
+        }
+        showUpgradeDialog()
         return false
     }
 
@@ -883,6 +943,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun startFocusMode(durationInMillis: Long) {
+        if (!PremiumAccess.hasPremiumAccess(prefs)) {
+            showUpgradeDialog()
+            return
+        }
         if (!isAccessServiceEnabled(requireContext())) {
             requireContext().showToast(R.string.focus_mode_enable_accessibility, Toast.LENGTH_LONG)
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -922,6 +986,171 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateWeatherSettings() {
         binding.weatherSettingsSummary?.text = if (prefs.showWeatherOnHome) buildWeatherSummary() else getString(R.string.off)
+        populateInlineWeatherSettings()
+    }
+
+    private fun populateInlineWeatherSettings() {
+        val weatherOnOff = binding.weatherOnOff ?: return
+        val isOn = prefs.showWeatherOnHome
+        weatherOnOff.text = getString(if (isOn) R.string.on else R.string.off)
+        binding.weatherOptionsLayout?.isVisible = isOn
+        if (!isOn) return
+
+        binding.weatherSource?.text = getString(
+            when (prefs.weatherSourceMode) {
+                Constants.WeatherSource.GOOGLE -> R.string.google_weather
+                Constants.WeatherSource.MANUAL -> R.string.manual_location
+                else -> R.string.device_location
+            }
+        )
+        binding.weatherLocation?.text = when {
+            prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE ->
+                getString(R.string.google_weather_short)
+            prefs.weatherSourceMode == Constants.WeatherSource.DEVICE ->
+                getString(R.string.device_location)
+            prefs.weatherLocationLabel.isNotBlank() -> prefs.weatherLocationLabel
+            else -> getString(R.string.not_set)
+        }
+        binding.weatherUnits?.text = getString(
+            if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT)
+                R.string.fahrenheit_short
+            else
+                R.string.celsius_short
+        )
+        binding.weatherLocationRow?.isVisible =
+            prefs.weatherSourceMode != Constants.WeatherSource.GOOGLE
+        updateInlineWeatherSourceChips()
+        updateInlineWeatherUnitChips()
+    }
+
+    private fun updateInlineWeatherSourceChips() {
+        setInlineChipState(
+            binding.weatherSourceManual,
+            prefs.weatherSourceMode == Constants.WeatherSource.MANUAL
+        )
+        setInlineChipState(
+            binding.weatherSourceDevice,
+            prefs.weatherSourceMode == Constants.WeatherSource.DEVICE
+        )
+        setInlineChipState(
+            binding.weatherSourceGoogle,
+            prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE
+        )
+    }
+
+    private fun updateInlineWeatherUnitChips() {
+        setInlineChipState(
+            binding.weatherUnitCelsius,
+            prefs.weatherUnits == Constants.WeatherUnit.CELSIUS
+        )
+        setInlineChipState(
+            binding.weatherUnitFahrenheit,
+            prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT
+        )
+    }
+
+    private fun setInlineChipState(chip: TextView?, selected: Boolean) {
+        chip ?: return
+        chip.setTextColor(
+            requireContext().getColorFromAttr(
+                if (selected) R.attr.primaryColor else R.attr.primaryColorTrans50
+            )
+        )
+        chip.paint.isFakeBoldText = selected
+    }
+
+    private fun toggleInlineWeather() {
+        prefs.showWeatherOnHome = !prefs.showWeatherOnHome
+        populateWeatherSettings()
+        refreshWeatherIfConfigured()
+        viewModel.refreshHome(false)
+    }
+
+    private fun selectInlineWeatherSource(source: String) {
+        binding.weatherSourceSelectLayout?.visibility = View.GONE
+        if (prefs.weatherSourceMode == source) return
+        when (source) {
+            Constants.WeatherSource.DEVICE -> requestWeatherLocationAccess {
+                prefs.weatherSourceMode = Constants.WeatherSource.DEVICE
+                finishInlineWeatherSourceChange()
+            }
+            Constants.WeatherSource.MANUAL -> {
+                if (prefs.weatherLocationQuery.isBlank()) {
+                    openLocationEditor()
+                    selectLocationManual()
+                    return
+                }
+                prefs.weatherSourceMode = source
+                finishInlineWeatherSourceChange()
+            }
+            else -> {
+                prefs.weatherSourceMode = source
+                if (source == Constants.WeatherSource.GOOGLE) {
+                    prefs.clearWeatherCache()
+                }
+                finishInlineWeatherSourceChange()
+            }
+        }
+    }
+
+    private fun finishInlineWeatherSourceChange() {
+        populateWeatherSettings()
+        populateLocationSettings()
+        refreshWeatherIfConfigured()
+        viewModel.refreshHome(false)
+    }
+
+    private fun requestWeatherLocationAccess(onGranted: () -> Unit) {
+        val context = requireContext()
+        if (!context.isLocationServicesEnabled()) {
+            context.showLocationServicesDisabledDialog()
+            return
+        }
+        if (context.hasWeatherLocationPermission()) {
+            onGranted()
+            return
+        }
+        pendingLocationAction = onGranted
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+    private fun saveInlineWeatherLocation() {
+        val query = binding.etWeatherLocation?.text?.toString()?.trim().orEmpty()
+        if (query.isBlank()) {
+            requireContext().showToast(R.string.weather_location_required)
+            return
+        }
+        prefs.weatherSourceMode = Constants.WeatherSource.MANUAL
+        prefs.weatherLocationQuery = query
+        prefs.weatherLocationLabel = query
+        prefs.weatherLatitude = ""
+        prefs.weatherLongitude = ""
+        prefs.clearWeatherCache()
+        closeInlineWeatherLocationEditor()
+        populateWeatherSettings()
+        populateLocationSettings()
+        refreshWeatherIfConfigured()
+        viewModel.refreshHome(false)
+    }
+
+    private fun closeInlineWeatherLocationEditor() {
+        binding.weatherLocationEditLayout?.visibility = View.GONE
+        binding.etWeatherLocation?.hideKeyboard()
+    }
+
+    private fun selectInlineWeatherUnits(units: String) {
+        binding.weatherUnitsSelectLayout?.visibility = View.GONE
+        if (prefs.weatherUnits == units) return
+        prefs.weatherUnits = units
+        prefs.clearWeatherCache()
+        populateWeatherSettings()
+        refreshWeatherIfConfigured()
+        viewModel.refreshHome(false)
     }
 
     private fun buildWeatherSummary(): String = getString(
@@ -938,6 +1167,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                     populateWeatherSettings()
                     populatePrayerSettings()
                     viewModel.refreshHome(false)
+                }
+
+                override fun onWeatherLocationNeeded() {
+                    openLocationEditor()
+                    selectLocationManual()
                 }
             })
             sheet.show(childFragmentManager, WeatherSettingsSheet.TAG)
@@ -1033,16 +1267,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun selectLocationDevice() {
-        if (requireContext().hasWeatherLocationPermission()) {
-            setAppLocationDevice()
-        } else {
-            locationPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        }
+        requestWeatherLocationAccess { setAppLocationDevice() }
     }
 
     private fun setAppLocationDevice() {
@@ -1348,10 +1573,18 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun updateHomeAppsNum(num: Int) {
-        binding.homeAppsNum.text = num.toString()
+        val clamped = num.coerceIn(0, prefs.maxHomeAppsAllowed())
+        binding.homeAppsNum.text = clamped.toString()
         binding.appsNumSelectLayout.visibility = View.GONE
-        prefs.homeAppsNum = num
+        prefs.homeAppsNum = clamped
         viewModel.refreshHome(true)
+    }
+
+    private fun updateHomeAppsNumSelectorVisibility() {
+        val max = prefs.maxHomeAppsAllowed()
+        binding.maxApps6.isVisible = max >= Constants.MAX_HOME_APPS_MEDIUM
+        binding.maxApps7.isVisible = max >= Constants.MAX_HOME_APPS_SMALL
+        binding.maxApps8.isVisible = false
     }
 
     private var pendingTextSizeScale: Float = -1f
@@ -1374,6 +1607,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
         prefs.textSizeScale = pendingTextSizeScale
         pendingTextSizeScale = -1f
+        prefs.homeAppsNum = prefs.homeAppsNum
+        binding.homeAppsNum.text = prefs.homeAppsNum.toString()
+        updateHomeAppsNumSelectorVisibility()
         if (isAdded) {
             requireActivity().recreate()
         }
@@ -1396,10 +1632,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 requireContext().showToast(R.string.ambient_theme_no_sensor)
                 return
             }
-            if (!canUsePremiumFeature()) {
-                showUpgradeDialog()
-                return
-            }
+            if (!canUsePremiumFeature()) return
         }
         prefs.appTheme = appTheme
         populateAppThemeText(appTheme)
@@ -1661,6 +1894,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateFocusMode()
         populateWeatherSettings()
         refreshWeatherIfConfigured()
+        applyPremiumVisuals()
+        populatePremiumStatus()
         populatePrayerSettings()
         populateRemindersSettings()
         if (prefs.showPrayerOnHome) {

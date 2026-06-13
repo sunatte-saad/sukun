@@ -21,6 +21,7 @@ import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.databinding.AdapterAppDrawerBinding
 import sukun.minimalist.app.launcher.com.databinding.AdapterAppSectionHeaderBinding
 import sukun.minimalist.app.launcher.com.databinding.AdapterPrivateSpaceHeaderBinding
+import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.dpToPx
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.hideKeyboard
@@ -46,6 +47,13 @@ class AppDrawerAdapter(
     private val appCooldownLimitListener: (AppModel) -> Unit = {},
 ) : ListAdapter<AppModel, RecyclerView.ViewHolder>(DIFF_CALLBACK), Filterable {
 
+    var premiumLocked: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if (itemCount > 0) notifyItemRangeChanged(0, itemCount)
+        }
+
     companion object {
         const val VIEW_TYPE_APP = 0
         const val VIEW_TYPE_PRIVATE_HEADER = 1
@@ -61,7 +69,7 @@ class AppDrawerAdapter(
 
                 oldItem is AppModel.PrivateSpaceHeader && newItem is AppModel.PrivateSpaceHeader -> true
                 oldItem is AppModel.SectionHeader && newItem is AppModel.SectionHeader ->
-                    oldItem.appLabel == newItem.appLabel
+                    oldItem.sectionKey == newItem.sectionKey
 
                 else -> false
             }
@@ -125,6 +133,7 @@ class AppDrawerAdapter(
                 is PrivateSpaceHeaderViewHolder -> {
                     holder.bind(
                         appLabelGravity,
+                        premiumLocked,
                         privateSpaceToggleListener,
                         privateSpaceSettingsListener,
                     )
@@ -143,7 +152,8 @@ class AppDrawerAdapter(
                     appInfoListener,
                     appHideListener,
                     appRenameListener,
-                    appCooldownLimitListener
+                    appCooldownLimitListener,
+                    premiumLocked,
                 )
             }
         } catch (e: Exception) {
@@ -282,10 +292,12 @@ class AppDrawerAdapter(
         RecyclerView.ViewHolder(binding.root) {
         fun bind(
             appLabelGravity: Int,
+            premiumLocked: Boolean,
             toggleListener: () -> Unit,
             settingsListener: () -> Unit,
         ) = with(binding) {
             privateSpaceTitle.gravity = appLabelGravity
+            privateSpaceTitle.alpha = if (premiumLocked) PremiumAccess.LOCKED_ALPHA else 1f
             privateSpaceTitle.setOnClickListener { toggleListener() }
             privateSpaceTitle.setOnLongClickListener {
                 settingsListener()
@@ -309,7 +321,12 @@ class AppDrawerAdapter(
             appHideListener: (AppModel, Int) -> Unit,
             appRenameListener: (AppModel, String) -> Unit,
             cooldownLimitListener: (AppModel) -> Unit,
+            premiumLocked: Boolean,
         ) = with(binding) {
+            val lockedAlpha = if (premiumLocked) PremiumAccess.LOCKED_ALPHA else 1f
+            appHide.alpha = lockedAlpha
+            appRename.alpha = lockedAlpha
+            appCooldownLimit.alpha = lockedAlpha
             appHideLayout.visibility = View.GONE
             renameLayout.visibility = View.GONE
             appTitle.visibility = View.VISIBLE

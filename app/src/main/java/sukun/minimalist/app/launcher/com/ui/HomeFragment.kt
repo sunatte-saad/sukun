@@ -65,6 +65,8 @@ import sukun.minimalist.app.launcher.com.helper.getChangedAppTheme
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.isDarkThemeOn
 import sukun.minimalist.app.launcher.com.helper.getUserHandleFromString
+import sukun.minimalist.app.launcher.com.MainActivity
+import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.isAccessServiceEnabled
 import sukun.minimalist.app.launcher.com.helper.isPackageInstalled
 import sukun.minimalist.app.launcher.com.helper.openAlarmApp
@@ -77,6 +79,7 @@ import sukun.minimalist.app.launcher.com.helper.showToast
 import sukun.minimalist.app.launcher.com.helper.prayerKeyToMark
 import sukun.minimalist.app.launcher.com.helper.toOverlayText
 import sukun.minimalist.app.launcher.com.listener.OnSwipeTouchListener
+import sukun.minimalist.app.launcher.com.helper.openGoogleWeather
 import sukun.minimalist.app.launcher.com.listener.ViewSwipeTouchListener
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -101,6 +104,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private var defaultHomeAppsPaddingTop = 0
     private var defaultHomeAppsPaddingBottom = 0
     private var topCornerStackRunnable: Runnable? = null
+    private var overlayLayoutRunnable: Runnable? = null
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
@@ -122,12 +126,13 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         defaultHomeAppsPaddingTop = binding.homeAppsLayout.paddingTop
         defaultHomeAppsPaddingBottom = binding.homeAppsLayout.paddingBottom
 
+        binding.mainLayout.layoutTransition = null
         initObservers()
         setHomeAlignment(prefs.homeAlignment)
         initSwipeTouchListener()
         initClickListeners()
         applyReadableHomeTextColors()
-        binding.topCornerStack.bringToFront()
+        bringOverlayViewsToFront()
         updateRemindersBellCount()
         updateTodoIconCount()
     }
@@ -162,6 +167,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             R.id.ringClock -> openClockApp()
             R.id.ringDate -> openCalendarApp()
             R.id.prayerText -> { /* mark on long-press only */ }
+            R.id.weatherText -> openGoogleWeather()
             R.id.remindersBellContainer -> openReminders()
             R.id.todoIconContainer -> openTodoList()
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
@@ -320,6 +326,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.date.setOnTouchListener(getViewSwipeTouchListener(context, binding.date))
         binding.ringClock.setOnTouchListener(getViewSwipeTouchListener(context, binding.ringClock))
         binding.ringDate.setOnTouchListener(getViewSwipeTouchListener(context, binding.ringDate))
+        binding.weatherText?.setOnTouchListener(getViewSwipeTouchListener(context, binding.weatherText!!))
         binding.prayerText?.let { prayerText ->
             prayerText.setOnTouchListener(getViewSwipeTouchListener(context, prayerText))
         }
@@ -405,23 +412,34 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private fun setHomeAlignment(horizontalGravity: Int = prefs.homeAlignment) {
         val verticalGravity = if (prefs.homeBottomAlignment) Gravity.BOTTOM else Gravity.TOP
-        binding.homeAppsLayout.gravity = horizontalGravity or verticalGravity
-        binding.dateTimeLayout.gravity = horizontalGravity
-        binding.weatherText.gravity = horizontalGravity
-        binding.prayerText.gravity = horizontalGravity
-        binding.focusModeStatus.gravity = horizontalGravity
-        binding.homeApp1.gravity = horizontalGravity
-        binding.homeApp2.gravity = horizontalGravity
-        binding.homeApp3.gravity = horizontalGravity
-        binding.homeApp4.gravity = horizontalGravity
-        binding.homeApp5.gravity = horizontalGravity
-        binding.homeApp6.gravity = horizontalGravity
-        binding.homeApp7.gravity = horizontalGravity
-        binding.homeApp8.gravity = horizontalGravity
+        binding.homeAppsLayout.gravity = frameHorizontalGravity(horizontalGravity) or verticalGravity
+        applyDateTimeLayoutAlignment(horizontalGravity)
+        val textGravity = textHorizontalGravity(horizontalGravity)
+        binding.weatherText.gravity = textGravity
+        binding.prayerText.gravity = textGravity
+        binding.focusModeStatus.gravity = textGravity
+        binding.homeApp1.gravity = textGravity
+        binding.homeApp2.gravity = textGravity
+        binding.homeApp3.gravity = textGravity
+        binding.homeApp4.gravity = textGravity
+        binding.homeApp5.gravity = textGravity
+        binding.homeApp6.gravity = textGravity
+        binding.homeApp7.gravity = textGravity
+        binding.homeApp8.gravity = textGravity
         positionTopCornerStack()
         positionOverlayText(horizontalGravity)
         adjustHomeAppsLayoutForTextScale()
     }
+
+    private fun applyDateTimeLayoutAlignment(horizontalGravity: Int) {
+        binding.dateTimeLayout.gravity = frameHorizontalGravity(horizontalGravity)
+        val params = binding.dateTimeLayout.layoutParams as? FrameLayout.LayoutParams ?: return
+        params.gravity = Gravity.TOP or frameHorizontalGravity(horizontalGravity)
+        params.topMargin = dateTimeLayoutTopMargin()
+        binding.dateTimeLayout.layoutParams = params
+    }
+
+    private fun dateTimeLayoutTopMargin(): Int = 56.dpToPx()
 
     private fun populateDateTime() {
         binding.dateTimeLayout.isVisible = prefs.dateTimeVisibility != Constants.DateTime.OFF
@@ -436,6 +454,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (binding.clock.isVisible) resetTextClockToSystem(binding.clock)
         if (binding.ringClock.isVisible) resetTextClockToSystem(binding.ringClock)
         updateDateTimeDisplay()
+        applyDateTimeLayoutAlignment(prefs.homeAlignment)
         if (binding.dateTimeLayout.isVisible) startDateTimeTicker()
         else stopDateTimeTicker()
         positionOverlayText()
@@ -484,27 +503,25 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             positionOverlayText()
             return
         }
-        if (weather == null) {
-            binding.weatherText?.text = getString(R.string.google_weather_card)
-            binding.weatherText?.visibility = View.VISIBLE
-            positionOverlayText()
-            return
+        binding.weatherText?.text = when {
+            prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE ->
+                getString(R.string.google_weather_card)
+            weather != null -> weather.displayText
+            else -> getString(R.string.weather_unavailable)
         }
-        binding.weatherText?.text = weather.displayText
         binding.weatherText?.visibility = View.VISIBLE
+        bringOverlayViewsToFront()
         positionOverlayText()
     }
 
     private fun openGoogleWeather() {
-        val location = prefs.weatherLocationLabel
-            .ifBlank { prefs.weatherLocationQuery }
-            .trim()
-        val query = if (location.isBlank()) "weather" else "weather $location"
-        val uri = android.net.Uri.parse("https://www.google.com/search")
-            .buildUpon()
-            .appendQueryParameter("q", query)
-            .build()
-        startActivity(Intent(Intent.ACTION_VIEW, uri))
+        when (prefs.weatherSourceMode) {
+            Constants.WeatherSource.GOOGLE -> requireContext().openGoogleWeather(
+                locationLabel = prefs.weatherLocationLabel,
+                locationQuery = prefs.weatherLocationQuery,
+            )
+            else -> viewModel.loadWeather(true)
+        }
     }
 
     private fun populatePrayer(prayerState: PrayerState?) {
@@ -517,7 +534,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
         binding.prayerText?.text = prayerState.toOverlayText(requireContext())
         binding.prayerText?.visibility = View.VISIBLE
-        binding.prayerText?.bringToFront()
+        bringOverlayViewsToFront()
         positionOverlayText()
         startPrayerTicker()
     }
@@ -586,49 +603,159 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         positionOverlayText(horizontalGravity)
     }
 
+    private fun bringOverlayViewsToFront() {
+        val binding = safeBinding ?: return
+        binding.dateTimeLayout.bringToFront()
+        binding.weatherText?.bringToFront()
+        binding.prayerText?.bringToFront()
+        binding.focusModeStatus?.bringToFront()
+        binding.topCornerStack.bringToFront()
+    }
+
     private fun positionOverlayText(horizontalGravity: Int = prefs.homeAlignment) {
-        safeBinding?.mainLayout?.post {
-            val binding = safeBinding ?: return@post
-            try {
-                val spacing = 12.dpToPx()
-                val weatherTopMargin = getDateTimeBottom()
-                    ?.plus(spacing)
-                    ?: 56.dpToPx()
-                updateOverlayLayout(binding.weatherText, horizontalGravity, weatherTopMargin)
-
-                val prayerTopMargin = if (binding.weatherText?.isVisible == true) {
-                    val weatherHeight = binding.weatherText?.height ?: 0
-                    weatherTopMargin + weatherHeight + spacing
-                } else {
-                    weatherTopMargin
-                }
-                updateOverlayLayout(binding.prayerText, horizontalGravity, prayerTopMargin)
-
-                val focusTopMargin = if (binding.prayerText?.isVisible == true) {
-                    val prayerHeight = binding.prayerText?.height ?: 0
-                    prayerTopMargin + prayerHeight + spacing
-                } else if (binding.weatherText?.isVisible == true) {
-                    val weatherHeight = binding.weatherText?.height ?: 0
-                    weatherTopMargin + weatherHeight + spacing
-                } else {
-                    weatherTopMargin
-                }
-                updateOverlayLayout(binding.focusModeStatus, horizontalGravity, focusTopMargin)
-
-                val overlayBottom = when {
-                    binding.focusModeStatus.isVisible -> focusTopMargin + binding.focusModeStatus.height
-                    binding.prayerText.isVisible -> prayerTopMargin + binding.prayerText.height
-                    binding.weatherText.isVisible -> weatherTopMargin + binding.weatherText.height
-                    else -> getDateTimeBottom() ?: 0
-                }
-                val topCornerBottom = binding.topCornerStack.takeIf { it.isVisible }
-                    ?.let { it.top + it.height } ?: 0
-                val topOverlayBottom = max(overlayBottom, topCornerBottom)
-                updateHomeAppsTopPadding(topOverlayBottom + spacing)
-            } catch (_: Throwable) {
-                // View was likely destroyed while this runnable executed; safely ignore
-            }
+        val layout = safeBinding?.mainLayout ?: return
+        overlayLayoutRunnable?.let { layout.removeCallbacks(it) }
+        val runnable = Runnable {
+            overlayLayoutRunnable = null
+            positionOverlayTextNow(horizontalGravity)
         }
+        overlayLayoutRunnable = runnable
+        layout.post(runnable)
+    }
+
+    private fun positionOverlayTextNow(horizontalGravity: Int = prefs.homeAlignment) {
+        val binding = safeBinding ?: return
+        try {
+            applyTopCornerStackPositionsNow()
+            val weatherTopMargin = overlayContentTopMargin(binding)
+            val cornerReserve = overlayCornerReserveForAlignment(binding, horizontalGravity)
+
+            updateOverlayLayout(binding.weatherText, horizontalGravity, weatherTopMargin, cornerReserve)
+
+            val weather = binding.weatherText
+            if (weather?.isVisible == true) {
+                weather.doOnLayout {
+                    if (safeBinding == null) return@doOnLayout
+                    finishOverlayTextLayout(horizontalGravity)
+                }
+            } else {
+                finishOverlayTextLayout(horizontalGravity)
+            }
+        } catch (_: Throwable) {
+            // View was likely destroyed while this runnable executed; safely ignore
+        }
+    }
+
+    private fun finishOverlayTextLayout(horizontalGravity: Int = prefs.homeAlignment) {
+        val binding = safeBinding ?: return
+        try {
+            val spacing = 12.dpToPx()
+            val weatherTopMargin = overlayContentTopMargin(binding)
+            val cornerReserve = overlayCornerReserveForAlignment(binding, horizontalGravity)
+            val availableWidth = overlayAvailableWidth(horizontalGravity, cornerReserve)
+
+            val weatherHeight = visibleOverlayHeight(binding.weatherText, availableWidth)
+            val prayerTopMargin = if (binding.weatherText?.isVisible == true) {
+                weatherTopMargin + weatherHeight + spacing
+            } else {
+                weatherTopMargin
+            }
+            updateOverlayLayout(binding.prayerText, horizontalGravity, prayerTopMargin, cornerReserve)
+
+            val prayerHeight = visibleOverlayHeight(binding.prayerText, availableWidth)
+            val focusTopMargin = when {
+                binding.prayerText.isVisible -> prayerTopMargin + prayerHeight + spacing
+                binding.weatherText.isVisible -> weatherTopMargin + weatherHeight + spacing
+                else -> weatherTopMargin
+            }
+            updateOverlayLayout(binding.focusModeStatus, horizontalGravity, focusTopMargin, cornerReserve)
+
+            val focusHeight = visibleOverlayHeight(binding.focusModeStatus, availableWidth)
+            val overlayBottom = when {
+                binding.focusModeStatus.isVisible -> focusTopMargin + focusHeight
+                binding.prayerText.isVisible -> prayerTopMargin + prayerHeight
+                binding.weatherText.isVisible -> weatherTopMargin + weatherHeight
+                else -> getDateTimeBottom() ?: 0
+            }
+            val topCornerBottom = binding.topCornerStack.takeIf { it.isVisible }
+                ?.let { it.top + visibleOverlayHeight(it) } ?: 0
+            val topOverlayBottom = if (overlaySharesIconColumn(horizontalGravity)) {
+                max(overlayBottom, topCornerBottom)
+            } else {
+                overlayBottom
+            }
+            updateHomeAppsTopPadding(topOverlayBottom + spacing)
+            bringOverlayViewsToFront()
+        } catch (_: Throwable) {
+            // View was likely destroyed while this runnable executed; safely ignore
+        }
+    }
+
+    private fun overlayCornerReserveWidth(binding: FragmentHomeBinding): Int {
+        if (!binding.topCornerStack.isVisible) return 0
+        val stackWidth = when {
+            binding.topCornerStack.width > 0 -> binding.topCornerStack.width
+            binding.topCornerStack.measuredWidth > 0 -> binding.topCornerStack.measuredWidth
+            else -> 0
+        }
+        if (stackWidth > 0) return stackWidth + 16.dpToPx()
+        return 72.dpToPx()
+    }
+
+    private fun overlaySharesIconColumn(horizontalGravity: Int): Boolean {
+        return frameHorizontalGravity(horizontalGravity) ==
+                frameHorizontalGravity(topCornerHorizontalGravity())
+    }
+
+    private fun overlayCornerReserveForAlignment(
+        binding: FragmentHomeBinding,
+        horizontalGravity: Int,
+    ): Int {
+        if (!binding.topCornerStack.isVisible) return 0
+        if (frameHorizontalGravity(horizontalGravity) == Gravity.END) {
+            return overlayCornerReserveWidth(binding)
+        }
+        if (overlaySharesIconColumn(horizontalGravity)) {
+            return overlayCornerReserveWidth(binding)
+        }
+        return 0
+    }
+
+    private fun overlayAvailableWidth(horizontalGravity: Int, cornerReserveWidth: Int): Int {
+        val horizontalMargin = 24.dpToPx()
+        if (frameHorizontalGravity(horizontalGravity) == Gravity.CENTER_HORIZONTAL) {
+            return resources.displayMetrics.widthPixels - horizontalMargin * 2
+        }
+        val isRtl = resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        val iconSideInset = horizontalMargin + cornerReserveWidth
+        val marginStart = if (isRtl) iconSideInset else horizontalMargin
+        val marginEnd = if (isRtl) horizontalMargin else iconSideInset
+        return (resources.displayMetrics.widthPixels - marginStart - marginEnd)
+            .coerceAtLeast(horizontalMargin * 2)
+    }
+
+    private fun overlayContentTopMargin(binding: FragmentHomeBinding): Int {
+        val spacing = 12.dpToPx()
+        return getDateTimeBottom()?.plus(spacing) ?: 56.dpToPx()
+    }
+
+    private fun iconsBelowRing(binding: FragmentHomeBinding): Boolean {
+        if (!binding.ringClockLayout.isVisible) return false
+        return overlaySharesIconColumn(prefs.homeAlignment)
+    }
+
+    private fun visibleOverlayHeight(view: View?, maxMeasureWidth: Int? = null): Int {
+        if (view == null || !view.isVisible) return 0
+        if (view.height > 0) return view.height
+        if (view.measuredHeight > 0 && view.width > 0) return view.measuredHeight
+        val maxWidth = maxMeasureWidth ?: view.resources.displayMetrics.widthPixels
+        val widthSpec = View.MeasureSpec.makeMeasureSpec(
+            maxWidth,
+            View.MeasureSpec.AT_MOST,
+        )
+        val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        view.measure(widthSpec, heightSpec)
+        return view.measuredHeight
     }
 
     private fun getDateTimeBottom(): Int? {
@@ -645,15 +772,53 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         return max(layoutBottom, visibleClockBottom)
     }
 
+    private fun frameHorizontalGravity(alignment: Int): Int = when (alignment) {
+        Gravity.CENTER, Gravity.CENTER_HORIZONTAL -> Gravity.CENTER_HORIZONTAL
+        Gravity.END, Gravity.RIGHT -> Gravity.END
+        else -> Gravity.START
+    }
+
+    private fun textHorizontalGravity(alignment: Int): Int = when (alignment) {
+        Gravity.CENTER, Gravity.CENTER_HORIZONTAL -> Gravity.CENTER_HORIZONTAL
+        Gravity.END, Gravity.RIGHT -> Gravity.END
+        else -> Gravity.START
+    }
+
     private fun updateOverlayLayout(
         view: TextView?,
         horizontalGravity: Int,
         topMargin: Int,
+        cornerReserveWidth: Int = 0,
     ) {
         val overlayView = view ?: return
         val params = overlayView.layoutParams as? FrameLayout.LayoutParams ?: return
-        params.gravity = Gravity.TOP or horizontalGravity
+        val horizontalMargin = 24.dpToPx()
+        val isRtl = resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        val frameGravity = frameHorizontalGravity(horizontalGravity)
+
         params.topMargin = topMargin
+        params.gravity = Gravity.TOP or frameGravity
+
+        if (frameGravity == Gravity.CENTER_HORIZONTAL) {
+            params.width = FrameLayout.LayoutParams.MATCH_PARENT
+            params.marginStart = horizontalMargin
+            params.marginEnd = horizontalMargin
+            overlayView.maxWidth = Int.MAX_VALUE
+            overlayView.textAlignment = View.TEXT_ALIGNMENT_CENTER
+            overlayView.gravity = Gravity.CENTER_HORIZONTAL
+        } else {
+            val iconSideInset = horizontalMargin + cornerReserveWidth
+            params.width = FrameLayout.LayoutParams.WRAP_CONTENT
+            params.marginStart = if (isRtl) iconSideInset else horizontalMargin
+            params.marginEnd = if (isRtl) horizontalMargin else iconSideInset
+            val availableWidth = resources.displayMetrics.widthPixels - params.marginStart - params.marginEnd
+            overlayView.maxWidth = availableWidth.coerceAtLeast(horizontalMargin * 2)
+            overlayView.textAlignment = when (frameGravity) {
+                Gravity.END -> View.TEXT_ALIGNMENT_VIEW_END
+                else -> View.TEXT_ALIGNMENT_VIEW_START
+            }
+            overlayView.gravity = textHorizontalGravity(horizontalGravity)
+        }
         overlayView.layoutParams = params
     }
 
@@ -693,7 +858,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         homeAppTextViews().forEach { textView ->
             textView.maxLines = 1
             textView.ellipsize = TextUtils.TruncateAt.END
-            textView.gravity = horizontalGravity
+            textView.gravity = textHorizontalGravity(horizontalGravity)
             textView.setPadding(textView.paddingLeft, itemPadding, textView.paddingRight, itemPadding)
             val lp = textView.layoutParams as? LinearLayout.LayoutParams ?: return@forEach
             lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -820,7 +985,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 }
                 binding.prayerText?.text = prayerState.toOverlayText(requireContext())
                 binding.prayerText?.isVisible = true
-                binding.prayerText?.bringToFront()
+                bringOverlayViewsToFront()
                 positionOverlayText()
                 delay(1000)
             }
@@ -849,7 +1014,13 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         positionTopCornerStack()
     }
 
-    private fun topCornerHorizontalGravity(): Int = prefs.homeAlignment
+    private fun topCornerHorizontalGravity(): Int {
+        return if (resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL) {
+            Gravity.START
+        } else {
+            Gravity.END
+        }
+    }
 
     private fun topCornerHorizontalMargin(): Int = 24.dpToPx()
 
@@ -878,20 +1049,17 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         return top + contentHeight
     }
 
-    private fun dateTimeBottomForCornerStack(binding: FragmentHomeBinding): Int {
-        if (!binding.dateTimeLayout.isVisible) return 0
-        if (binding.dateTimeLayout.height > 0) {
-            return getDateTimeBottom() ?: estimatedDateTimeBottom(binding)
-        }
-        return estimatedDateTimeBottom(binding)
-    }
-
     private fun topCornerStackTopMargin(binding: FragmentHomeBinding): Int {
         val spacing = 6.dpToPx()
-        if (binding.dateTimeLayout.isVisible) {
-            return dateTimeBottomForCornerStack(binding) + spacing
+        if (!binding.dateTimeLayout.isVisible) {
+            return screenTimeFallbackTopMargin()
         }
-        return screenTimeFallbackTopMargin()
+        if (iconsBelowRing(binding)) {
+            val ringBottom = getDateTimeBottom() ?: estimatedDateTimeBottom(binding)
+            return ringBottom + spacing
+        }
+        val dateTimeTop = binding.dateTimeLayout.top.takeIf { it > 0 } ?: 56.dpToPx()
+        return dateTimeTop + spacing
     }
 
     private fun screenTimeFallbackTopMargin(): Int {
@@ -978,7 +1146,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             populateScreenTime()
 
-        val homeAppsNum = prefs.homeAppsNum.coerceAtMost(8)
+        val homeAppsNum = prefs.homeAppsNum
         if (homeAppsNum == 0) {
             adjustHomeAppsLayoutForTextScale()
             return
@@ -1473,6 +1641,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private fun showLongPressToast() = requireContext().showToast(getString(R.string.long_press_to_select_app))
 
     private fun startFocusModeFromDoubleTap() {
+        if (!PremiumAccess.hasPremiumAccess(prefs)) {
+            (requireActivity() as? MainActivity)?.showUpgradeDialog()
+            return
+        }
         if (prefs.isFocusModeActive()) {
             requireContext().showToast(R.string.focus_mode_blocked)
             return
@@ -1565,6 +1737,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun activateFocusMode(durationInMillis: Long) {
+        if (!PremiumAccess.hasPremiumAccess(prefs)) {
+            (requireActivity() as? MainActivity)?.showUpgradeDialog()
+            return
+        }
         prefs.startFocusMode(durationInMillis)
         syncFocusModeState()
         viewModel.refreshHome(false)
@@ -1735,7 +1911,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     override fun onDestroyView() {
         topCornerStackRunnable?.let { safeBinding?.mainLayout?.removeCallbacks(it) }
+        overlayLayoutRunnable?.let { safeBinding?.mainLayout?.removeCallbacks(it) }
         topCornerStackRunnable = null
+        overlayLayoutRunnable = null
         stopFocusModeTicker()
         unregisterSystemTimeReceiver()
         super.onDestroyView()

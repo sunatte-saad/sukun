@@ -17,8 +17,8 @@ android {
         applicationId "sukun.minimalist.app.launcher.com"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 105
-        versionName "v1.0.0"
+        versionCode 106
+        versionName "v2.0.0"
 
         resourceConfigurations += ["en", "ar", "de", "es-rES", "es-rUS", "fr", "he", "hr", "hu", "in", "it", "ja", "nl", "pl", "pt-rBR", "ru-rRU", "sv", "tr", "uk", "zh"]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -67,6 +67,9 @@ dependencies {
 
     //Material dependency
     implementation libs.material
+
+    // Google Play Billing (one-time in-app purchases)
+    implementation libs.billing
 
     // Google Sign-In via Credential Manager
     implementation libs.credentials

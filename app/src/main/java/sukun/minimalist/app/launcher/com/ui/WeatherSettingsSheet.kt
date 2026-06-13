@@ -1,5 +1,6 @@
 package sukun.minimalist.app.launcher.com.ui
 
+import android.Manifest
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -7,6 +8,8 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
@@ -15,13 +18,17 @@ import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.BottomSheetWeatherSettingsBinding
+import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
-import sukun.minimalist.app.launcher.com.helper.showToast
+import sukun.minimalist.app.launcher.com.helper.isLocationServicesEnabled
+import sukun.minimalist.app.launcher.com.helper.showLocationPermissionRationaleDialog
+import sukun.minimalist.app.launcher.com.helper.showLocationServicesDisabledDialog
 
 class WeatherSettingsSheet : DialogFragment() {
 
     interface Listener {
         fun onWeatherSettingsChanged()
+        fun onWeatherLocationNeeded()
     }
 
     private var _binding: BottomSheetWeatherSettingsBinding? = null
@@ -29,6 +36,20 @@ class WeatherSettingsSheet : DialogFragment() {
     private lateinit var prefs: Prefs
     private lateinit var viewModel: MainViewModel
     private var listener: Listener? = null
+    private var pendingWeatherSource: String? = null
+
+    private val locationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
+                    || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            val source = pendingWeatherSource
+            pendingWeatherSource = null
+            if (granted && source != null) {
+                applyWeatherSource(source)
+            } else if (!granted) {
+                requireContext().showLocationPermissionRationaleDialog()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +90,10 @@ class WeatherSettingsSheet : DialogFragment() {
 
     private fun setupClickListeners() {
         binding.weatherToggleRow.setOnClickListener { toggleWeather() }
+        binding.weatherSourceRow.setOnClickListener { toggleSourceChips() }
+        binding.chipWeatherDevice.setOnClickListener { selectWeatherSource(Constants.WeatherSource.DEVICE) }
+        binding.chipWeatherManual.setOnClickListener { selectWeatherSource(Constants.WeatherSource.MANUAL) }
+        binding.chipWeatherGoogle.setOnClickListener { selectWeatherSource(Constants.WeatherSource.GOOGLE) }
         binding.weatherUnitsRow.setOnClickListener { toggleUnits() }
     }
 
@@ -77,17 +102,95 @@ class WeatherSettingsSheet : DialogFragment() {
         binding.weatherToggle.text = getString(if (isOn) R.string.on else R.string.off)
         binding.weatherSubSettings.isVisible = isOn
         if (isOn) {
+            updateSourceLabel()
+            updateSourceChips()
             updateUnitChips()
         }
     }
 
     private fun toggleWeather() {
-        if (!prefs.showWeatherOnHome && !prefs.isProUser) {
-            requireContext().showToast(R.string.premium_feature_requires_upgrade)
-            return
-        }
         prefs.showWeatherOnHome = !prefs.showWeatherOnHome
         updateUI()
+        refreshWeather()
+        listener?.onWeatherSettingsChanged()
+    }
+
+    private fun toggleSourceChips() {
+        binding.weatherSourceChips.isVisible = !binding.weatherSourceChips.isVisible
+    }
+
+    private fun updateSourceLabel() {
+        binding.weatherSourceValue.text = getString(
+            when (prefs.weatherSourceMode) {
+                Constants.WeatherSource.GOOGLE -> R.string.google_weather
+                Constants.WeatherSource.MANUAL -> R.string.manual_location
+                else -> R.string.device_location
+            }
+        )
+    }
+
+    private fun updateSourceChips() {
+        setSourceChipState(binding.chipWeatherDevice, prefs.weatherSourceMode == Constants.WeatherSource.DEVICE)
+        setSourceChipState(binding.chipWeatherManual, prefs.weatherSourceMode == Constants.WeatherSource.MANUAL)
+        setSourceChipState(binding.chipWeatherGoogle, prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE)
+    }
+
+    private fun setSourceChipState(chip: TextView, selected: Boolean) {
+        chip.setTextColor(
+            requireContext().getColorFromAttr(
+                if (selected) R.attr.primaryColor else R.attr.primaryColorTrans50
+            )
+        )
+        chip.paint.isFakeBoldText = selected
+    }
+
+    private fun selectWeatherSource(source: String) {
+        if (prefs.weatherSourceMode == source) {
+            binding.weatherSourceChips.isVisible = false
+            return
+        }
+        when (source) {
+            Constants.WeatherSource.DEVICE -> requestDeviceWeatherSource()
+            Constants.WeatherSource.MANUAL -> {
+                if (prefs.weatherLocationQuery.isBlank()) {
+                    binding.weatherSourceChips.isVisible = false
+                    dismiss()
+                    listener?.onWeatherLocationNeeded()
+                    return
+                }
+                applyWeatherSource(source)
+            }
+            else -> applyWeatherSource(source)
+        }
+    }
+
+    private fun requestDeviceWeatherSource() {
+        val context = requireContext()
+        if (!context.isLocationServicesEnabled()) {
+            context.showLocationServicesDisabledDialog()
+            return
+        }
+        if (context.hasWeatherLocationPermission()) {
+            applyWeatherSource(Constants.WeatherSource.DEVICE)
+            return
+        }
+        pendingWeatherSource = Constants.WeatherSource.DEVICE
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+    private fun applyWeatherSource(source: String) {
+        prefs.weatherSourceMode = source
+        if (source == Constants.WeatherSource.GOOGLE || source == Constants.WeatherSource.DEVICE) {
+            prefs.clearWeatherCache()
+        }
+        binding.weatherSourceChips.isVisible = false
+        updateSourceLabel()
+        updateSourceChips()
         refreshWeather()
         listener?.onWeatherSettingsChanged()
     }

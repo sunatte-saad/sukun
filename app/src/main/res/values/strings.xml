@@ -106,6 +106,7 @@
     <string name="google_weather">Google Weather</string>
     <string name="google_weather_short">Google</string>
     <string name="google_weather_card">Google Weather&#10;Tap to open forecast</string>
+    <string name="weather_open_failed">Could not open weather. Install a browser or try again.</string>
     <string name="current_location">Current location</string>
     <string name="type_city_name">Type city name</string>
     <string name="save">Save</string>
@@ -134,6 +135,14 @@
     <string name="upgrade_to_premium">Upgrade</string>
     <string name="premium_enabled">Sukun Premium activated</string>
     <string name="premium_already_active">Sukun Premium is already active</string>
+    <string name="premium_purchase_failed">Purchase could not be completed. Please try again.</string>
+    <string name="premium_purchase_unavailable">Premium is not available right now. Please try again later.</string>
+    <string name="premium_purchase_connecting">Connecting to Google Play…</string>
+    <string name="premium_purchase_play_store_required">To buy Premium, install Sukun from Google Play (internal testing). Direct installs from Android Studio cannot complete purchases.</string>
+    <string name="premium_purchase_product_missing">Premium product not found. Check that \"%1$s\" is active in Play Console and you installed from Google Play.</string>
+    <string name="premium_trial_days_left">%1$d days left in Premium trial</string>
+    <string name="premium_trial_ended">Your Premium trial has ended</string>
+    <string name="premium_trial_welcome">Try all Premium features free for 30 days.</string>
     <string name="prayer_overlay_text">%1$s  %2$s  %3$s</string>
     <string name="prayer_reminder">Prayer reminder</string>
     <string name="prayer_reminder_channel_name">Prayer reminders</string>
@@ -423,6 +432,11 @@
     <string name="onboarding_action_appearance">Switch between light, dark, or let it follow the time of day.</string>
     <string name="onboarding_action_hide_apps">Swipe up to open all your apps, then long-press one and choose Hide.</string>
     <string name="onboarding_action_search_apps">Try it: type an app name in the search bar at the top of the app list.</string>
+    <string name="onboarding_open_prayer">Open Prayer times</string>
+    <string name="onboarding_open_focus">Open Focus mode</string>
+    <string name="onboarding_open_screen_time">Open Screen time</string>
+    <string name="onboarding_open_language">Open Language</string>
+    <string name="onboarding_open_appearance">Open Theme mode</string>
     <string name="onboarding_action_finish">Tap Finish when you are ready to begin.</string>
     <string name="settings_start_tour">Start tour again</string>
     <string name="onboarding_start_tour">Start tour</string>

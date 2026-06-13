@@ -6,6 +6,7 @@ import android.view.Gravity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
 import sukun.minimalist.app.launcher.com.helper.AmbientThemeController
+import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -296,8 +297,17 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(WALLPAPER_PENDING_SYNC, value).apply() }
 
     var homeAppsNum: Int
-        get() = prefs.getInt(HOME_APPS_NUM, 4).coerceIn(0, 8)
-        set(value) = prefs.edit { putInt(HOME_APPS_NUM, value.coerceIn(0, 8)).apply() }
+        get() = prefs.getInt(HOME_APPS_NUM, 4).coerceIn(0, maxHomeAppsAllowed())
+        set(value) = prefs.edit { putInt(HOME_APPS_NUM, value.coerceIn(0, maxHomeAppsAllowed())).apply() }
+
+    fun isLargeOrXLargeTextSize(): Boolean =
+        textSizeScale > Constants.TEXT_SIZE_MEDIUM_MAX_SCALE
+
+    fun maxHomeAppsAllowed(): Int = when {
+        textSizeScale <= Constants.TEXT_SIZE_SMALL_MAX_SCALE -> Constants.MAX_HOME_APPS_SMALL
+        textSizeScale <= Constants.TEXT_SIZE_MEDIUM_MAX_SCALE -> Constants.MAX_HOME_APPS_MEDIUM
+        else -> Constants.MAX_HOME_APPS_LARGE
+    }
 
     var homeAlignment: Int
         get() = prefs.getInt(HOME_ALIGNMENT, Gravity.START)
@@ -363,7 +373,8 @@ class Prefs(context: Context) {
     fun resolveLaunchNightMode(): Int {
         return when (appTheme) {
             Constants.THEME_MODE_AMBIENT_LIGHT -> {
-                if (!isProUser) AppCompatDelegate.MODE_NIGHT_YES
+                if (!PremiumAccess.hasPremiumAccess(this))
+                    AppCompatDelegate.MODE_NIGHT_YES
                 else AmbientThemeController.nightModeForDark(ambientThemeDark)
             }
             else -> appTheme
@@ -487,7 +498,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(SHOW_PRAYER_ON_HOME, value).apply() }
 
     var isProUser: Boolean
-        get() = prefs.getBoolean(PRO_USER, true)
+        get() = prefs.getBoolean(PRO_USER, false)
         set(value) = prefs.edit { putBoolean(PRO_USER, value).apply() }
 
     var proPurchaseToken: String

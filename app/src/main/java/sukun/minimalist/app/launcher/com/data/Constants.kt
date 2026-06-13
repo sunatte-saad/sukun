@@ -124,6 +124,9 @@ object Constants {
     /** Premium: switch light/dark from ambient light sensor (stored in prefs, not AppCompat mode). */
     const val THEME_MODE_AMBIENT_LIGHT = 3
 
+    /** One-time in-app product ID — must match Google Play Console exactly. */
+    const val PREMIUM_PRODUCT_ID = "sukun_premium"
+
     const val FLAG_LAUNCH_APP = 100
     const val FLAG_HIDDEN_APPS = 101
 
@@ -149,6 +152,8 @@ object Constants {
 
     const val LONG_PRESS_DELAY_MS = 500L
     const val ONE_DAY_IN_MILLIS = 86400000L
+    const val PREMIUM_TRIAL_DAYS = 30
+    const val PREMIUM_TRIAL_DURATION_MS = PREMIUM_TRIAL_DAYS * ONE_DAY_IN_MILLIS
     const val ONE_HOUR_IN_MILLIS = 3600000L
     const val ONE_MINUTE_IN_MILLIS = 60000L
     const val MIN_CUSTOM_FOCUS_MINUTES = 1L
@@ -215,4 +220,10 @@ object Constants {
     const val EXTRA_PRAYER_KEY = "extra_prayer_key"
     const val EXTRA_PRAYER_TIME_MILLIS = "extra_prayer_time_millis"
     const val EXTRA_PRAYER_LABEL = "extra_prayer_label"
+
+    const val MAX_HOME_APPS_SMALL = 7
+    const val MAX_HOME_APPS_MEDIUM = 6
+    const val MAX_HOME_APPS_LARGE = 5
+    const val TEXT_SIZE_SMALL_MAX_SCALE = 0.95f
+    const val TEXT_SIZE_MEDIUM_MAX_SCALE = 1.05f
 }

@@ -28,6 +28,8 @@ import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.PrayerLog
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.BottomSheetPrayerSettingsBinding
+import sukun.minimalist.app.launcher.com.MainActivity
+import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.PrayerReminderScheduler
 import sukun.minimalist.app.launcher.com.helper.downloadAzan
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
@@ -135,7 +137,9 @@ class PrayerSettingsSheet : DialogFragment() {
         binding.chipAzanMarylebone.setOnClickListener { selectAzan(Constants.AzanSound.MARYLEBONE) }
         binding.chipAzanCustom.setOnClickListener { selectAzan(Constants.AzanSound.CUSTOM) }
         binding.customAzanRow.setOnClickListener {
-            if (prefs.showPrayerOnHome) customAzanPickerLauncher.launch(arrayOf("audio/*"))
+            if (prefs.showPrayerOnHome && requirePremiumAccess()) {
+                customAzanPickerLauncher.launch(arrayOf("audio/*"))
+            }
         }
     }
 
@@ -153,13 +157,29 @@ class PrayerSettingsSheet : DialogFragment() {
         binding.analyticsDivider.isVisible = showAnalytics
         binding.analyticsSection.isVisible = showAnalytics
         if (showAnalytics) populateAnalytics()
+        applyPremiumVisuals()
+    }
+
+    private fun applyPremiumVisuals() {
+        val alpha = PremiumAccess.lockedAlpha(prefs)
+        binding.analyticsSection.alpha = alpha
+        binding.chipAzanCustom.alpha = alpha
+        binding.customAzanRow.alpha = alpha
+    }
+
+    private fun requirePremiumAccess(): Boolean {
+        if (PremiumAccess.hasPremiumAccess(prefs)) return true
+        if (PremiumAccess.trialExpired(prefs)) {
+            requireContext().showToast(R.string.premium_trial_ended)
+        } else {
+            requireContext().showToast(R.string.premium_feature_requires_upgrade)
+        }
+        (requireActivity() as? MainActivity)?.showUpgradeDialog()
+        return false
     }
 
     private fun togglePrayer() {
-        if (!prefs.showPrayerOnHome && !prefs.isProUser) {
-            requireContext().showToast(R.string.premium_feature_requires_upgrade)
-            return
-        }
+        if (!prefs.showPrayerOnHome && !requirePremiumAccess()) return
         prefs.showPrayerOnHome = !prefs.showPrayerOnHome
         updateUI()
         if (prefs.showPrayerOnHome) {
@@ -200,7 +220,7 @@ class PrayerSettingsSheet : DialogFragment() {
 
     private fun selectAzan(sound: String) {
         if (sound == Constants.AzanSound.CUSTOM) {
-            customAzanPickerLauncher.launch(arrayOf("audio/*"))
+            if (requirePremiumAccess()) customAzanPickerLauncher.launch(arrayOf("audio/*"))
             return
         }
         if (prefs.azanSound == sound) return
@@ -291,6 +311,7 @@ class PrayerSettingsSheet : DialogFragment() {
     // ── Analytics ──────────────────────────────────────────────────────────
 
     private fun populateAnalytics() {
+        if (!PremiumAccess.hasPremiumAccess(prefs)) return
         val logs = prefs.getPrayerLogs()
         val cal = Calendar.getInstance()
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())

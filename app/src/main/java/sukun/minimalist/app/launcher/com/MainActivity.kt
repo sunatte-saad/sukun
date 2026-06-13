@@ -50,8 +50,12 @@ import sukun.minimalist.app.launcher.com.helper.resetLauncherViaFakeActivity
 import sukun.minimalist.app.launcher.com.helper.setPlainWallpaper
 import sukun.minimalist.app.launcher.com.helper.shareApp
 import sukun.minimalist.app.launcher.com.helper.showLauncherSelector
+import sukun.minimalist.app.launcher.com.helper.PremiumAccess
+import sukun.minimalist.app.launcher.com.helper.PremiumBillingManager
+import sukun.minimalist.app.launcher.com.ui.SettingsFragment
 import sukun.minimalist.app.launcher.com.helper.showToast
 import sukun.minimalist.app.launcher.com.helper.turnOffSukunLauncher
+import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -67,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     private var isResumed = false
     private var profileReceiver: BroadcastReceiver? = null
     private var ambientThemeController: AmbientThemeController? = null
+    private var premiumBillingManager: PremiumBillingManager? = null
 
 //    override fun onBackPressed() {
 //        if (navController.currentDestination?.id != R.id.mainFragment)
@@ -133,8 +138,10 @@ class MainActivity : AppCompatActivity() {
             viewModel.firstOpen(true)
             prefs.firstOpen = false
             prefs.firstOpenTime = System.currentTimeMillis()
+            showToast(R.string.premium_trial_welcome)
             viewModel.setDefaultClockApp()
         }
+        enforcePremiumExpiry()
 
         showFirstRunFlowIfNeeded()
 
@@ -144,6 +151,7 @@ class MainActivity : AppCompatActivity() {
         restoreOnboardingTourUi()
         viewModel.getAppList()
         setupOrientation()
+        initPremiumBilling()
 
         window.addFlags(FLAG_LAYOUT_NO_LIMITS)
 
@@ -698,7 +706,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupAmbientThemeController() {
         ambientThemeController?.stop()
         ambientThemeController = null
-        if (!prefs.isAmbientLightTheme() || !prefs.isProUser) return
+        if (!prefs.isAmbientLightTheme() || !PremiumAccess.hasPremiumAccess(prefs)) return
 
         ambientThemeController = AmbientThemeController(
             context = this,
@@ -720,7 +728,49 @@ class MainActivity : AppCompatActivity() {
         }.also { it.start() }
     }
 
+    fun showUpgradeDialog() {
+        if (prefs.isProUser) {
+            showToast(R.string.premium_already_active)
+            return
+        }
+        val message = if (PremiumAccess.trialExpired(prefs)) {
+            getString(R.string.premium_trial_ended) + "\n\n" + getString(R.string.premium_feature_requires_upgrade)
+        } else {
+            getString(R.string.premium_feature_requires_upgrade)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.go_premium)
+            .setMessage(message)
+            .setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
+                premiumBillingManager?.launchPremiumPurchase()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun enforcePremiumExpiry() {
+        if (PremiumAccess.hasPremiumAccess(prefs)) return
+        if (prefs.dailyWallpaper) {
+            prefs.dailyWallpaper = false
+            viewModel.cancelWallpaperWorker()
+        }
+    }
+
+    private fun initPremiumBilling() {
+        premiumBillingManager = PremiumBillingManager(this, prefs).also { manager ->
+            manager.onPremiumStatusChanged = {
+                setupAmbientThemeController()
+                supportFragmentManager.fragments
+                    .filterIsInstance<SettingsFragment>()
+                    .forEach { it.onPremiumStatusChanged() }
+            }
+            manager.start()
+        }
+    }
+
     override fun onDestroy() {
+        premiumBillingManager?.endConnection()
+        premiumBillingManager = null
         ambientThemeController?.stop()
         ambientThemeController = null
         profileReceiver?.let {

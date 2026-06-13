@@ -1,4 +1,5 @@
 [versions]
+billing = "7.1.1"
 adhan = "1.2.1"
 appcompat = "1.7.0"
 coreKtx = "1.16.0"
@@ -12,6 +13,7 @@ navigationFragmentKtx = "2.9.0"
 recyclerview = "1.4.0"
 workRuntimeKtx = "2.10.1"
 [libraries]
+billing = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
 adhan = { module = "com.batoulapps.adhan:adhan", version.ref = "adhan" }
 appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }

@@ -20,6 +20,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Recycler
+import sukun.minimalist.app.launcher.com.MainActivity
 import sukun.minimalist.app.launcher.com.MainViewModel
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.AppCooldownConfig
@@ -28,6 +29,7 @@ import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.OnboardingAction
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.FragmentAppDrawerBinding
+import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.deletePinnedShortcut
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.hideKeyboard
@@ -54,6 +56,7 @@ class AppDrawerFragment : Fragment() {
     private var currentPrivateSpaceApps: List<AppModel>? = null
     private var currentPrivateSpaceLocked: Boolean = true
     private var currentPrivateSpaceAvailable: Boolean = false
+    private var combineListRunnable: Runnable? = null
 
     private val viewModel: MainViewModel by activityViewModels()
     private var _binding: FragmentAppDrawerBinding? = null
@@ -86,6 +89,13 @@ class AppDrawerFragment : Fragment() {
         initAdapter()
         initObservers()
         initClickListeners()
+        currentAppList = viewModel.appList.value
+        currentRecentPackages = viewModel.recentAppPackages.value ?: emptyList()
+        if (currentAppList.isNullOrEmpty()) {
+            viewModel.getAppList()
+        } else {
+            scheduleUpdateCombinedAppList()
+        }
     }
 
     private fun initViews() {
@@ -199,6 +209,10 @@ class AppDrawerFragment : Fragment() {
                 viewModel.getAppList()
             },
             appHideListener = { appModel, position ->
+                if (!PremiumAccess.hasPremiumAccess(prefs)) {
+                    (requireActivity() as? MainActivity)?.showUpgradeDialog()
+                    return@AppDrawerAdapter
+                }
                 if (appModel is AppModel.PinnedShortcut) {
                     requireContext().showToast("Hiding pinned shortcuts is not supported")
                     return@AppDrawerAdapter
@@ -228,6 +242,10 @@ class AppDrawerFragment : Fragment() {
                 viewModel.getHiddenApps()
             },
             appRenameListener = { appModel, renameLabel ->
+                if (!PremiumAccess.hasPremiumAccess(prefs)) {
+                    (requireActivity() as? MainActivity)?.showUpgradeDialog()
+                    return@AppDrawerAdapter
+                }
                 val identifier = when (appModel) {
                     is AppModel.PinnedShortcut -> appModel.shortcutId
                     is AppModel.App -> appModel.appPackage
@@ -237,16 +255,29 @@ class AppDrawerFragment : Fragment() {
                 viewModel.getAppList()
             },
             privateSpaceToggleListener = {
-                viewModel.togglePrivateSpaceLock()
+                if (PremiumAccess.hasPremiumAccess(prefs)) {
+                    viewModel.togglePrivateSpaceLock()
+                } else {
+                    (requireActivity() as? MainActivity)?.showUpgradeDialog()
+                }
             },
             privateSpaceSettingsListener = {
-                viewModel.openPrivateSpaceSettings()
-                findNavController().popBackStack(R.id.mainFragment, false)
+                if (PremiumAccess.hasPremiumAccess(prefs)) {
+                    viewModel.openPrivateSpaceSettings()
+                    findNavController().popBackStack(R.id.mainFragment, false)
+                } else {
+                    (requireActivity() as? MainActivity)?.showUpgradeDialog()
+                }
             },
             appCooldownLimitListener = { appModel ->
-                if (appModel is AppModel.App) showCooldownConfigDialog(appModel)
+                if (PremiumAccess.hasPremiumAccess(prefs) && appModel is AppModel.App) {
+                    showCooldownConfigDialog(appModel)
+                } else if (!PremiumAccess.hasPremiumAccess(prefs)) {
+                    (requireActivity() as? MainActivity)?.showUpgradeDialog()
+                }
             }
         )
+        adapter.premiumLocked = !PremiumAccess.hasPremiumAccess(prefs)
 
         linearLayoutManager = object : LinearLayoutManager(requireContext()) {
             override fun scrollVerticallyBy(
@@ -289,31 +320,43 @@ class AppDrawerFragment : Fragment() {
         } else {
             viewModel.appList.observe(viewLifecycleOwner) {
                 currentAppList = it
-                updateCombinedAppList()
+                scheduleUpdateCombinedAppList()
             }
             viewModel.recentAppPackages.observe(viewLifecycleOwner) {
                 currentRecentPackages = it ?: emptyList()
-                updateCombinedAppList()
+                scheduleUpdateCombinedAppList()
             }
             if (flag == Constants.FLAG_LAUNCH_APP) {
                 viewModel.privateSpaceAvailable.observe(viewLifecycleOwner) {
                     currentPrivateSpaceAvailable = it
-                    updateCombinedAppList()
+                    scheduleUpdateCombinedAppList()
                 }
                 viewModel.privateSpaceLocked.observe(viewLifecycleOwner) {
                     currentPrivateSpaceLocked = it
-                    updateCombinedAppList()
+                    scheduleUpdateCombinedAppList()
                 }
                 viewModel.privateSpaceApps.observe(viewLifecycleOwner) {
                     currentPrivateSpaceApps = it
-                    updateCombinedAppList()
+                    scheduleUpdateCombinedAppList()
                 }
             }
         }
     }
 
+    private fun scheduleUpdateCombinedAppList() {
+        combineListRunnable?.let { binding.root.removeCallbacks(it) }
+        val runnable = Runnable {
+            combineListRunnable = null
+            updateCombinedAppList()
+        }
+        combineListRunnable = runnable
+        binding.root.post(runnable)
+    }
+
     private fun updateCombinedAppList() {
-        val apps = currentAppList ?: return
+        val apps = currentAppList
+            ?.filter { it !is AppModel.SectionHeader }
+            ?: return
         val combined = mutableListOf<AppModel>()
 
         if (flag == Constants.FLAG_LAUNCH_APP) {
@@ -324,10 +367,20 @@ class AppDrawerFragment : Fragment() {
 
             val recentApps = currentRecentPackages.mapNotNull { firstByPackage[it] }
             if (recentApps.isNotEmpty()) {
-                combined.add(AppModel.SectionHeader(getString(R.string.recently_used)))
+                combined.add(
+                    AppModel.SectionHeader(
+                        appLabel = getString(R.string.recently_used),
+                        sectionKey = "recently_used",
+                    )
+                )
                 combined.addAll(recentApps)
             }
-            combined.add(AppModel.SectionHeader(getString(R.string.all_apps)))
+            combined.add(
+                AppModel.SectionHeader(
+                    appLabel = getString(R.string.all_apps),
+                    sectionKey = "all_apps",
+                )
+            )
         }
         combined.addAll(apps)
 
@@ -340,7 +393,10 @@ class AppDrawerFragment : Fragment() {
 
         adapter.updateCooledOff(viewModel.cooldownManager.getCooledOffPackages())
         adapter.setAppList(combined)
-        adapter.filter.filter(binding.search.query)
+        val query = binding.search.query?.toString().orEmpty().trim()
+        if (query.isNotEmpty()) {
+            adapter.filter.filter(query)
+        }
     }
 
     private fun initClickListeners() {
@@ -518,10 +574,15 @@ class AppDrawerFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        if (::adapter.isInitialized) {
+            adapter.premiumLocked = !PremiumAccess.hasPremiumAccess(prefs)
+        }
         if (flag == Constants.FLAG_HIDDEN_APPS) {
             viewModel.getHiddenApps()
-        } else {
+        } else if (currentAppList.isNullOrEmpty()) {
             viewModel.getAppList()
+        } else {
+            scheduleUpdateCombinedAppList()
         }
     }
 
@@ -531,6 +592,8 @@ class AppDrawerFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        combineListRunnable?.let { _binding?.root?.removeCallbacks(it) }
+        combineListRunnable = null
         super.onDestroyView()
         _binding = null
     }

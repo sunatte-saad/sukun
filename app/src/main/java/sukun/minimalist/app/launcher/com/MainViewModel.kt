@@ -664,12 +664,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadWeather(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            weatherData.value = getCachedWeatherData(prefs)
             if (!prefs.showWeatherOnHome) {
                 weatherData.value = null
                 return@launch
             }
-            if (forceRefresh || prefs.weatherLastUpdated.hasBeenMinutes(Constants.WEATHER_STALE_MINUTES)) {
+            if (prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE) {
+                weatherData.value = null
+                return@launch
+            }
+            weatherData.value = getCachedWeatherData(prefs)
+            val shouldRefresh = forceRefresh ||
+                    weatherData.value == null ||
+                    prefs.weatherLastUpdated.hasBeenMinutes(Constants.WEATHER_STALE_MINUTES)
+            if (shouldRefresh) {
                 refreshWeatherData()
             }
         }
