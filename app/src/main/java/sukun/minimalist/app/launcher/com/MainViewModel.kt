@@ -22,6 +22,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import sukun.minimalist.app.launcher.com.data.AppCooldownManager
+import sukun.minimalist.app.launcher.com.data.MindfulMorningManager
 import sukun.minimalist.app.launcher.com.data.AppModel
 import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.OnboardingAction
@@ -77,10 +78,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext by lazy { application.applicationContext }
     private val prefs = Prefs(appContext)
     val cooldownManager by lazy { AppCooldownManager(prefs) }
-
-    init {
-        restoreOnboardingTourState()
-    }
+    val mindfulMorningManager by lazy { MindfulMorningManager(appContext, prefs) }
 
     val firstOpen = MutableLiveData<Boolean>()
     val refreshHome = MutableLiveData<Boolean>()
@@ -103,6 +101,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Suppress backToHomeScreen during Private Space lock/unlock auth
     var isPrivateSpaceToggling = false
 
+    // Suppress backToHomeScreen while Google Credential Manager sign-in UI is open
+    var isAuthFlowActive = false
+
     val showDialog = SingleLiveEvent<String>()
     val checkForMessages = SingleLiveEvent<Unit?>()
     val resetLauncherLiveData = SingleLiveEvent<Unit?>()
@@ -111,6 +112,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val onboardingActive = MutableLiveData(false)
     val onboardingStepIndex = MutableLiveData(0)
     val onboardingPerformSettingsAction = SingleLiveEvent<OnboardingAction>()
+
+    init {
+        restoreOnboardingTourState()
+    }
 
     fun startOnboarding() {
         onboardingStepIndex.value = 0
@@ -141,6 +146,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         when (currentOnboardingStep().requiredAction) {
             OnboardingAction.TAP_PRAYER_SETTINGS,
             OnboardingAction.TAP_FOCUS_MODE,
+            OnboardingAction.TAP_MINDFUL_MORNING,
             OnboardingAction.TAP_SCREEN_TIME,
             OnboardingAction.TAP_LANGUAGE,
             OnboardingAction.TAP_APPEARANCE,
@@ -171,7 +177,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return true
     }
 
-    fun skipOnboarding() = completeOnboarding()
+    fun skipOnboarding() {
+        if (currentOnboardingStep().requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER) return
+        completeOnboarding()
+    }
 
     fun completeOnboarding() {
         prefs.onboardingComplete = true
@@ -183,10 +192,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun shouldOfferOnboarding(): Boolean {
         if (prefs.onboardingComplete) return false
         if (prefs.onboardingTourActive) return false
-        if (!prefs.firstSettingsOpen) {
-            prefs.onboardingComplete = true
-            return false
-        }
         return true
     }
 

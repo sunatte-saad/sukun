@@ -89,6 +89,13 @@
             app:popEnterAnim="@anim/fade_enter"
             app:popExitAnim="@anim/fade_exit" />
         <action
+            android:id="@+id/action_settingsFragment_to_screenTimeAnalyticsFragment"
+            app:destination="@id/screenTimeAnalyticsFragment"
+            app:enterAnim="@anim/fade_enter"
+            app:exitAnim="@anim/fade_exit"
+            app:popEnterAnim="@anim/fade_enter"
+            app:popExitAnim="@anim/fade_exit" />
+        <action
             android:id="@+id/action_settingsFragment_to_languageFragment"
             app:destination="@id/languageFragment"
             app:enterAnim="@anim/fade_enter"
@@ -120,6 +127,12 @@
         android:name="sukun.minimalist.app.launcher.com.ui.LanguageFragment"
         android:label="LanguageFragment"
         tools:layout="@layout/fragment_language" />
+
+    <fragment
+        android:id="@+id/screenTimeAnalyticsFragment"
+        android:name="sukun.minimalist.app.launcher.com.ui.ScreenTimeAnalyticsFragment"
+        android:label="ScreenTimeAnalyticsFragment"
+        tools:layout="@layout/fragment_screen_time_analytics" />
 
     <fragment
         android:id="@+id/signInFragment"

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/scrimColor">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginVertical="8dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:fadingEdgeLength="48dp"
+        android:overScrollMode="never"
+        android:requiresFadingEdge="vertical"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            android:paddingVertical="64dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:background="@drawable/rounded_rect_shade_color"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    style="@style/TextLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="@string/screen_time_analytics"
+                    android:textColor="?attr/primaryColor" />
+
+                <!-- NO PERMISSION -->
+                <TextView
+                    android:id="@+id/tvNoPermission"
+                    style="@style/TextSmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:paddingVertical="4dp"
+                    android:text="@string/screen_time_no_permission"
+                    android:visibility="gone"
+                    tools:visibility="gone" />
+
+                <!-- TODAY -->
+                <TextView
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingVertical="4dp"
+                    android:text="@string/screen_time_today_label"
+                    android:textColor="?attr/primaryColor" />
+
+                <TextView
+                    android:id="@+id/tvTodayStats"
+                    style="@style/TextSmallBold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="16dp"
+                    android:fontFamily="monospace"
+                    android:paddingVertical="4dp"
+                    tools:text="Total  2h 45m" />
+
+                <!-- LAST 7 DAYS -->
+                <TextView
+                    android:id="@+id/tvWeekHeader"
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingVertical="4dp"
+                    android:textColor="?attr/primaryColor"
+                    tools:text="Last 7 Days" />
+
+                <TextView
+                    android:id="@+id/tvWeekStats"
+                    style="@style/TextSmallBold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="16dp"
+                    android:fontFamily="monospace"
+                    android:paddingVertical="4dp"
+                    tools:text="Mon  20 Jun  1h 30m\nTue  21 Jun  2h 10m\nToday       2h 45m\n\nAvg  2h 8m" />
+
+                <!-- THIS MONTH -->
+                <TextView
+                    android:id="@+id/tvMonthHeader"
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingVertical="4dp"
+                    android:textColor="?attr/primaryColor"
+                    tools:text="June 2026" />
+
+                <TextView
+                    android:id="@+id/tvMonthStats"
+                    style="@style/TextSmallBold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="monospace"
+                    android:paddingVertical="4dp"
+                    tools:text="Total  54h 20m\nAvg    2h 42m" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</FrameLayout>

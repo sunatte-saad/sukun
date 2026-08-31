@@ -98,6 +98,7 @@ class Prefs(context: Context) {
     private val HOURLY_CHIME_ENABLED = "HOURLY_CHIME_ENABLED"
     private val HOURLY_CHIME_START_HOUR = "HOURLY_CHIME_START_HOUR"
     private val HOURLY_CHIME_END_HOUR = "HOURLY_CHIME_END_HOUR"
+    private val HOURLY_CHIME_STYLE = "HOURLY_CHIME_STYLE"
     private val HOURLY_CHIME_SOUND = "HOURLY_CHIME_SOUND"
     private val HOURLY_CHIME_CUSTOM_URI = "HOURLY_CHIME_CUSTOM_URI"
     private val RECENT_APPS = "RECENT_APPS"
@@ -106,6 +107,18 @@ class Prefs(context: Context) {
     private val COOLDOWN_CONFIGS = "COOLDOWN_CONFIGS"
     private val COOLDOWN_DAILY_USAGE_PREFIX = "COOLDOWN_USAGE_"
     private val COOLDOWN_LAST_PKG = "COOLDOWN_LAST_PKG"
+    private val MINDFUL_MORNING_ENABLED = "MINDFUL_MORNING_ENABLED"
+    private val MINDFUL_MORNING_DURATION = "MINDFUL_MORNING_DURATION"
+    private val MINDFUL_MORNING_WAKE_HOUR = "MINDFUL_MORNING_WAKE_HOUR"
+    private val MINDFUL_MORNING_WAKE_MINUTE = "MINDFUL_MORNING_WAKE_MINUTE"
+    private val MINDFUL_MORNING_HARD = "MINDFUL_MORNING_HARD"
+    private val PRAYER_ROLLUP_JSON = "PRAYER_ROLLUP_JSON"
+    private val SCREEN_TIME_ROLLUP_JSON = "SCREEN_TIME_ROLLUP_JSON"
+    private val PRAYER_ROLLUP_MIGRATED = "PRAYER_ROLLUP_MIGRATED"
+    private val ACCOUNT_TRIAL_START = "ACCOUNT_TRIAL_START"
+    private val SYNC_PAYLOAD_UPDATED_AT = "SYNC_PAYLOAD_UPDATED_AT"
+    private val SYNC_LAST_UPLOAD_AT = "SYNC_LAST_UPLOAD_AT"
+    private val SYNC_DECLINED_REMOTE_UPDATED_AT = "SYNC_DECLINED_REMOTE_UPDATED_AT"
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -191,12 +204,28 @@ class Prefs(context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_FILENAME, 0)
 
+    /**
+     * JSON backups cannot preserve whether a small integral value was an Int or Long.
+     * Accept and self-heal legacy/restored numeric values instead of letting getLong throw.
+     */
+    private fun getLongCompat(key: String, defaultValue: Long): Long {
+        val stored = prefs.all[key] ?: return defaultValue
+        val value = when (stored) {
+            is Long -> return stored
+            is Number -> stored.toLong()
+            is String -> stored.toLongOrNull() ?: return defaultValue
+            else -> return defaultValue
+        }
+        prefs.edit { putLong(key, value) }
+        return value
+    }
+
     var firstOpen: Boolean
         get() = prefs.getBoolean(FIRST_OPEN, true)
         set(value) = prefs.edit { putBoolean(FIRST_OPEN, value).apply() }
 
     var firstOpenTime: Long
-        get() = prefs.getLong(FIRST_OPEN_TIME, 0L)
+        get() = getLongCompat(FIRST_OPEN_TIME, 0L)
         set(value) = prefs.edit { putLong(FIRST_OPEN_TIME, value).apply() }
 
     var firstSettingsOpen: Boolean
@@ -289,7 +318,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(DAILY_WALLPAPER_URL, value).apply() }
 
     var lastWallpaperUpdateTime: Long
-        get() = prefs.getLong(LAST_WALLPAPER_UPDATE_TIME, 0L)
+        get() = getLongCompat(LAST_WALLPAPER_UPDATE_TIME, 0L)
         set(value) = prefs.edit { putLong(LAST_WALLPAPER_UPDATE_TIME, value).apply() }
 
     var wallpaperPendingSync: Boolean
@@ -407,7 +436,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(APP_DRAWER_FAST_SCROLLER, value).apply() }
 
     var screenTimeLastUpdated: Long
-        get() = prefs.getLong(SCREEN_TIME_LAST_UPDATED, 0L)
+        get() = getLongCompat(SCREEN_TIME_LAST_UPDATED, 0L)
         set(value) = prefs.edit { putLong(SCREEN_TIME_LAST_UPDATED, value).apply() }
 
     var showScreenTimeOnHome: Boolean
@@ -417,7 +446,7 @@ class Prefs(context: Context) {
     fun hasShowScreenTimeOnHomePref(): Boolean = prefs.contains(SHOW_SCREEN_TIME_ON_HOME)
 
     var launcherRestartTimestamp: Long
-        get() = prefs.getLong(LAUNCHER_RESTART_TIMESTAMP, 0L)
+        get() = getLongCompat(LAUNCHER_RESTART_TIMESTAMP, 0L)
         set(value) = prefs.edit { putLong(LAUNCHER_RESTART_TIMESTAMP, value).apply() }
 
     var shownOnDayOfYear: Int
@@ -429,11 +458,11 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(HOME_BUTTON_SHOW_RECENTS, value).apply() }
 
     var focusModeEndsAt: Long
-        get() = prefs.getLong(FOCUS_MODE_ENDS_AT, 0L)
+        get() = getLongCompat(FOCUS_MODE_ENDS_AT, 0L)
         set(value) = prefs.edit { putLong(FOCUS_MODE_ENDS_AT, value).apply() }
 
     var focusModeLastDuration: Long
-        get() = prefs.getLong(FOCUS_MODE_LAST_DURATION, Constants.FocusModeDuration.FIFTEEN_MIN)
+        get() = getLongCompat(FOCUS_MODE_LAST_DURATION, Constants.FocusModeDuration.FIFTEEN_MIN)
         set(value) = prefs.edit { putLong(FOCUS_MODE_LAST_DURATION, value).apply() }
 
     var focusModeLockNotifications: Boolean
@@ -450,7 +479,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(DOUBLE_TAP_ACTION, value).apply() }
 
     var showWeatherOnHome: Boolean
-        get() = prefs.getBoolean(SHOW_WEATHER_ON_HOME, false)
+        get() = prefs.getBoolean(SHOW_WEATHER_ON_HOME, true)
         set(value) = prefs.edit { putBoolean(SHOW_WEATHER_ON_HOME, value).apply() }
 
     var weatherUnits: String
@@ -490,7 +519,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(WEATHER_PRECIPITATION_TEXT, value).apply() }
 
     var weatherLastUpdated: Long
-        get() = prefs.getLong(WEATHER_LAST_UPDATED, 0L)
+        get() = getLongCompat(WEATHER_LAST_UPDATED, 0L)
         set(value) = prefs.edit { putLong(WEATHER_LAST_UPDATED, value).apply() }
 
     var showPrayerOnHome: Boolean
@@ -560,7 +589,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(PRAYER_NEXT_KEY, value).apply() }
 
     var prayerNextAt: Long
-        get() = prefs.getLong(PRAYER_NEXT_AT, 0L)
+        get() = getLongCompat(PRAYER_NEXT_AT, 0L)
         set(value) = prefs.edit { putLong(PRAYER_NEXT_AT, value).apply() }
 
     var prayerDisplayTime: String
@@ -568,7 +597,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(PRAYER_DISPLAY_TIME, value).apply() }
 
     var prayerLastUpdated: Long
-        get() = prefs.getLong(PRAYER_LAST_UPDATED, 0L)
+        get() = getLongCompat(PRAYER_LAST_UPDATED, 0L)
         set(value) = prefs.edit { putLong(PRAYER_LAST_UPDATED, value).apply() }
 
     var azanEnabled: Boolean
@@ -594,6 +623,10 @@ class Prefs(context: Context) {
     var hourlyChimeEndHour: Int
         get() = prefs.getInt(HOURLY_CHIME_END_HOUR, Constants.HourlyChime.DEFAULT_END_HOUR)
         set(value) = prefs.edit { putInt(HOURLY_CHIME_END_HOUR, value).apply() }
+
+    var hourlyChimeStyle: String
+        get() = prefs.getString(HOURLY_CHIME_STYLE, Constants.ChimeStyle.SOUND).toString()
+        set(value) = prefs.edit { putString(HOURLY_CHIME_STYLE, value).apply() }
 
     var hourlyChimeSound: String
         get() = prefs.getString(HOURLY_CHIME_SOUND, Constants.ChimeSound.BUNDLED).toString()
@@ -640,7 +673,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(WALLPAPER_MSG_SHOWN, value).apply() }
 
     var shareShownTime: Long
-        get() = prefs.getLong(SHARE_SHOWN_TIME, 0L)
+        get() = getLongCompat(SHARE_SHOWN_TIME, 0L)
         set(value) = prefs.edit { putLong(SHARE_SHOWN_TIME, value).apply() }
 
     var swipeDownAction: Int
@@ -1230,5 +1263,101 @@ class Prefs(context: Context) {
 
     fun clearCooldownDailyUsage(packageName: String) {
         prefs.edit { remove(COOLDOWN_DAILY_USAGE_PREFIX + packageName) }
+    }
+
+    // --- Mindful Morning ---
+
+    var mindfulMorningEnabled: Boolean
+        get() = prefs.getBoolean(MINDFUL_MORNING_ENABLED, false)
+        set(value) = prefs.edit { putBoolean(MINDFUL_MORNING_ENABLED, value) }
+
+    var mindfulMorningDurationHours: Int
+        get() = prefs.getInt(MINDFUL_MORNING_DURATION, 2)
+        set(value) = prefs.edit { putInt(MINDFUL_MORNING_DURATION, value) }
+
+    var mindfulMorningWakeHour: Int
+        get() = prefs.getInt(MINDFUL_MORNING_WAKE_HOUR, 6)
+        set(value) = prefs.edit { putInt(MINDFUL_MORNING_WAKE_HOUR, value) }
+
+    var mindfulMorningWakeMinute: Int
+        get() = prefs.getInt(MINDFUL_MORNING_WAKE_MINUTE, 0)
+        set(value) = prefs.edit { putInt(MINDFUL_MORNING_WAKE_MINUTE, value) }
+
+    var mindfulMorningHard: Boolean
+        get() = prefs.getBoolean(MINDFUL_MORNING_HARD, false)
+        set(value) = prefs.edit { putBoolean(MINDFUL_MORNING_HARD, value) }
+
+    var prayerRollupJson: String
+        get() = prefs.getString(PRAYER_ROLLUP_JSON, "").orEmpty()
+        set(value) = prefs.edit { putString(PRAYER_ROLLUP_JSON, value).apply() }
+
+    var screenTimeRollupJson: String
+        get() = prefs.getString(SCREEN_TIME_ROLLUP_JSON, "").orEmpty()
+        set(value) = prefs.edit { putString(SCREEN_TIME_ROLLUP_JSON, value).apply() }
+
+    var prayerRollupMigrated: Boolean
+        get() = prefs.getBoolean(PRAYER_ROLLUP_MIGRATED, false)
+        set(value) = prefs.edit { putBoolean(PRAYER_ROLLUP_MIGRATED, value).apply() }
+
+    /** Account-linked trial start (ms). Used when signed in to prevent trial reset on reinstall. */
+    var accountTrialStart: Long
+        get() = getLongCompat(ACCOUNT_TRIAL_START, 0L)
+        set(value) = prefs.edit { putLong(ACCOUNT_TRIAL_START, value).apply() }
+
+    var syncPayloadUpdatedAt: Long
+        get() = getLongCompat(SYNC_PAYLOAD_UPDATED_AT, 0L)
+        set(value) = prefs.edit { putLong(SYNC_PAYLOAD_UPDATED_AT, value).apply() }
+
+    var syncLastUploadAt: Long
+        get() = getLongCompat(SYNC_LAST_UPLOAD_AT, 0L)
+        set(value) = prefs.edit { putLong(SYNC_LAST_UPLOAD_AT, value).apply() }
+
+    /** Remote backup timestamp the user declined to restore (Keep / dismiss). */
+    var syncDeclinedRemoteUpdatedAt: Long
+        get() = getLongCompat(SYNC_DECLINED_REMOTE_UPDATED_AT, 0L)
+        set(value) = prefs.edit { putLong(SYNC_DECLINED_REMOTE_UPDATED_AT, value).apply() }
+
+    private var suppressSyncDirty = false
+
+    /** Skip sync-dirty callbacks while applying a cloud snapshot locally. */
+    fun runWithoutSyncDirty(block: () -> Unit) {
+        suppressSyncDirty = true
+        try {
+            block()
+        } finally {
+            suppressSyncDirty = false
+        }
+    }
+
+    fun registerSyncDirtyListener(onDirty: () -> Unit) {
+        prefs.registerOnSharedPreferenceChangeListener { _, key ->
+            if (suppressSyncDirty || key in SYNC_DIRTY_EXCLUDED_KEYS) {
+                return@registerOnSharedPreferenceChangeListener
+            }
+            onDirty()
+        }
+    }
+
+    companion object {
+        private val SYNC_DIRTY_EXCLUDED_KEYS = setOf(
+            "SYNC_PAYLOAD_UPDATED_AT",
+            "SYNC_LAST_UPLOAD_AT",
+            "SYNC_DECLINED_REMOTE_UPDATED_AT",
+            "PRO_USER",
+            "PRO_PURCHASE_TOKEN",
+            "SCREEN_TIME_LAST_UPDATED",
+            "WEATHER_TEMPERATURE_TEXT",
+            "WEATHER_CONDITION_TEXT",
+            "WEATHER_PRECIPITATION_TEXT",
+            "WEATHER_LAST_UPDATED",
+            "PRAYER_NEXT_KEY",
+            "PRAYER_NEXT_AT",
+            "PRAYER_DISPLAY_TIME",
+            "PRAYER_LAST_UPDATED",
+            "RECENT_APPS",
+            "LAUNCHER_RESTART_TIMESTAMP",
+            "WALLPAPER_PENDING_SYNC",
+            "LAST_WALLPAPER_UPDATE_TIME",
+        )
     }
 }

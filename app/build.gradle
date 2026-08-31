@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdk 35
@@ -17,15 +18,25 @@ android {
         applicationId "sukun.minimalist.app.launcher.com"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 106
-        versionName "v2.0.0"
+        versionCode 109
+        versionName "v2.0.3"
 
-        resourceConfigurations += ["en", "ar", "de", "es-rES", "es-rUS", "fr", "he", "hr", "hu", "in", "it", "ja", "nl", "pl", "pt-rBR", "ru-rRU", "sv", "tr", "uk", "zh"]
+        resourceConfigurations += ["en", "ar", "de", "es", "es-rES", "es-rUS", "fr", "he", "hr", "hu", "id", "in", "it", "ja", "ko", "nl", "pl", "pt", "pt-rBR", "ru", "ru-rRU", "sv", "tr", "uk", "zh"]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('release-1')
+            storePassword 'SaadRehman@123'
+            keyAlias 'key0'
+            keyPassword 'SaadRehman@123'
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             debuggable false
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -33,7 +44,6 @@ android {
         debug {
             debuggable true
             minifyEnabled false
-            applicationIdSuffix ".debug"
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -56,7 +66,9 @@ dependencies {
     implementation libs.appcompat
     implementation libs.recyclerview
     implementation libs.adhan
-
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation libs.lifecycle.viewmodel.ktx
 
     // Navigation

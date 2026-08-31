@@ -72,6 +72,7 @@ object Constants {
         const val ASR = "asr"
         const val MAGHRIB = "maghrib"
         const val ISHA = "isha"
+        val ALL = listOf(FAJR, DHUHR, ASR, MAGHRIB, ISHA)
         const val DISPLAY_STALE_MINUTES = 30
         const val REMINDER_WINDOW_MILLIS = 600000L
         const val NOTIFICATION_CHANNEL_ID = "prayer_reminders"
@@ -188,17 +189,29 @@ object Constants {
     const val WEATHER_WORKER_NAME = "WEATHER_WORKER_NAME"
     const val WEATHER_REFRESH_HOURS = 4L
     const val WEATHER_STALE_MINUTES = 30
+    
+    // Web OAuth client (client_type 3) from app/google-services.json — project sukun-a8573
+    const val GOOGLE_WEB_CLIENT_ID = "838044909721-3sapbfnisc2qr5c4oc9rvt43fms1nc3i.apps.googleusercontent.com"
     object HourlyChime {
         const val DEFAULT_START_HOUR = 8
         const val DEFAULT_END_HOUR = 22
         const val ACTION = "sukun.minimalist.app.launcher.com.HOURLY_CHIME"
         const val REQUEST_CODE = 7501
+        const val NOTIFICATION_CHANNEL_ID = "hourly_chime_silent"
+        const val NOTIFICATION_ID = 7502
     }
 
     object ChimeSound {
         const val BUNDLED = "bundled"
         const val DEFAULT = "default"
         const val CUSTOM = "custom"
+    }
+
+    object ChimeStyle {
+        const val SOUND = "sound"
+        const val VIBRATE = "vibrate"
+        const val SILENT_NOTIFICATION = "silent"
+        const val FLASH = "flash"
     }
 
     object Reminder {

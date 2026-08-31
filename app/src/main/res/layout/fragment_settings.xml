@@ -130,8 +130,20 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="16dp"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginBottom="4dp"
                     android:text="@string/sign_in_with_google" />
+
+                <TextView
+                    android:id="@+id/accountDeleteAction"
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/delete_account"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
 
             </LinearLayout>
 
@@ -760,37 +772,54 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp">
 
-                    <TextView
-                        style="@style/TextSmall"
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:paddingVertical="8dp"
-                        android:text="@string/backup_restore"
-                        android:textColor="?attr/primaryColor" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingVertical="4dp">
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingVertical="4dp"
+                            android:text="@string/backup_restore"
+                            android:textColor="?attr/primaryColor" />
+
+                        <ImageView
+                            android:id="@+id/backupInfo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="@string/backup_info_content_description"
+                            android:padding="6dp"
+                            android:src="@drawable/ic_info" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="end|bottom"
+                        android:layout_gravity="end|center_vertical"
                         android:layout_marginEnd="4dp"
+                        android:gravity="center_vertical"
                         android:orientation="horizontal">
 
-                        <TextView
+                        <ImageView
                             android:id="@+id/backupExport"
-                            style="@style/TextSmallBold"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:padding="8dp"
-                            android:text="@string/backup_export" />
+                            android:contentDescription="@string/backup_export"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_backup_export" />
 
-                        <TextView
+                        <ImageView
                             android:id="@+id/backupImport"
-                            style="@style/TextSmallBold"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:padding="8dp"
-                            android:text="@string/backup_import" />
+                            android:contentDescription="@string/backup_import"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_backup_import" />
                     </LinearLayout>
 
                 </FrameLayout>
@@ -839,6 +868,16 @@
                         android:paddingBottom="4dp"
                         android:textColor="?attr/primaryColor"
                         android:visibility="gone" />
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:paddingBottom="4dp"
+                        android:text="@string/premium_mindful_morning_hard_feature"
+                        android:textColor="?attr/primaryColorTrans80" />
                 </LinearLayout>
 
                     <FrameLayout
@@ -894,6 +933,15 @@
                         android:text="@string/off" />
 
                 </FrameLayout>
+
+                <TextView
+                    android:id="@+id/prayerAnalyticsLink"
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingVertical="8dp"
+                    android:text="@string/view_prayer_analytics" />
 
                 <FrameLayout
                     android:id="@+id/locationSettings"
@@ -1177,6 +1225,228 @@
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:animateLayoutChanges="true">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:paddingVertical="8dp"
+                        android:text="@string/mindful_morning"
+                        android:textColor="?attr/primaryColor" />
+
+                    <TextView
+                        android:id="@+id/mindfulMorningOnOff"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|bottom"
+                        android:layout_marginEnd="4dp"
+                        android:padding="8dp"
+                        android:text="@string/off" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/mindfulMorningOptionsLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/mindful_morning_duration"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/mindfulMorningDuration"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/mindful_morning_2h" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/mindfulMorningDurationSelectLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:animateLayoutChanges="true"
+                            android:background="@drawable/rounded_primary_gradient"
+                            android:elevation="8dp"
+                            android:orientation="horizontal"
+                            android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                            android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="2dp"
+                            android:visibility="gone">
+
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/mindfulMorning1h"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/mindful_morning_1h" />
+
+                            <TextView
+                                android:id="@+id/mindfulMorning2h"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/mindful_morning_2h" />
+
+                            <TextView
+                                android:id="@+id/mindfulMorning3h"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/mindful_morning_3h" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/mindful_morning_wake_time"
+                            android:textColor="?attr/primaryColor" />
+
+                        <TextView
+                            android:id="@+id/mindfulMorningWakeTime"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|bottom"
+                            android:layout_marginEnd="4dp"
+                            android:padding="8dp"
+                            tools:text="6:00 AM" />
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:animateLayoutChanges="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:paddingVertical="8dp"
+                                android:text="@string/mindful_morning_severity"
+                                android:textColor="?attr/primaryColor" />
+
+                            <TextView
+                                android:id="@+id/mindfulMorningSeverity"
+                                style="@style/TextSmallBold"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="end|center_vertical"
+                                android:maxLines="1"
+                                android:padding="8dp"
+                                android:text="@string/mindful_morning_normal" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/mindfulMorningSeveritySelectLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:animateLayoutChanges="true"
+                            android:background="@drawable/rounded_primary_gradient"
+                            android:elevation="8dp"
+                            android:orientation="horizontal"
+                            android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                            android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="2dp"
+                            android:visibility="gone">
+
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/mindfulMorningSeverityNormal"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="24dp"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/mindful_morning_normal" />
+
+                            <TextView
+                                android:id="@+id/mindfulMorningSeverityHard"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/mindful_morning_hard_premium" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="12dp"
                     android:animateLayoutChanges="true">
@@ -1251,21 +1521,37 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
 
-                        <TextView
-                            style="@style/TextSmall"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:paddingVertical="8dp"
-                            android:text="@string/hourly_chime"
-                            android:textColor="?attr/primaryColor" />
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingVertical="4dp">
+
+                            <TextView
+                                style="@style/TextSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingVertical="4dp"
+                                android:text="@string/hourly_chime"
+                                android:textColor="?attr/primaryColor" />
+
+                            <ImageView
+                                android:id="@+id/hourlyChimeInfo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:contentDescription="@string/hourly_chime_info_content_description"
+                                android:padding="6dp"
+                                android:src="@drawable/ic_info" />
+                        </LinearLayout>
 
                         <TextView
                             android:id="@+id/hourlyChimeOnOff"
                             style="@style/TextSmallBold"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_gravity="end|bottom"
+                            android:layout_gravity="end|center_vertical"
                             android:layout_marginEnd="4dp"
                             android:padding="8dp"
                             android:text="@string/off" />
@@ -1317,6 +1603,96 @@
                             android:text="22:00" />
                     </LinearLayout>
 
+                    <!-- STYLE ROW -->
+                    <FrameLayout
+                        android:id="@+id/hourlyChimeStyleLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:animateLayoutChanges="true"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/TextSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/chime_style"
+                            android:textColor="?attr/primaryColor" />
+
+                        <TextView
+                            android:id="@+id/hourlyChimeStyle"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|bottom"
+                            android:layout_marginEnd="4dp"
+                            android:padding="8dp"
+                            android:text="@string/chime_style_sound" />
+                    </FrameLayout>
+
+                    <!-- STYLE SELECTOR -->
+                    <LinearLayout
+                        android:id="@+id/chimeStyleSelectLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:animateLayoutChanges="true"
+                        android:background="@drawable/rounded_primary_gradient"
+                        android:elevation="8dp"
+                        android:orientation="horizontal"
+                        android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                        android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="2dp"
+                        android:visibility="gone"
+                        tools:ignore="UnusedAttribute">
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/chimeStyleSound"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="24dp"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/chime_style_sound" />
+
+                        <TextView
+                            android:id="@+id/chimeStyleVibrate"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="24dp"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/chime_style_vibrate" />
+
+                        <TextView
+                            android:id="@+id/chimeStyleSilent"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="24dp"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/chime_style_silent" />
+
+                        <TextView
+                            android:id="@+id/chimeStyleFlash"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:paddingVertical="6dp"
+                            android:text="@string/chime_style_flash" />
+                    </LinearLayout>
+
+                    <!-- SOUND ROW (only visible when style = SOUND) -->
                     <FrameLayout
                         android:id="@+id/hourlyChimeSoundLayout"
                         android:layout_width="match_parent"
@@ -1425,6 +1801,15 @@
                         android:text="@string/off" />
 
                 </FrameLayout>
+
+                <TextView
+                    android:id="@+id/screenTimeAnalyticsLink"
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingVertical="8dp"
+                    android:text="@string/view_screen_time_analytics" />
 
             </LinearLayout>
 

@@ -43,13 +43,15 @@ fun View.showKeyboard(show: Boolean = true) {
 
 
 @RequiresApi(Build.VERSION_CODES.Q)
-fun Activity.showLauncherSelector(requestCode: Int) {
-    val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
-    if (roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
-        val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME)
-        startActivityForResult(intent, requestCode)
-    } else
-        resetDefaultLauncher()
+fun Activity.createHomeRoleRequestIntent(): Intent? {
+    val roleManager = getSystemService(RoleManager::class.java) ?: return null
+    if (!roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) return null
+    return try {
+        roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME)
+    } catch (e: Exception) {
+        Log.w("Sukun", "Failed to create home role intent", e)
+        null
+    }
 }
 
 /**
@@ -115,13 +117,7 @@ fun Context.resetDefaultLauncher() {
     }
 }
 
-fun Context.isDefaultLauncher(): Boolean {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
-        return roleManager.isRoleHeld(RoleManager.ROLE_HOME)
-    }
-    return BuildConfig.APPLICATION_ID == getDefaultLauncherPackage(this)
-}
+fun Context.isDefaultLauncher(): Boolean = isSukunDefault(this)
 
 fun Context.resetLauncherViaFakeActivity() {
     resetDefaultLauncher()
@@ -175,14 +171,23 @@ fun Context.isPackageInstalled(packageName: String, userHandle: UserHandle = and
     return activityInfo.isNotEmpty()
 }
 
-@RequiresApi(Build.VERSION_CODES.Q)
 fun Context.appUsagePermissionGranted(): Boolean {
     val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-    return appOpsManager.unsafeCheckOpNoThrow(
-        "android:get_usage_stats",
-        android.os.Process.myUid(),
-        packageName
-    ) == AppOpsManager.MODE_ALLOWED
+    val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        appOpsManager.unsafeCheckOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            packageName
+        )
+    } else {
+        @Suppress("DEPRECATION")
+        appOpsManager.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            packageName
+        )
+    }
+    return mode == AppOpsManager.MODE_ALLOWED
 }
 
 fun Context.formattedTimeSpent(timeSpent: Long): String {

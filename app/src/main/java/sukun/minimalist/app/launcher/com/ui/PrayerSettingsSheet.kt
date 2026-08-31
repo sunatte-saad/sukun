@@ -25,7 +25,6 @@ import androidx.lifecycle.lifecycleScope
 import sukun.minimalist.app.launcher.com.MainViewModel
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Constants
-import sukun.minimalist.app.launcher.com.data.PrayerLog
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.BottomSheetPrayerSettingsBinding
 import sukun.minimalist.app.launcher.com.MainActivity
@@ -40,10 +39,6 @@ import sukun.minimalist.app.launcher.com.helper.isNetworkAvailable
 import sukun.minimalist.app.launcher.com.helper.scheduleAzanDownloadWhenOnline
 import sukun.minimalist.app.launcher.com.helper.showToast
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 class PrayerSettingsSheet : DialogFragment() {
 
@@ -56,14 +51,6 @@ class PrayerSettingsSheet : DialogFragment() {
     private lateinit var prefs: Prefs
     private lateinit var viewModel: MainViewModel
     private var listener: Listener? = null
-
-    private val prayers = listOf(
-        Constants.Prayer.FAJR,
-        Constants.Prayer.DHUHR,
-        Constants.Prayer.ASR,
-        Constants.Prayer.MAGHRIB,
-        Constants.Prayer.ISHA,
-    )
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
@@ -121,6 +108,13 @@ class PrayerSettingsSheet : DialogFragment() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (requireActivity().isFinishing) {
+            dismissAllowingStateLoss()
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
@@ -152,17 +146,11 @@ class PrayerSettingsSheet : DialogFragment() {
             updateCustomAzanRow()
             ensureAzanDownloaded()
         }
-        val hasLogs = prefs.getPrayerLogs().isNotEmpty()
-        val showAnalytics = isOn || hasLogs
-        binding.analyticsDivider.isVisible = showAnalytics
-        binding.analyticsSection.isVisible = showAnalytics
-        if (showAnalytics) populateAnalytics()
         applyPremiumVisuals()
     }
 
     private fun applyPremiumVisuals() {
         val alpha = PremiumAccess.lockedAlpha(prefs)
-        binding.analyticsSection.alpha = alpha
         binding.chipAzanCustom.alpha = alpha
         binding.customAzanRow.alpha = alpha
     }
@@ -307,61 +295,6 @@ class PrayerSettingsSheet : DialogFragment() {
             )
         }
     }
-
-    // ── Analytics ──────────────────────────────────────────────────────────
-
-    private fun populateAnalytics() {
-        if (!PremiumAccess.hasPremiumAccess(prefs)) return
-        val logs = prefs.getPrayerLogs()
-        val cal = Calendar.getInstance()
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        val yearPrefix = String.format("%04d", cal.get(Calendar.YEAR))
-        val monthPrefix = String.format("%04d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
-        val monthName = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date())
-
-        val todayLogs = logs.filter { it.dateKey == today }.map { it.prayerKey }.toSet()
-        val daysElapsedMonth = cal.get(Calendar.DAY_OF_MONTH)
-        val daysElapsedYear = cal.get(Calendar.DAY_OF_YEAR)
-
-        binding.tvTodayStats.text = buildTodayDashboard(todayLogs)
-        binding.tvMonthHeader.text = monthName
-        binding.tvMonthStats.text = buildPrayerCounts(logs.filter { it.dateKey.startsWith(monthPrefix) }, daysElapsedMonth, padStart = 2)
-        binding.tvYearHeader.text = yearPrefix
-        binding.tvYearStats.text = buildPrayerCounts(logs.filter { it.dateKey.startsWith(yearPrefix) }, daysElapsedYear, padStart = 3)
-    }
-
-    private fun buildTodayDashboard(prayedKeys: Set<String>): String {
-        return buildString {
-            prayers.forEach { key ->
-                val name = getPrayerDisplayName(key).padEnd(8)
-                val mark = if (key in prayedKeys) "✓" else "·"
-                appendLine("$name $mark")
-            }
-        }
-    }
-
-    private fun buildPrayerCounts(logs: List<PrayerLog>, daysElapsed: Int, padStart: Int): String {
-        return buildString {
-            prayers.forEach { key ->
-                val daysPrayed = logs.filter { it.prayerKey == key }.map { it.dateKey }.toSet().size
-                val name = getPrayerDisplayName(key).padEnd(8)
-                val count = daysPrayed.toString().padStart(padStart)
-                val total = daysElapsed.toString().padStart(padStart)
-                appendLine("$name $count / $total")
-            }
-        }
-    }
-
-    private fun getPrayerDisplayName(key: String) = getString(
-        when (key) {
-            Constants.Prayer.FAJR -> R.string.prayer_fajr
-            Constants.Prayer.DHUHR -> R.string.prayer_dhuhr
-            Constants.Prayer.ASR -> R.string.prayer_asr
-            Constants.Prayer.MAGHRIB -> R.string.prayer_maghrib
-            Constants.Prayer.ISHA -> R.string.prayer_isha
-            else -> R.string.prayer_time_now
-        }
-    )
 
     companion object {
         const val TAG = "PrayerSettingsSheet"

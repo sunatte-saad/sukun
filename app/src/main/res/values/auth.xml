@@ -1,26 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Google Sign-In configuration.
+  Google Sign-In configuration (workspace Firebase project: sukun-a8573).
 
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │ REQUIRED SETUP — sign-in will NOT work until you do this:                   │
-  │                                                                            │
-  │ 1. Go to https://console.cloud.google.com/ and create (or pick) a project. │
-  │ 2. APIs & Services → Credentials → Create Credentials → OAuth client ID.   │
-  │ 3. Create an **Android** client:                                           │
-  │      - Package name: sukun.minimalist.app.launcher.com                      │
-  │        (debug builds use sukun.minimalist.app.launcher.com.debug)           │
-  │      - SHA-1 fingerprint of your signing key. Get it with:                  │
-  │          ./gradlew signingReport                                            │
-  │ 4. Also create a **Web application** OAuth client ID in the same project.   │
-  │ 5. Paste that *Web* client ID (ends in .apps.googleusercontent.com) below.  │
-  │    Credential Manager / Google ID requires the WEB client id as the        │
-  │    server client id — NOT the Android one.                                  │
-  │ 6. Configure the OAuth consent screen (add your account as a test user      │
-  │    while the app is unpublished).                                           │
-  └──────────────────────────────────────────────────────────────────────────┘
+  Must match the Web OAuth client (client_type 3) in app/google-services.json.
+  Android OAuth clients (package + SHA-1) stay in Firebase / Google Cloud —
+  they are not pasted here. Credential Manager needs this WEB client id.
 -->
 <resources>
-    <!-- TODO: replace with your OAuth 2.0 *Web application* client ID. -->
-    <string name="default_web_client_id" translatable="false">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+    <!-- Web application client ID from Firebase / Google Cloud (project 838044909721). -->
+    <string name="default_web_client_id" translatable="false">838044909721-3sapbfnisc2qr5c4oc9rvt43fms1nc3i.apps.googleusercontent.com</string>
 </resources>

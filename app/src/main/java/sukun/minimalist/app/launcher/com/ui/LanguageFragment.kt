@@ -8,6 +8,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import sukun.minimalist.app.launcher.com.MainActivity
 import sukun.minimalist.app.launcher.com.MainViewModel
 import sukun.minimalist.app.launcher.com.data.OnboardingAction
 import sukun.minimalist.app.launcher.com.databinding.FragmentLanguageBinding
@@ -86,6 +87,6 @@ class LanguageFragment : Fragment() {
             try { findNavController().navigateUp() } catch (_: Exception) {}
             return
         }
-        requireActivity().recreate()
+        (requireActivity() as? MainActivity)?.safeRecreate()
     }
 }

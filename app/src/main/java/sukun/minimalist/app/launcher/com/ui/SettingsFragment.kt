@@ -1,6 +1,7 @@
 package sukun.minimalist.app.launcher.com.ui
 
 import android.Manifest
+import android.app.TimePickerDialog
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
@@ -36,11 +37,13 @@ import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.FragmentSettingsBinding
 import sukun.minimalist.app.launcher.com.helper.HourlyChimeScheduler
+import sukun.minimalist.app.launcher.com.helper.HourlyChimeEffects
 import sukun.minimalist.app.launcher.com.helper.LocaleHelper
 import sukun.minimalist.app.launcher.com.helper.PrayerReminderScheduler
 import sukun.minimalist.app.launcher.com.helper.ReminderScheduler
 import sukun.minimalist.app.launcher.com.helper.animateAlpha
 import sukun.minimalist.app.launcher.com.helper.appUsagePermissionGranted
+import sukun.minimalist.app.launcher.com.helper.sync.AccountSyncManager
 import sukun.minimalist.app.launcher.com.helper.GoogleAuthHelper
 import sukun.minimalist.app.launcher.com.helper.getFocusModeStatus
 import sukun.minimalist.app.launcher.com.helper.AmbientThemeController
@@ -56,9 +59,11 @@ import android.widget.ArrayAdapter
 import android.widget.Filter
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.isAccessServiceEnabled
 import sukun.minimalist.app.launcher.com.helper.isDarkThemeOn
@@ -73,6 +78,8 @@ import sukun.minimalist.app.launcher.com.helper.showKeyboard
 import sukun.minimalist.app.launcher.com.helper.showToast
 import sukun.minimalist.app.launcher.com.helper.dpToPx
 import sukun.minimalist.app.launcher.com.listener.DeviceAdmin
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
 
 class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListener {
 
@@ -121,7 +128,20 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             prefs.hourlyChimeSound = Constants.ChimeSound.CUSTOM
             prefs.hourlyChimeCustomUri = uri.toString()
             populateHourlyChime()
+            previewChimeSound(Constants.ChimeSound.CUSTOM)
             requireContext().showToast(R.string.chime_sound_saved)
+        }
+
+    private val cameraPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                prefs.hourlyChimeStyle = Constants.ChimeStyle.FLASH
+                binding.chimeStyleSelectLayout?.visibility = View.GONE
+                populateHourlyChime()
+                previewChimeStyle(Constants.ChimeStyle.FLASH)
+            } else {
+                requireContext().showToast(R.string.chime_flash_camera_permission, Toast.LENGTH_LONG)
+            }
         }
 
     private val locationPermissionLauncher =
@@ -142,9 +162,23 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             if (uri == null) return@registerForActivityResult
             val ok = sukun.minimalist.app.launcher.com.helper.BackupHelper
                 .exportToUri(requireContext(), uri)
-            requireContext().showToast(
-                if (ok) R.string.backup_exported else R.string.backup_export_failed
-            )
+            if (!ok) {
+                requireContext().showToast(R.string.backup_export_failed)
+                return@registerForActivityResult
+            }
+            if (prefs.isSignedIn) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val synced = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        AccountSyncManager.pushManualBackupToDrive(requireContext(), requireActivity())
+                    }
+                    requireContext().showToast(
+                        if (synced) R.string.backup_exported_and_synced
+                        else R.string.backup_exported_sync_failed
+                    )
+                }
+            } else {
+                requireContext().showToast(R.string.backup_exported)
+            }
         }
 
     private val backupImportLauncher =
@@ -170,10 +204,21 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             requireContext().showToast(R.string.backup_import_failed)
             return
         }
-        sukun.minimalist.app.launcher.com.helper.ReminderScheduler
-            .scheduleAll(requireContext())
-        requireContext().showToast(R.string.backup_imported)
-        Process.killProcess(Process.myPid())
+        sukun.minimalist.app.launcher.com.helper.ReminderScheduler.scheduleAll(requireContext())
+        if (prefs.isSignedIn) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val synced = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    AccountSyncManager.pushManualBackupToDrive(requireContext(), requireActivity())
+                }
+                requireContext().showToast(
+                    if (synced) R.string.backup_imported_and_synced else R.string.backup_imported,
+                )
+                (requireActivity() as? MainActivity)?.restartAfterSettingsImport()
+            }
+        } else {
+            requireContext().showToast(R.string.backup_imported)
+            (requireActivity() as? MainActivity)?.restartAfterSettingsImport()
+        }
     }
 
     private fun launchBackupExport() {
@@ -184,6 +229,14 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun launchBackupImport() {
         backupImportLauncher.launch(arrayOf("application/json", "*/*"))
+    }
+
+    private fun showBackupInfoDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.backup_info_title)
+            .setMessage(R.string.backup_info_message)
+            .setPositiveButton(R.string.okay, null)
+            .show()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -241,6 +294,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             populateLocationSettings()
             setupLocationAutocomplete()
             populateHourlyChime()
+            populateMindfulMorning()
             populateStatusBar()
             populateDateTime()
             populateSwipeApps()
@@ -264,6 +318,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.appThemeSelectLayout.visibility = View.GONE
         binding.swipeDownSelectLayout.visibility = View.GONE
         binding.focusModeSelectLayout?.visibility = View.GONE
+        binding.mindfulMorningDurationSelectLayout?.visibility = View.GONE
+        binding.mindfulMorningSeveritySelectLayout?.visibility = View.GONE
         binding.doubleTapActionSelectLayout.visibility = View.GONE
         if (view.id != R.id.textSizeSmall && view.id != R.id.textSizeMedium && view.id != R.id.textSizeLarge
             && view.id != R.id.textSizeXLarge
@@ -294,7 +350,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             binding.alignmentSelectLayout.visibility = View.GONE
 
         when (view.id) {
-            R.id.accountAction -> onAccountActionClick()
             R.id.sukunHiddenApps -> showHiddenApps()
             R.id.screenTimeOnOff -> {
                 val action = OnboardingAction.TAP_SCREEN_TIME
@@ -352,6 +407,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                     showPrayerSettingsSheet()
                 }
             }
+            R.id.prayerAnalyticsLink ->
+                findNavController().navigate(R.id.action_settingsFragment_to_prayerAnalyticsFragment)
+            R.id.screenTimeAnalyticsLink ->
+                findNavController().navigate(R.id.action_settingsFragment_to_screenTimeAnalyticsFragment)
             R.id.locationSettings -> openLocationEditor()
             R.id.chipLocationDevice -> selectLocationDevice()
             R.id.chipLocationManual -> selectLocationManual()
@@ -383,10 +442,38 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.focusCustomLayout.visibility = View.GONE
                 binding.etFocusCustomMinutes.hideKeyboard()
             }
+            R.id.mindfulMorningOnOff -> {
+                val action = OnboardingAction.TAP_MINDFUL_MORNING
+                viewModel.reportOnboardingAction(action)
+                if (!isOnboardingDiscoveryStep(action)) {
+                    toggleMindfulMorning()
+                }
+            }
+            R.id.mindfulMorningDuration -> binding.mindfulMorningDurationSelectLayout?.visibility = View.VISIBLE
+            R.id.mindfulMorning1h -> updateMindfulMorningDuration(1)
+            R.id.mindfulMorning2h -> updateMindfulMorningDuration(2)
+            R.id.mindfulMorning3h -> updateMindfulMorningDuration(3)
+            R.id.mindfulMorningWakeTime -> showMindfulMorningWakePicker()
+            R.id.mindfulMorningSeverity -> binding.mindfulMorningSeveritySelectLayout?.visibility = View.VISIBLE
+            R.id.mindfulMorningSeverityNormal -> updateMindfulMorningHard(false)
+            R.id.mindfulMorningSeverityHard -> updateMindfulMorningHard(true)
             R.id.hourlyChimeOnOff -> toggleHourlyChime()
+            R.id.hourlyChimeInfo -> showHourlyChimeInfoDialog()
             R.id.hourlyChimeStartHour -> showHourPicker(isStart = true)
             R.id.hourlyChimeEndHour -> showHourPicker(isStart = false)
-            R.id.hourlyChimeSound -> binding.chimeSoundSelectLayout?.visibility = View.VISIBLE
+            R.id.hourlyChimeStyle -> {
+                binding.chimeStyleSelectLayout?.visibility = View.VISIBLE
+                binding.chimeSoundSelectLayout?.visibility = View.GONE
+                requireContext().showToast(R.string.chime_preview_tap_style)
+            }
+            R.id.chimeStyleSound -> updateChimeStyle(Constants.ChimeStyle.SOUND)
+            R.id.chimeStyleVibrate -> updateChimeStyle(Constants.ChimeStyle.VIBRATE)
+            R.id.chimeStyleSilent -> updateChimeStyle(Constants.ChimeStyle.SILENT_NOTIFICATION)
+            R.id.chimeStyleFlash -> updateChimeStyle(Constants.ChimeStyle.FLASH)
+            R.id.hourlyChimeSound -> {
+                binding.chimeSoundSelectLayout?.visibility = View.VISIBLE
+                requireContext().showToast(R.string.chime_preview_tap_sound)
+            }
             R.id.chimeSoundBundled -> updateChimeSound(Constants.ChimeSound.BUNDLED)
             R.id.chimeSoundDefault -> updateChimeSound(Constants.ChimeSound.DEFAULT)
             R.id.chimeSoundCustom -> {
@@ -493,7 +580,17 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun initClickListeners() {
-        binding.accountAction.setOnClickListener(this)
+        binding.accountAction?.setOnClickListener { onAccountActionClick() }
+        binding.accountDeleteAction?.setOnClickListener { confirmDeleteAccount() }
+        binding.mindfulMorningOnOff?.setOnClickListener(this)
+        binding.mindfulMorningDuration?.setOnClickListener(this)
+        binding.mindfulMorning1h?.setOnClickListener(this)
+        binding.mindfulMorning2h?.setOnClickListener(this)
+        binding.mindfulMorning3h?.setOnClickListener(this)
+        binding.mindfulMorningWakeTime?.setOnClickListener(this)
+        binding.mindfulMorningSeverity?.setOnClickListener(this)
+        binding.mindfulMorningSeverityNormal?.setOnClickListener(this)
+        binding.mindfulMorningSeverityHard?.setOnClickListener(this)
         binding.sukunHiddenApps.setOnClickListener(this)
         binding.scrollLayout.setOnClickListener(this)
         binding.appInfo.setOnClickListener(this)
@@ -526,6 +623,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.weatherUnitCelsius?.setOnClickListener(this)
         binding.weatherUnitFahrenheit?.setOnClickListener(this)
         binding.prayerSettings?.setOnClickListener(this)
+        binding.prayerAnalyticsLink?.setOnClickListener(this)
+        binding.screenTimeAnalyticsLink?.setOnClickListener(this)
         binding.locationSettings?.setOnClickListener(this)
         binding.chipLocationDevice?.setOnClickListener(this)
         binding.chipLocationManual?.setOnClickListener(this)
@@ -542,8 +641,14 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.focusModeHideStatusBar.setOnClickListener(this)
         binding.focusCustomClose.setOnClickListener(this)
         binding.hourlyChimeOnOff?.setOnClickListener(this)
+        binding.hourlyChimeInfo?.setOnClickListener(this)
         binding.hourlyChimeStartHour?.setOnClickListener(this)
         binding.hourlyChimeEndHour?.setOnClickListener(this)
+        binding.hourlyChimeStyle?.setOnClickListener(this)
+        binding.chimeStyleSound?.setOnClickListener(this)
+        binding.chimeStyleVibrate?.setOnClickListener(this)
+        binding.chimeStyleSilent?.setOnClickListener(this)
+        binding.chimeStyleFlash?.setOnClickListener(this)
         binding.hourlyChimeSound?.setOnClickListener(this)
         binding.chimeSoundBundled?.setOnClickListener(this)
         binding.chimeSoundDefault?.setOnClickListener(this)
@@ -596,6 +701,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
         binding.backupExport?.setOnClickListener { if (canUsePremiumFeature()) launchBackupExport() }
         binding.backupImport?.setOnClickListener { if (canUsePremiumFeature()) launchBackupImport() }
+        binding.backupInfo?.setOnClickListener { showBackupInfoDialog() }
 
         binding.alignment.setOnLongClickListener(this)
         binding.appThemeText.setOnLongClickListener(this)
@@ -654,6 +760,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private fun onboardingTargetView(action: OnboardingAction): View? = when (action) {
         OnboardingAction.TAP_PRAYER_SETTINGS -> binding.prayerSettings
         OnboardingAction.TAP_FOCUS_MODE -> binding.focusMode
+        OnboardingAction.TAP_MINDFUL_MORNING -> binding.mindfulMorningOnOff
         OnboardingAction.TAP_SCREEN_TIME -> binding.screenTimeOnOff
         OnboardingAction.TAP_LANGUAGE -> binding.appLanguageText
         OnboardingAction.TAP_APPEARANCE -> binding.appThemeText
@@ -800,20 +907,37 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateAccount() {
         val signedIn = prefs.isSignedIn
-        binding.accountName.isVisible = signedIn && prefs.accountName.isNotBlank()
-        binding.accountEmail.isVisible = signedIn
-        if (signedIn) {
-            binding.accountName.text = prefs.accountName
-            binding.accountEmail.text = prefs.accountEmail
-            binding.accountAction.text = getString(R.string.sign_out)
-            binding.accountAction.setTextColor(
-                requireContext().getColorFromAttr(R.attr.primaryColorTrans50)
+
+        binding.accountName?.isVisible = signedIn && prefs.accountName.isNotBlank()
+        binding.accountName?.text = prefs.accountName
+        binding.accountEmail?.isVisible = signedIn
+        binding.accountEmail?.text = if (signedIn) {
+            val base = prefs.accountEmail
+            if (prefs.syncLastUploadAt > 0L) {
+                "$base\n${getString(R.string.account_sync_last, formatSyncTime(prefs.syncLastUploadAt))}"
+            } else if (signedIn) {
+                "$base\n${getString(R.string.account_sync_pending)}"
+            } else base
+        } else ""
+        binding.accountAction?.text = if (signedIn) getString(R.string.sign_out) else getString(R.string.sign_in_with_google)
+        binding.accountAction?.setTextColor(
+            requireContext().getColorFromAttr(
+                if (signedIn) R.attr.primaryColorTrans50 else R.attr.primaryColor
             )
-        } else {
-            binding.accountAction.text = getString(R.string.sign_in_with_google)
-            binding.accountAction.setTextColor(
-                requireContext().getColorFromAttr(R.attr.primaryColor)
-            )
+        )
+        binding.accountDeleteAction?.isVisible = signedIn
+        binding.accountDeleteAction?.setTextColor(
+            requireContext().getColorFromAttr(R.attr.primaryColorTrans50)
+        )
+    }
+
+    private fun formatSyncTime(whenMs: Long): String {
+        val delta = System.currentTimeMillis() - whenMs
+        return when {
+            delta < 60_000L -> getString(R.string.account_sync_just_now)
+            delta < 3_600_000L -> getString(R.string.account_sync_minutes_ago, (delta / 60_000L).toInt())
+            delta < 86_400_000L -> getString(R.string.account_sync_hours_ago, (delta / 3_600_000L).toInt())
+            else -> getString(R.string.account_sync_days_ago, (delta / 86_400_000L).toInt())
         }
     }
 
@@ -822,18 +946,112 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun signIn() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            when (val result = googleAuthHelper.signIn(requireActivity())) {
-                is GoogleAuthHelper.SignInResult.Success -> {
-                    val account = result.account
-                    prefs.saveAccount(account.id, account.name, account.email, account.photoUrl)
-                    populateAccount()
-                    requireContext().showToast(getString(R.string.signed_in_as, account.email))
+        android.util.Log.i(GoogleAuthHelper.TAG, "Sign-in tapped from Settings")
+        if (!googleAuthHelper.isConfigured()) {
+            showSignInFeedback(getString(R.string.sign_in_not_configured), isError = true)
+            return
+        }
+        binding.accountAction?.isEnabled = false
+        requireActivity().showToast(getString(R.string.sign_in_opening), Toast.LENGTH_SHORT)
+        viewModel.isAuthFlowActive = true
+        requireActivity().lifecycleScope.launch {
+            try {
+                val result = kotlinx.coroutines.withTimeout(90_000L) {
+                    googleAuthHelper.signIn(requireActivity())
                 }
-                is GoogleAuthHelper.SignInResult.Cancelled -> Unit
-                is GoogleAuthHelper.SignInResult.Error ->
-                    requireContext().showToast(result.message)
+                handleSignInResult(result)
+            } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                android.util.Log.e(GoogleAuthHelper.TAG, "Settings sign-in timed out", e)
+                showSignInFeedback(getString(R.string.sign_in_timed_out), isError = true)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                android.util.Log.e(
+                    GoogleAuthHelper.TAG,
+                    "Settings coroutine cancelled: ${e.javaClass.name} ${e.message}",
+                    e
+                )
+                showSignInFeedback(getString(R.string.sign_in_cancelled), isError = false)
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    GoogleAuthHelper.TAG,
+                    "Settings unexpected error: ${e.javaClass.name} ${e.message}",
+                    e
+                )
+                showSignInFeedback(getString(R.string.sign_in_failed), isError = true)
+            } finally {
+                viewModel.isAuthFlowActive = false
+                if (isAdded) {
+                    binding.accountAction?.isEnabled = true
+                }
             }
+        }
+    }
+
+    private fun handleSignInResult(result: GoogleAuthHelper.SignInResult) {
+        when (result) {
+            is GoogleAuthHelper.SignInResult.Success -> {
+                android.util.Log.i(GoogleAuthHelper.TAG, "Settings result=Success email=${result.account.email}")
+                if (!isAdded) return
+                val account = result.account
+                viewLifecycleOwner.lifecycleScope.launch {
+                    prefs.saveAccount(account.id, account.name, account.email, account.photoUrl)
+                    val syncResult = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        AccountSyncManager.onSignInSuccess(requireContext(), requireActivity())
+                    }
+                    populateAccount()
+                    when (syncResult) {
+                        is AccountSyncManager.SyncResult.Success -> {
+                            val msg = if (syncResult.restored) {
+                                getString(R.string.signed_in_settings_restored, account.email)
+                            } else {
+                                getString(R.string.signed_in_backup_saved, account.email)
+                            }
+                            requireActivity().showToast(msg, Toast.LENGTH_LONG)
+                        }
+                        is AccountSyncManager.SyncResult.NeedsRestoreConfirm -> {
+                            (requireActivity() as? MainActivity)?.promptDriveRestoreIfNeeded(
+                                syncResult.remote,
+                                onKeepLocal = {
+                                    viewLifecycleOwner.lifecycleScope.launch {
+                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            AccountSyncManager.keepLocalAndPushToDrive(
+                                                requireContext(),
+                                                syncResult.remote.updatedAt,
+                                                requireActivity(),
+                                            )
+                                        }
+                                    }
+                                },
+                            )
+                        }
+                        is AccountSyncManager.SyncResult.Error -> {
+                            requireActivity().showToast(
+                                getString(R.string.signed_in_sync_failed, account.email),
+                                Toast.LENGTH_LONG,
+                            )
+                        }
+                    }
+                }
+            }
+            is GoogleAuthHelper.SignInResult.Cancelled -> {
+                android.util.Log.w(GoogleAuthHelper.TAG, "Settings result=Cancelled")
+                showSignInFeedback(getString(R.string.sign_in_cancelled), isError = false)
+            }
+            is GoogleAuthHelper.SignInResult.Error -> {
+                android.util.Log.e(GoogleAuthHelper.TAG, "Settings result=Error ${result.message}")
+                showSignInFeedback(result.message, isError = true)
+            }
+        }
+    }
+
+    private fun showSignInFeedback(message: String, isError: Boolean) {
+        if (!isAdded) return
+        requireActivity().showToast(message, Toast.LENGTH_LONG)
+        if (isError) {
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.sign_in_with_google)
+                .setMessage(message)
+                .setPositiveButton(R.string.okay, null)
+                .show()
         }
     }
 
@@ -849,9 +1067,45 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private fun signOut() {
         viewLifecycleOwner.lifecycleScope.launch {
             googleAuthHelper.signOut()
+            AccountSyncManager.signOut()
             prefs.clearAccount()
+            prefs.syncDeclinedRemoteUpdatedAt = 0L
             populateAccount()
             requireContext().showToast(R.string.signed_out)
+        }
+    }
+
+    private fun confirmDeleteAccount() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.delete_account_confirmation_title)
+            .setMessage(R.string.delete_account_confirmation_message)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete_account) { _, _ -> deleteAccount() }
+            .show()
+    }
+
+    private fun deleteAccount() {
+        val progressDialog = AlertDialog.Builder(requireContext())
+            .setMessage(R.string.delete_account_progress)
+            .setCancelable(false)
+            .show()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val success = withContext(Dispatchers.IO) {
+                AccountSyncManager.deleteCloudData(requireContext(), requireActivity())
+            }
+            googleAuthHelper.signOut()
+            AccountSyncManager.signOut()
+            prefs.clearAccount()
+            prefs.syncPayloadUpdatedAt = 0L
+            prefs.syncLastUploadAt = 0L
+            progressDialog.dismiss()
+            populateAccount()
+            if (success) {
+                requireContext().showToast(R.string.delete_account_success)
+            } else {
+                requireContext().showToast(R.string.delete_account_failed)
+            }
         }
     }
 
@@ -888,6 +1142,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.dailyWallpaperUrl.alpha = alpha
         binding.changeWallpaperNow.alpha = alpha
         binding.chimeSoundCustom?.alpha = alpha
+        binding.mindfulMorningSeverityHard?.alpha = alpha
     }
 
     private fun showUpgradeDialog() {
@@ -1611,7 +1866,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.homeAppsNum.text = prefs.homeAppsNum.toString()
         updateHomeAppsNumSelectorVisibility()
         if (isAdded) {
-            requireActivity().recreate()
+            (requireActivity() as? MainActivity)?.safeRecreate()
         }
     }
 
@@ -1650,7 +1905,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
         AppCompatDelegate.setDefaultNightMode(nightMode)
         if (isAdded) {
-            requireActivity().recreate()
+            (requireActivity() as? MainActivity)?.safeRecreate()
         }
     }
 
@@ -1908,12 +2163,23 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateHourlyChime() {
         val enabled = prefs.hourlyChimeEnabled
+        val isSound = prefs.hourlyChimeStyle == Constants.ChimeStyle.SOUND
         binding.hourlyChimeOnOff?.text = getString(if (enabled) R.string.on else R.string.off)
         binding.hourlyChimeTimeLayout?.isVisible = enabled
-        binding.hourlyChimeSoundLayout?.isVisible = enabled
+        binding.hourlyChimeStyleLayout?.isVisible = enabled
+        binding.chimeStyleSelectLayout?.visibility = View.GONE
+        binding.hourlyChimeSoundLayout?.isVisible = enabled && isSound
         binding.chimeSoundSelectLayout?.visibility = View.GONE
         binding.hourlyChimeStartHour?.text = formatHourLabel(prefs.hourlyChimeStartHour)
         binding.hourlyChimeEndHour?.text = formatHourLabel(prefs.hourlyChimeEndHour)
+        binding.hourlyChimeStyle?.text = getString(
+            when (prefs.hourlyChimeStyle) {
+                Constants.ChimeStyle.VIBRATE -> R.string.chime_style_vibrate
+                Constants.ChimeStyle.SILENT_NOTIFICATION -> R.string.chime_style_silent
+                Constants.ChimeStyle.FLASH -> R.string.chime_style_flash
+                else -> R.string.chime_style_sound
+            }
+        )
         binding.hourlyChimeSound?.text = getString(
             when (prefs.hourlyChimeSound) {
                 Constants.ChimeSound.DEFAULT -> R.string.chime_sound_default
@@ -1923,20 +2189,151 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         )
     }
 
+    private fun populateMindfulMorning() {
+        val enabled = prefs.mindfulMorningEnabled
+        binding.mindfulMorningOnOff?.text = getString(if (enabled) R.string.on else R.string.off)
+        binding.mindfulMorningOptionsLayout?.isVisible = enabled
+        binding.mindfulMorningDurationSelectLayout?.visibility = View.GONE
+        binding.mindfulMorningSeveritySelectLayout?.visibility = View.GONE
+        val durationText = when (prefs.mindfulMorningDurationHours) {
+            1 -> getString(R.string.mindful_morning_1h)
+            3 -> getString(R.string.mindful_morning_3h)
+            else -> getString(R.string.mindful_morning_2h)
+        }
+        binding.mindfulMorningDuration?.text = durationText
+        binding.mindfulMorningWakeTime?.text = formatMindfulMorningWakeTime()
+        binding.mindfulMorningSeverity?.text = getString(
+            if (prefs.mindfulMorningHard) R.string.mindful_morning_hard_premium
+            else R.string.mindful_morning_normal
+        )
+    }
+
+    private fun formatMindfulMorningWakeTime(): String {
+        val calendar = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, prefs.mindfulMorningWakeHour)
+            set(java.util.Calendar.MINUTE, prefs.mindfulMorningWakeMinute)
+        }
+        return android.text.format.DateFormat.getTimeFormat(requireContext()).format(calendar.time)
+    }
+
+    private fun toggleMindfulMorning() {
+        prefs.mindfulMorningEnabled = !prefs.mindfulMorningEnabled
+        populateMindfulMorning()
+    }
+
+    private fun updateMindfulMorningDuration(hours: Int) {
+        prefs.mindfulMorningDurationHours = hours
+        populateMindfulMorning()
+    }
+
+    private fun updateMindfulMorningHard(hard: Boolean) {
+        if (hard && !canUsePremiumFeature()) return
+        prefs.mindfulMorningHard = hard
+        populateMindfulMorning()
+    }
+
+    private fun showMindfulMorningWakePicker() {
+        TimePickerDialog(
+            requireContext(),
+            { _, hourOfDay, minute ->
+                prefs.mindfulMorningWakeHour = hourOfDay
+                prefs.mindfulMorningWakeMinute = minute
+                populateMindfulMorning()
+            },
+            prefs.mindfulMorningWakeHour,
+            prefs.mindfulMorningWakeMinute,
+            android.text.format.DateFormat.is24HourFormat(requireContext()),
+        ).show()
+    }
+
     private fun toggleHourlyChime() {
+        if (!prefs.hourlyChimeEnabled) {
+            // About to enable: check for exact alarm permission on Android 12+
+            if (!HourlyChimeScheduler.canScheduleExactChime(requireContext())) {
+                requireContext().showToast(R.string.hourly_chime_exact_alarm_needed, Toast.LENGTH_LONG)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    startActivity(
+                        Intent(
+                            Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                            Uri.parse("package:${requireContext().packageName}")
+                        )
+                    )
+                }
+                return
+            }
+        }
+
         prefs.hourlyChimeEnabled = !prefs.hourlyChimeEnabled
         if (prefs.hourlyChimeEnabled) {
             HourlyChimeScheduler.scheduleNext(requireContext())
+            showHourlyChimeInfoDialog(offerTryCurrent = true)
         } else {
             HourlyChimeScheduler.cancel(requireContext())
         }
         populateHourlyChime()
     }
 
+    private fun updateChimeStyle(style: String) {
+        if (style == Constants.ChimeStyle.FLASH) {
+            val granted = ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                return
+            }
+        }
+        prefs.hourlyChimeStyle = style
+        binding.chimeStyleSelectLayout?.visibility = View.GONE
+        populateHourlyChime()
+        previewChimeStyle(style)
+    }
+
     private fun updateChimeSound(sound: String) {
         prefs.hourlyChimeSound = sound
         binding.chimeSoundSelectLayout?.visibility = View.GONE
         populateHourlyChime()
+        previewChimeSound(sound)
+    }
+
+    private fun previewChimeStyle(style: String) {
+        if (!isAdded) return
+        val tipRes = when (style) {
+            Constants.ChimeStyle.VIBRATE -> R.string.chime_preview_vibrate
+            Constants.ChimeStyle.SILENT_NOTIFICATION -> R.string.chime_preview_silent
+            Constants.ChimeStyle.FLASH -> R.string.chime_preview_flash
+            else -> R.string.chime_preview_sound
+        }
+        requireContext().showToast(tipRes)
+        HourlyChimeEffects.playStyle(requireContext(), style, prefs)
+    }
+
+    private fun previewChimeSound(sound: String) {
+        if (!isAdded) return
+        requireContext().showToast(R.string.chime_preview_sound)
+        HourlyChimeEffects.playSound(requireContext(), sound, prefs.hourlyChimeCustomUri)
+    }
+
+    private fun showHourlyChimeInfoDialog(offerTryCurrent: Boolean = false) {
+        val builder = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.hourly_chime_info_title)
+            .setMessage(R.string.hourly_chime_info_message)
+            .setPositiveButton(R.string.okay, null)
+        if (offerTryCurrent && prefs.hourlyChimeEnabled) {
+            val styleLabel = getString(
+                when (prefs.hourlyChimeStyle) {
+                    Constants.ChimeStyle.VIBRATE -> R.string.chime_style_vibrate
+                    Constants.ChimeStyle.SILENT_NOTIFICATION -> R.string.chime_style_silent
+                    Constants.ChimeStyle.FLASH -> R.string.chime_style_flash
+                    else -> R.string.chime_style_sound
+                }
+            )
+            builder.setNeutralButton(getString(R.string.chime_preview_try, styleLabel)) { _, _ ->
+                previewChimeStyle(prefs.hourlyChimeStyle)
+            }
+        }
+        builder.show()
     }
 
     private fun showHourPicker(isStart: Boolean) {

@@ -1,5 +1,6 @@
 package sukun.minimalist.app.launcher.com.ui
 
+import android.Manifest
 import android.app.admin.DevicePolicyManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -30,6 +31,7 @@ import android.widget.TextClock
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
@@ -47,6 +49,7 @@ import sukun.minimalist.app.launcher.com.data.OnboardingAction
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.AppModel
 import sukun.minimalist.app.launcher.com.data.Constants
+import sukun.minimalist.app.launcher.com.data.MindfulMorningManager
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.data.PrayerState
 import sukun.minimalist.app.launcher.com.data.WeatherData
@@ -56,6 +59,7 @@ import sukun.minimalist.app.launcher.com.data.toTodoJson
 import sukun.minimalist.app.launcher.com.data.toTodoList
 import sukun.minimalist.app.launcher.com.databinding.FragmentHomeBinding
 import sukun.minimalist.app.launcher.com.helper.appUsagePermissionGranted
+import sukun.minimalist.app.launcher.com.helper.asGreyscale
 import sukun.minimalist.app.launcher.com.helper.canOpenNotificationsInFocusMode
 import sukun.minimalist.app.launcher.com.helper.dpToPx
 import sukun.minimalist.app.launcher.com.helper.applyLauncherStatusBarVisibility
@@ -69,6 +73,7 @@ import sukun.minimalist.app.launcher.com.MainActivity
 import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.isAccessServiceEnabled
 import sukun.minimalist.app.launcher.com.helper.isPackageInstalled
+import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
 import sukun.minimalist.app.launcher.com.helper.openAlarmApp
 import sukun.minimalist.app.launcher.com.helper.openCalendar
 import sukun.minimalist.app.launcher.com.helper.openCameraApp
@@ -99,12 +104,24 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private var focusModeJob: Job? = null
     private var prayerJob: Job? = null
     private var dateTimeJob: Job? = null
+    private var mindfulMorningUnmaskJob: Job? = null
     private var systemTimeReceiver: BroadcastReceiver? = null
     private var currentPrayerState: PrayerState? = null
     private var defaultHomeAppsPaddingTop = 0
     private var defaultHomeAppsPaddingBottom = 0
     private var topCornerStackRunnable: Runnable? = null
     private var overlayLayoutRunnable: Runnable? = null
+
+    private var locationPermissionRequested = false
+    private val locationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
+                    || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            if (granted) {
+                viewModel.loadWeather(forceRefresh = true)
+                viewModel.loadPrayerState(forceRefresh = true)
+            }
+        }
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
@@ -148,6 +165,24 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         viewModel.loadWeather()
         viewModel.loadPrayerState()
         viewModel.isSukunDefault()
+        requestLocationPermissionIfNeeded()
+    }
+
+    private fun requestLocationPermissionIfNeeded() {
+        if (locationPermissionRequested) return
+        if (requireContext().hasWeatherLocationPermission()) return
+        val needsForWeather = prefs.showWeatherOnHome
+                && prefs.weatherSourceMode == Constants.WeatherSource.DEVICE
+        val needsForPrayer = prefs.showPrayerOnHome
+                && prefs.prayerSourceMode == Constants.PrayerSource.DEVICE
+        if (!needsForWeather && !needsForPrayer) return
+        locationPermissionRequested = true
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            )
+        )
     }
 
     override fun onPause() {
@@ -155,6 +190,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         stopPrayerTicker()
         stopDateTimeTicker()
         unregisterSystemTimeReceiver()
+        mindfulMorningUnmaskJob?.cancel()
         super.onPause()
     }
 
@@ -553,9 +589,13 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             ) { _, which ->
                 if (which == 0) {
                     prefs.logPrayer(prayerKeyToMark)
+                    sukun.minimalist.app.launcher.com.helper.sync.AnalyticsRollupManager
+                        .onPrayerMarked(requireContext(), prayerKeyToMark)
                     requireContext().showToast(R.string.prayer_marked_prayed)
                 } else {
                     prefs.unmarkPrayer(prayerKeyToMark)
+                    sukun.minimalist.app.launcher.com.helper.sync.AnalyticsRollupManager
+                        .onPrayerUnmarked(requireContext(), prayerKeyToMark)
                     requireContext().showToast(R.string.prayer_marked_missed)
                 }
             }
@@ -1058,6 +1098,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             val ringBottom = getDateTimeBottom() ?: estimatedDateTimeBottom(binding)
             return ringBottom + spacing
         }
+        if (binding.ringClockLayout.isVisible) {
+            val ringBottom = getDateTimeBottom() ?: estimatedDateTimeBottom(binding)
+            return ringBottom + spacing
+        }
         val dateTimeTop = binding.dateTimeLayout.top.takeIf { it > 0 } ?: 56.dpToPx()
         return dateTimeTop + spacing
     }
@@ -1139,6 +1183,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun populateHomeScreen(appCountUpdated: Boolean) {
+        scheduleMindfulMorningUnmask()
         if (appCountUpdated) hideHomeApps()
         populateDateTime()
         updateTodoIconCount()
@@ -1264,6 +1309,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                         isShortcut = true,
                         shortcutId = shortcutId
                     )
+                    applyMindfulMorningMask(textView, packageName)
                     return true
                 }
                 textView.text = ""
@@ -1288,6 +1334,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 isShortcut = false,
                 shortcutId = null
             )
+            applyMindfulMorningMask(textView, packageName)
             return true
         }
         textView.text = ""
@@ -1329,6 +1376,24 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             null
         }
         setHomeAppIcon(textView, drawable)
+    }
+
+    private fun applyMindfulMorningMask(textView: TextView, packageName: String) {
+        if (!viewModel.mindfulMorningManager.isBlocked(packageName)) return
+        textView.text = MindfulMorningManager.MASKED_LABEL
+        val icon = textView.compoundDrawablesRelative.firstOrNull { it != null } ?: return
+        setHomeAppIcon(textView, icon.asGreyscale())
+    }
+
+    private fun scheduleMindfulMorningUnmask() {
+        mindfulMorningUnmaskJob?.cancel()
+        if (!prefs.mindfulMorningEnabled) return
+        val remaining = viewModel.mindfulMorningManager.getBlockedUntilTime() - System.currentTimeMillis()
+        if (remaining <= 0L) return
+        mindfulMorningUnmaskJob = viewLifecycleOwner.lifecycleScope.launch {
+            delay(remaining + 400L)
+            if (isAdded) populateHomeScreen(false)
+        }
     }
 
     private fun setHomeAppIcon(textView: TextView, drawable: Drawable?) {
@@ -1376,6 +1441,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
         if (isShortcut && !shortcutId.isNullOrEmpty()) {
+            if (showMindfulMorningHardBlockIfNeeded(packageName)) return
             launchShortcut(
                 packageName = packageName,
                 shortcutId = shortcutId,
@@ -1417,6 +1483,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             isNew = false,
             user = getUserHandleFromString(requireContext(), userString)
         )
+        if (showMindfulMorningHardBlockIfNeeded(packageName)) return
         if (viewModel.cooldownManager.isInCooldown(packageName)) {
             showHomeCooldownWarning(packageName, appName) {
                 viewModel.selectedApp(appModel, Constants.FLAG_LAUNCH_APP)
@@ -1424,6 +1491,18 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
         viewModel.selectedApp(appModel, Constants.FLAG_LAUNCH_APP)
+    }
+
+    private fun showMindfulMorningHardBlockIfNeeded(packageName: String): Boolean {
+        if (!viewModel.mindfulMorningManager.isLaunchBlocked(packageName)) return false
+        val untilMillis = viewModel.mindfulMorningManager.getBlockedUntilTime()
+        val timeLabel = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(untilMillis))
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.mindful_morning)
+            .setMessage(getString(R.string.mindful_morning_hard_blocked, timeLabel))
+            .setPositiveButton(R.string.mindful_morning_stay_focused, null)
+            .show()
+        return true
     }
 
     private fun showHomeCooldownWarning(packageName: String, appName: String, onProceed: () -> Unit) {

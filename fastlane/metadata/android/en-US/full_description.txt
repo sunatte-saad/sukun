@@ -1,13 +1,99 @@
-<p><b>Are you using your phone, or is your phone using you?</b></p>
-<p><i>Sukun Minimalistic Launcher</i> is a minimal Android launcher focused on calm defaults, low visual noise, and faster everyday navigation.</p>
-<p><br><b>FEATURES:</b></p>
-<ul>
-<li><b>Minimal home screen:</b> Keep your launcher clean and distraction-light.</li>
-<li><b>Custom app setup:</b> Rename apps, hide unused apps, and control home-screen shortcuts.</li>
-<li><b>Useful gestures:</b> Swipe actions, double tap actions, and quick launcher interactions.</li>
-<li><b>Focus tools:</b> Focus mode, status-bar control, and screen-time-aware usage.</li>
-<li><b>Optional extras:</b> Weather, prayer times, azan reminders, daily notes, and wallpaper support.</li>
-<li><b>Privacy:</b> Your data stays on your device.</li>
-</ul>
-<p>Sukun Minimalistic Launcher aims to stay simple while still offering practical features for daily use.</p>
-<p><b>Accessibility Service:</b> Accessibility is only used for gesture-related features such as screen lock and recent-app actions. It is optional and does not collect or share personal data.</p>
+Sukun — A Minimal Launcher for Focus & Prayer
+
+Your phone should work for you, not against you.
+
+Sukun is a minimalist Android launcher designed to help you stay focused, present, and consistent with your prayers and daily goals. It replaces your distracting home screen with one that shows only what matters.
+
+A HOME SCREEN DESIGNED FOR FOCUS
+
+Keep your home screen clean with your chosen apps, time, weather, and essential information.
+
+• Pin 1–8 favorite apps
+• Customize text size and alignment
+• Swipe left or right to open your chosen apps
+• Swipe up for the full app drawer
+• Swipe down for notifications or search
+• Double tap to lock or start Focus mode
+• Clock styles, date, battery, and status bar options
+
+Simple by design.
+
+PRAYER TIMES & SALAH TRACKING
+
+Prayer times are calculated from your location, with a live countdown to the next salah.
+
+• Mark prayers as completed or missed
+• View prayer analytics (today / month / year)
+• Receive Azan notifications
+• Choose recordings from Makkah or Marylebone Mosque
+• Upload your own Azan audio
+• Optional hourly chime for gentle reminders
+
+Sukun helps you build awareness without guilt or pressure.
+
+MINDFUL MORNING
+
+Start your day before the scrolling begins.
+
+Mindful Morning prevents access to selected distracting apps, such as social media, for a set period after you wake up. Instead of immediately reaching for social media, you can use your first moments for prayer, planning, reflection, exercise, or simply starting your day calmly.
+
+FOCUS MODE
+
+Create intentional time away from distractions.
+
+Activate Focus Mode with a double tap or from settings, choose a duration, and Sukun blocks app launches and can silence notifications using Android's accessibility service.
+
+Use it for prayer, work, study, reading, or family time.
+
+APP COOLDOWNS
+
+Some apps are designed to keep your attention.
+
+Set daily launch or usage limits for individual apps. Once a limit is reached, Sukun enforces a cooldown before the app can be opened again.
+
+Hide unused apps, rename apps, and use Private Space support for a cleaner drawer.
+
+REMINDERS & TODO LIST
+
+Stay organized without another app. Create reminders and simple todo items, see pending tasks on your home screen, and receive reminder notifications.
+
+SCREEN TIME
+
+See your daily screen time on your home screen, plus today and 7-day analytics — an honest view of how you spend your time.
+
+WEATHER
+
+See current weather and temperature on your home screen. Use your location, choose a city, or open Google Weather. Updates run efficiently in the background.
+
+PERSONALIZATION
+
+Choose light mode, dark mode, or Ambient Light Theme, which adapts using your phone's light sensor. Optional daily wallpapers keep your home screen fresh. Multiple languages with RTL support.
+
+PREMIUM — ONE-TIME PURCHASE
+
+Every new user gets a 30-day Premium trial.
+
+After the trial, a single one-time purchase unlocks Premium permanently. No subscriptions or recurring fees.
+
+Premium includes:
+• Focus Mode
+• Prayer times on home, Azan tools, and prayer analytics
+• App cooldowns, hide/rename apps, and Private Space
+• Ambient Light Theme
+• Daily wallpaper
+• Custom Azan and chime sounds
+• Backup, export, and Google Drive sync
+
+The minimalist launcher, Mindful Morning, weather, reminders, todo list, hourly chime, and screen time remain free.
+
+PRIVATE & LIGHTWEIGHT
+
+No ads. No account required to use the launcher.
+
+Core launcher data stays on your device. Optional Google Sign-In is available only for backing up and restoring your settings across devices.
+
+Accessibility is used only for lock, recents, and Focus Mode — it does not collect or share personal data.
+
+Sukun (سكون) means stillness, calm, and peace.
+
+That's the experience we're aiming for: a phone that supports your day instead of distracting you from it.

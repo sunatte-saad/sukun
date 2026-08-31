@@ -159,14 +159,20 @@ class AppDrawerFragment : Fragment() {
                 updateFastScroller()
             },
             appClickListener = { appModel ->
-                if (flag == Constants.FLAG_LAUNCH_APP && appModel is AppModel.App
-                    && viewModel.cooldownManager.isInCooldown(appModel.appPackage)
+                if (flag == Constants.FLAG_LAUNCH_APP && appModel.appPackage.isNotBlank() &&
+                    viewModel.mindfulMorningManager.isLaunchBlocked(appModel.appPackage)
                 ) {
-                    showCooldownWarningDialog(appModel) {
-                        viewModel.selectedApp(appModel, flag)
-                        findNavController().popBackStack(R.id.mainFragment, false)
-                    }
+                    showMindfulMorningHardBlock()
                     return@AppDrawerAdapter
+                }
+                if (flag == Constants.FLAG_LAUNCH_APP && appModel is AppModel.App) {
+                    if (viewModel.cooldownManager.isInCooldown(appModel.appPackage)) {
+                        showCooldownWarningDialog(appModel) {
+                            viewModel.selectedApp(appModel, flag)
+                            findNavController().popBackStack(R.id.mainFragment, false)
+                        }
+                        return@AppDrawerAdapter
+                    }
                 }
                 viewModel.selectedApp(appModel, flag)
                 if (flag == Constants.FLAG_LAUNCH_APP || flag == Constants.FLAG_HIDDEN_APPS)
@@ -365,7 +371,11 @@ class AppDrawerFragment : Fragment() {
                 .groupBy { it.appPackage }
                 .mapValues { (_, items) -> items.first() }
 
-            val recentApps = currentRecentPackages.mapNotNull { firstByPackage[it] }
+            val recentApps = currentRecentPackages
+                .distinct() // Ensure package list is unique
+                .mapNotNull { pkg -> firstByPackage[pkg] }
+                .distinctBy { it.appPackage } // Ensure AppModel list is unique
+
             if (recentApps.isNotEmpty()) {
                 combined.add(
                     AppModel.SectionHeader(
@@ -382,7 +392,9 @@ class AppDrawerFragment : Fragment() {
                 )
             )
         }
-        combined.addAll(apps)
+        combined.addAll(apps.distinctBy { 
+            if (it is AppModel.App) it.appPackage + it.user.toString() else it.appLabel 
+        })
 
         if (flag == Constants.FLAG_LAUNCH_APP && currentPrivateSpaceAvailable) {
             combined.add(AppModel.PrivateSpaceHeader(isLocked = currentPrivateSpaceLocked))
@@ -392,6 +404,7 @@ class AppDrawerFragment : Fragment() {
         }
 
         adapter.updateCooledOff(viewModel.cooldownManager.getCooledOffPackages())
+        adapter.updateMasked(maskedPackagesFrom(combined))
         adapter.setAppList(combined)
         val query = binding.search.query?.toString().orEmpty().trim()
         if (query.isNotEmpty()) {
@@ -456,6 +469,28 @@ class AppDrawerFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun maskedPackagesFrom(apps: List<AppModel>): Set<String> {
+        return apps.mapNotNull { model ->
+            val packageName = when (model) {
+                is AppModel.App -> model.appPackage
+                is AppModel.PinnedShortcut -> model.appPackage
+                else -> null
+            }
+            packageName?.takeIf { it.isNotBlank() && viewModel.mindfulMorningManager.isBlocked(it) }
+        }.toSet()
+    }
+
+    private fun showMindfulMorningHardBlock() {
+        val untilMillis = viewModel.mindfulMorningManager.getBlockedUntilTime()
+        val timeLabel = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+            .format(java.util.Date(untilMillis))
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(R.string.mindful_morning)
+            .setMessage(getString(R.string.mindful_morning_hard_blocked, timeLabel))
+            .setPositiveButton(R.string.mindful_morning_stay_focused, null)
+            .show()
     }
 
     private fun showCooldownWarningDialog(appModel: AppModel.App, onProceed: () -> Unit) {
@@ -535,12 +570,14 @@ class AppDrawerFragment : Fragment() {
                 cooloffMinutes = cooloffMins.coerceAtLeast(1)
             ))
             adapter.updateCooledOff(cm.getCooledOffPackages())
+            adapter.updateMasked(maskedPackagesFrom(adapter.appsList))
             dialog.dismiss()
         }
 
         dialogView.findViewById<TextView>(R.id.cooldownConfigRemove).setOnClickListener {
             cm.removeConfig(appModel.appPackage)
             adapter.updateCooledOff(cm.getCooledOffPackages())
+            adapter.updateMasked(maskedPackagesFrom(adapter.appsList))
             dialog.dismiss()
         }
 

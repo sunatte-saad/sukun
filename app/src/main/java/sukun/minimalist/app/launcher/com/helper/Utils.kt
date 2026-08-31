@@ -20,10 +20,13 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Shader
+import android.graphics.drawable.Drawable
 import android.location.Geocoder
 import android.graphics.Point
 import android.location.Location
@@ -57,6 +60,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
 import sukun.minimalist.app.launcher.com.BuildConfig
+import sukun.minimalist.app.launcher.com.MainActivity
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.AppModel
 import sukun.minimalist.app.launcher.com.data.Constants
@@ -308,10 +312,17 @@ fun getUserHandleFromString(context: Context, userHandleString: String): UserHan
 
 fun isSukunDefault(context: Context): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        val roleManager = context.getSystemService(Context.ROLE_SERVICE) as RoleManager
-        return roleManager.isRoleHeld(RoleManager.ROLE_HOME)
+        val roleManager = context.getSystemService(RoleManager::class.java) ?: return false
+        return try {
+            roleManager.isRoleHeld(RoleManager.ROLE_HOME)
+        } catch (e: Exception) {
+            Log.w("Sukun", "Failed to check home role", e)
+            false
+        }
     }
-    return BuildConfig.APPLICATION_ID == getDefaultLauncherPackage(context)
+    val component = context.getDefaultLauncherComponentName()
+    return component?.packageName == BuildConfig.APPLICATION_ID
+        && component.className == MainActivity::class.java.name
 }
 
 fun getDefaultLauncherPackage(context: Context): String {
@@ -343,6 +354,12 @@ fun Activity.clearLauncherBrightnessOverride() {
         layoutParams.screenBrightness = BRIGHTNESS_OVERRIDE_NONE
         window.attributes = layoutParams
     }
+}
+
+fun Drawable.asGreyscale(): Drawable {
+    val copy = constantState?.newDrawable()?.mutate() ?: mutate()
+    copy.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
+    return copy
 }
 
 fun setPlainWallpaperByTheme(context: Context, appTheme: Int) {

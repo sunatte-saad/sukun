@@ -79,6 +79,13 @@ class WeatherSettingsSheet : DialogFragment() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (requireActivity().isFinishing) {
+            dismissAllowingStateLoss()
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

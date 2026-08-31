@@ -1,0 +1,51 @@
+[debug] [2026-07-06T16:47:14.542Z] ----------------------------------------------------------------------
+[debug] [2026-07-06T16:47:14.544Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\jtc\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js projects:list
+[debug] [2026-07-06T16:47:14.544Z] CLI Version:   15.22.3
+[debug] [2026-07-06T16:47:14.544Z] Platform:      win32
+[debug] [2026-07-06T16:47:14.544Z] Node Version:  v24.17.0
+[debug] [2026-07-06T16:47:14.544Z] Detected Agent: claude-code_2-1-187_agent
+[debug] [2026-07-06T16:47:14.544Z] Time:          Mon Jul 06 2026 21:47:14 GMT+0500 (Pakistan Standard Time)
+[debug] [2026-07-06T16:47:14.544Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-06T16:47:14.546Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-07-06T16:47:14.570Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-06T16:47:14.571Z] > authorizing via FIREBASE_TOKEN environment variable
+[warn] !  Authenticating with `FIREBASE_TOKEN` is deprecated and will be removed in a future major version of `firebase-tools`. Instead, use a service account key with `GOOGLE_APPLICATION_CREDENTIALS`: https://cloud.google.com/docs/authentication/getting-started 
+[debug] [2026-07-06T16:47:14.576Z] No OAuth tokens found
+[debug] [2026-07-06T16:47:14.576Z] No OAuth tokens found
+[debug] [2026-07-06T16:47:14.577Z] > refreshing access token with scopes: []
+[debug] [2026-07-06T16:47:14.578Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-06T16:47:14.578Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-06T16:47:15.206Z] *** [apiv2] retrying https://www.googleapis.com/oauth2/v3/token without keep-alive after a premature close error
+[debug] [2026-07-06T16:47:15.509Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-07-06T16:47:15.509Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-07-06T16:47:16.219Z] *** [apiv2] Attempting the request again. Attempt number 2
+[debug] [2026-07-06T16:47:16.221Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-06T16:47:16.221Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-06T16:47:17.067Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-07-06T16:47:17.067Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-06T16:47:17.068Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-07-06T16:47:17.844Z] *** [apiv2] retrying https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 without keep-alive after a premature close error
+[debug] [2026-07-06T16:47:18.847Z] *** [apiv2] Attempting the request again. Attempt number 2
+[debug] [2026-07-06T16:47:18.848Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-07-06T16:47:19.567Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 401
+[debug] [2026-07-06T16:47:19.568Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-07-06T16:47:19.568Z] Got a 401 Unauthenticated error for a call that required authentication. Refreshing tokens.
+[debug] [2026-07-06T16:47:19.570Z] No OAuth tokens found
+[debug] [2026-07-06T16:47:19.571Z] No OAuth tokens found
+[debug] [2026-07-06T16:47:19.571Z] > refreshing access token with scopes: []
+[debug] [2026-07-06T16:47:19.572Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-06T16:47:19.572Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-06T16:47:19.933Z] *** [apiv2] retrying https://www.googleapis.com/oauth2/v3/token without keep-alive after a premature close error
+[debug] [2026-07-06T16:47:20.947Z] *** [apiv2] Attempting the request again. Attempt number 2
+[debug] [2026-07-06T16:47:20.948Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-06T16:47:20.948Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-06T16:47:21.616Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-07-06T16:47:21.616Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-06T16:47:21.619Z] Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+[debug] [2026-07-06T16:47:22.389Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at responseToError (C:\Users\jtc\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:53:12)
+    at RetryOperation._fn (C:\Users\jtc\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:381:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.

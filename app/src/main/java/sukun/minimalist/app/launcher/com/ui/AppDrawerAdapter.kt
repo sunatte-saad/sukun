@@ -18,10 +18,12 @@ import androidx.recyclerview.widget.RecyclerView
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.AppModel
 import sukun.minimalist.app.launcher.com.data.Constants
+import sukun.minimalist.app.launcher.com.data.MindfulMorningManager
 import sukun.minimalist.app.launcher.com.databinding.AdapterAppDrawerBinding
 import sukun.minimalist.app.launcher.com.databinding.AdapterAppSectionHeaderBinding
 import sukun.minimalist.app.launcher.com.databinding.AdapterPrivateSpaceHeaderBinding
 import sukun.minimalist.app.launcher.com.helper.PremiumAccess
+import sukun.minimalist.app.launcher.com.helper.asGreyscale
 import sukun.minimalist.app.launcher.com.helper.dpToPx
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.hideKeyboard
@@ -86,6 +88,8 @@ class AppDrawerAdapter(
     private val sectionPositions = linkedMapOf<String, Int>()
     var cooledOffPackages: Set<String> = emptySet()
         private set
+    var maskedPackages: Set<String> = emptySet()
+        private set
 
     var appsList: MutableList<AppModel> = mutableListOf()
     var appFilteredList: MutableList<AppModel> = mutableListOf()
@@ -147,6 +151,7 @@ class AppDrawerAdapter(
                     myUserHandle,
                     appModel,
                     appModel.appPackage in cooledOffPackages,
+                    appModel.appPackage in maskedPackages,
                     appClickListener,
                     appDeleteListener,
                     appInfoListener,
@@ -258,6 +263,11 @@ class AppDrawerAdapter(
         if (itemCount > 0) notifyItemRangeChanged(0, itemCount)
     }
 
+    fun updateMasked(packages: Set<String>) {
+        maskedPackages = packages
+        if (itemCount > 0) notifyItemRangeChanged(0, itemCount)
+    }
+
     fun getSections(): List<String> = sectionPositions.keys.toList()
 
     fun getPositionForSection(section: String): Int? = sectionPositions[section]
@@ -315,6 +325,7 @@ class AppDrawerAdapter(
             myUserHandle: UserHandle,
             appModel: AppModel,
             isCoolingOff: Boolean,
+            isMasked: Boolean,
             clickListener: (AppModel) -> Unit,
             appDeleteListener: (AppModel) -> Unit,
             appInfoListener: (AppModel) -> Unit,
@@ -332,11 +343,15 @@ class AppDrawerAdapter(
             appTitle.visibility = View.VISIBLE
 
             // Show indicators in title based on app type and state
-            val baseLabel = buildString {
-                append(appModel.appLabel)
-                if (appModel.isNew) append(" ✦")
+            val baseLabel = if (isMasked && appModel.appPackage.isNotBlank()) {
+                MindfulMorningManager.MASKED_LABEL
+            } else {
+                buildString {
+                    append(appModel.appLabel)
+                    if (appModel.isNew) append(" ✦")
+                }
             }
-            if (isCoolingOff && appModel.appPackage.isNotBlank()) {
+            if (!isMasked && isCoolingOff && appModel.appPackage.isNotBlank()) {
                 val indicator = "  ⏸"
                 val full = baseLabel + indicator
                 val span = SpannableString(full)
@@ -351,7 +366,7 @@ class AppDrawerAdapter(
                 appTitle.text = baseLabel
             }
             appTitle.gravity = appLabelGravity
-            setAppIcon(showAppIcons, appModel)
+            setAppIcon(showAppIcons, appModel, isMasked)
             otherProfileIndicator.isVisible = appModel.user != myUserHandle
 
             appTitle.setOnClickListener { clickListener(appModel) }
@@ -455,7 +470,7 @@ class AppDrawerAdapter(
             appHide.setOnClickListener { appHideListener(appModel, bindingAdapterPosition) }
         }
 
-        private fun setAppIcon(showAppIcons: Boolean, appModel: AppModel) {
+        private fun setAppIcon(showAppIcons: Boolean, appModel: AppModel, isMasked: Boolean) {
             val appTitle = binding.appTitle
             if (!showAppIcons || appModel.appPackage.isBlank()) {
                 appTitle.setCompoundDrawablesRelative(null, null, null, null)
@@ -497,8 +512,9 @@ class AppDrawerAdapter(
                 return
             }
             val iconSize = 24.dpToPx()
-            drawable.setBounds(0, 0, iconSize, iconSize)
-            appTitle.setCompoundDrawablesRelative(drawable, null, null, null)
+            val icon = if (isMasked) drawable.asGreyscale() else drawable
+            icon.setBounds(0, 0, iconSize, iconSize)
+            appTitle.setCompoundDrawablesRelative(icon, null, null, null)
             appTitle.compoundDrawablePadding = 12.dpToPx()
         }
 

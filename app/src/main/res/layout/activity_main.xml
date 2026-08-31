@@ -120,25 +120,43 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <ProgressBar
-                android:id="@+id/onboardingProgress"
-                style="?android:attr/progressBarStyleHorizontal"
+            <ImageView
+                android:id="@+id/onboardingIcon"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="16dp"
+                android:alpha="0.85"
+                android:scaleType="centerInside"
+                android:src="@drawable/logo"
+                app:tint="?attr/primaryColor"
+                tools:ignore="ContentDescription" />
+
+            <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="3dp"
-                android:layout_weight="1"
-                android:max="100"
-                android:progressDrawable="@drawable/bg_onboarding_progress" />
-
-            <TextView
-                android:id="@+id/onboardingStepCounter"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:textColor="?attr/primaryColorTrans50"
-                style="@style/TextSmall"
-                tools:text="3 / 12" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:orientation="vertical">
 
+                <ProgressBar
+                    android:id="@+id/onboardingProgress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="3dp"
+                    android:max="100"
+                    android:progressDrawable="@drawable/bg_onboarding_progress" />
+
+                <TextView
+                    android:id="@+id/onboardingStepCounter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="?attr/primaryColorTrans50"
+                    style="@style/TextSmall"
+                    tools:text="3 / 12" />
+
+            </LinearLayout>
+
+        </LinearLayout>
 
         <!-- Clear, purpose-first title -->
         <TextView
@@ -177,9 +195,18 @@
             tools:text="Tap any empty spot to place an app you love." />
 
         <LinearLayout
+            android:id="@+id/onboardingDots"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            tools:ignore="UselessLeaf" />
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="14dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
