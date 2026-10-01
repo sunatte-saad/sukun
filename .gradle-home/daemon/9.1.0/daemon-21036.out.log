@@ -1,0 +1,595 @@
+2026-09-02T23:09:07.076+0500 [DEBUG] [org.gradle.launcher.daemon.bootstrap.DaemonMain] Assuming the daemon was started with following jvm opts: [-Xmx4608m, -Dfile.encoding=windows-1252, -Duser.country=US, -Duser.language=en, -Duser.variant]
+2026-09-02T23:09:07.190+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Software Loopback Interface 1
+2026-09-02T23:09:07.193+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? true
+2026-09-02T23:09:07.193+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding loopback address /127.0.0.1
+2026-09-02T23:09:07.193+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding loopback address /0:0:0:0:0:0:0:1
+2026-09-02T23:09:07.199+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (PPPOE)
+2026-09-02T23:09:07.201+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.202+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (Network Monitor)
+2026-09-02T23:09:07.204+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.204+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft 6to4 Adapter
+2026-09-02T23:09:07.206+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.207+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (IP)
+2026-09-02T23:09:07.208+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.209+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft IP-HTTPS Platform Adapter
+2026-09-02T23:09:07.210+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.211+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter #2
+2026-09-02T23:09:07.212+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.213+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding remote address /fe80:0:0:0:7095:e187:65d4:a203%wlan0
+2026-09-02T23:09:07.213+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (IPv6)
+2026-09-02T23:09:07.215+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.215+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (PPTP)
+2026-09-02T23:09:07.216+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.216+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter
+2026-09-02T23:09:07.218+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.218+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding remote address /fe80:0:0:0:a074:df17:7dbe:8a18%wlan1
+2026-09-02T23:09:07.219+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Kernel Debug Network Adapter
+2026-09-02T23:09:07.223+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.223+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (IKEv2)
+2026-09-02T23:09:07.226+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.226+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Bluetooth Device (Personal Area Network)
+2026-09-02T23:09:07.228+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.228+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Ethernet Connection (18) I219-LM
+2026-09-02T23:09:07.230+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.230+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding remote address /fe80:0:0:0:6ae5:bb80:e8dd:adaa%eth5
+2026-09-02T23:09:07.230+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Teredo Tunneling Adapter
+2026-09-02T23:09:07.232+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.232+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (L2TP)
+2026-09-02T23:09:07.237+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.237+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (SSTP)
+2026-09-02T23:09:07.240+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.240+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Wi-Fi 6E AX211 160MHz
+2026-09-02T23:09:07.242+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.242+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding remote address /192.168.10.6
+2026-09-02T23:09:07.242+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding remote address /fe80:0:0:0:b2e0:9dae:8844:7e36%wlan2
+2026-09-02T23:09:07.242+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Ethernet Connection (18) I219-LM-WFP Native MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.244+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.244+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Ethernet Connection (18) I219-LM-QoS Packet Scheduler-0000
+2026-09-02T23:09:07.246+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.246+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Ethernet Connection (18) I219-LM-WFP 802.3 MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.248+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.248+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Wi-Fi 6E AX211 160MHz-WFP Native MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.250+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.250+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Wi-Fi 6E AX211 160MHz-Virtual WiFi Filter Driver-0000
+2026-09-02T23:09:07.251+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.251+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Wi-Fi 6E AX211 160MHz-Native WiFi Filter Driver-0000
+2026-09-02T23:09:07.254+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.255+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Wi-Fi 6E AX211 160MHz-QoS Packet Scheduler-0000
+2026-09-02T23:09:07.257+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.257+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Intel(R) Wi-Fi 6E AX211 160MHz-WFP 802.3 MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.259+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.259+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter-WFP Native MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.260+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.261+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter-Native WiFi Filter Driver-0000
+2026-09-02T23:09:07.263+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.264+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter-QoS Packet Scheduler-0000
+2026-09-02T23:09:07.265+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.265+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter-WFP 802.3 MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.267+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.267+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter #2-WFP Native MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.268+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.269+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter #2-Native WiFi Filter Driver-0000
+2026-09-02T23:09:07.271+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.271+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter #2-QoS Packet Scheduler-0000
+2026-09-02T23:09:07.274+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.274+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Microsoft Wi-Fi Direct Virtual Adapter #2-WFP 802.3 MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.275+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.276+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (IP)-WFP Native MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.278+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.278+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (IP)-QoS Packet Scheduler-0000
+2026-09-02T23:09:07.279+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.279+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (IPv6)-WFP Native MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.281+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.281+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (IPv6)-QoS Packet Scheduler-0000
+2026-09-02T23:09:07.282+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.283+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (Network Monitor)-WFP Native MAC Layer LightWeight Filter-0000
+2026-09-02T23:09:07.284+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.284+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface WAN Miniport (Network Monitor)-QoS Packet Scheduler-0000
+2026-09-02T23:09:07.286+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.286+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface Realtek USB FE Family Controller
+2026-09-02T23:09:07.289+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-09-02T23:09:07.301+0500 [DEBUG] [org.gradle.internal.nativeintegration.services.NativeServices] Native-platform posix files integration is not available. Continuing with fallback.
+2026-09-02T23:09:07.318+0500 [INFO] [org.gradle.launcher.daemon.server.Daemon] start() called on daemon - DefaultDaemonContext[uid=d21f3321-875a-4ceb-af59-c539250b5caf,javaHome=C:\Program Files\Java\jdk-17,javaVersion=17,javaVendor=Oracle Corporation,daemonRegistryDir=D:\sukun\.gradle-home\daemon,pid=21036,idleTimeout=120000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx4608m,-Dfile.encoding=windows-1252,-Duser.country=US,-Duser.language=en,-Duser.variant]
+2026-09-02T23:09:07.377+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.TcpIncomingConnector] Listening on [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]].
+2026-09-02T23:09:07.386+0500 [DEBUG] [org.gradle.launcher.daemon.server.Daemon] Daemon starting at: Wed Sep 02 23:09:07 PKT 2026, with address: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]]
+2026-09-02T23:09:07.386+0500 [INFO] [org.gradle.launcher.daemon.server.DaemonRegistryUpdater] Advertising the daemon address to the clients: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]]
+2026-09-02T23:09:07.387+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonRegistryUpdater] Advertised daemon context: DefaultDaemonContext[uid=d21f3321-875a-4ceb-af59-c539250b5caf,javaHome=C:\Program Files\Java\jdk-17,javaVersion=17,javaVendor=Oracle Corporation,daemonRegistryDir=D:\sukun\.gradle-home\daemon,pid=21036,idleTimeout=120000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx4608m,-Dfile.encoding=windows-1252,-Duser.country=US,-Duser.language=en,-Duser.variant]
+2026-09-02T23:09:07.388+0500 [DEBUG] [org.gradle.launcher.daemon.registry.PersistentDaemonRegistry] Storing daemon address: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]], context: DefaultDaemonContext[uid=d21f3321-875a-4ceb-af59-c539250b5caf,javaHome=C:\Program Files\Java\jdk-17,javaVersion=17,javaVendor=Oracle Corporation,daemonRegistryDir=D:\sukun\.gradle-home\daemon,pid=21036,idleTimeout=120000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx4608m,-Dfile.encoding=windows-1252,-Duser.country=US,-Duser.language=en,-Duser.variant]
+2026-09-02T23:09:07.398+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on daemon addresses registry.
+2026-09-02T23:09:07.401+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-09-02T23:09:07.402+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-09-02T23:09:07.404+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on daemon addresses registry.
+2026-09-02T23:09:07.405+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-09-02T23:09:07.407+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-09-02T23:09:07.408+0500 [LIFECYCLE] [org.gradle.launcher.daemon.server.Daemon] Daemon server started.
+2026-09-02T23:09:07.409+0500 [DEBUG] [org.gradle.launcher.daemon.bootstrap.DaemonStartupCommunication] Completed writing the daemon greeting. Closing streams...
+2026-09-02T23:09:07.417+0500 [DEBUG] [org.gradle.launcher.daemon.server.Daemon] stopOnExpiration() called on daemon
+2026-09-02T23:09:07.418+0500 [DEBUG] [org.gradle.launcher.daemon.server.Daemon] awaitExpiration() called on daemon
+2026-09-02T23:09:07.418+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] daemon is running. Sleeping until state changes.
+2026-09-02T23:09:07.429+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.TcpIncomingConnector] Accepted connection from /127.0.0.1:56358 to /127.0.0.1:56357.
+2026-09-02T23:09:07.484+0500 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 22: received class org.gradle.launcher.daemon.protocol.Build
+2026-09-02T23:09:07.484+0500 [DEBUG] [org.gradle.launcher.daemon.server.DefaultDaemonConnection] thread 22: Received non-IO message from client: Build{id=fc9e81df-30c9-49eb-aabe-4a01ec2de93e, currentDir=D:\sukun}
+2026-09-02T23:09:07.484+0500 [INFO] [org.gradle.launcher.daemon.server.DefaultIncomingConnectionHandler] Received command: Build{id=fc9e81df-30c9-49eb-aabe-4a01ec2de93e, currentDir=D:\sukun}.
+2026-09-02T23:09:07.484+0500 [DEBUG] [org.gradle.launcher.daemon.server.DefaultIncomingConnectionHandler] Starting executing command: Build{id=fc9e81df-30c9-49eb-aabe-4a01ec2de93e, currentDir=D:\sukun} with connection: socket connection from /127.0.0.1:56357 to /127.0.0.1:56358.
+2026-09-02T23:09:07.487+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Command execution: started DaemonCommandExecution[command = Build{id=fc9e81df-30c9-49eb-aabe-4a01ec2de93e, currentDir=D:\sukun}, connection = DefaultDaemonConnection: socket connection from /127.0.0.1:56357 to /127.0.0.1:56358] after 0.0018666666666666666 minutes of idle
+2026-09-02T23:09:07.487+0500 [INFO] [org.gradle.launcher.daemon.server.DaemonRegistryUpdater] Marking the daemon as busy, address: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]]
+2026-09-02T23:09:07.487+0500 [DEBUG] [org.gradle.launcher.daemon.registry.PersistentDaemonRegistry] Marking busy by address: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]]
+2026-09-02T23:09:07.488+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on daemon addresses registry.
+2026-09-02T23:09:07.488+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-09-02T23:09:07.490+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-09-02T23:09:07.491+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] resetting idle timer
+2026-09-02T23:09:07.491+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] daemon is running. Sleeping until state changes.
+2026-09-02T23:09:07.492+0500 [INFO] [org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy] Daemon is about to start building Build{id=fc9e81df-30c9-49eb-aabe-4a01ec2de93e, currentDir=D:\sukun}. Dispatching build started information...
+2026-09-02T23:09:07.492+0500 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 24: dispatching org.gradle.launcher.daemon.protocol.BuildStarted@2ed95b46
+2026-09-02T23:09:07.493+0500 [DEBUG] [org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment] Configuring env variables: [SESSIONNAME, ALLUSERSPROFILE, GOCACHE, VSCODE_PID, SystemDrive, =ExitCode, DIRNAME, USERNAME, ProgramFiles(x86), VSCODE_NLS_CONFIG, DEFAULT_JVM_OPTS, PATHEXT, DriverData, PNPM_STORE_PATH, PUPPETEER_CACHE_DIR, HOMEPATH, PROCESSOR_IDENTIFIER, PIP_CACHE_DIR, ProgramFiles, PUBLIC, windir, BUN_INSTALL_CACHE_DIR, CURSOR_LAYOUT, CCACHE_DIR, PROMPT, TERM, EFC_1632_1592913036, OneDrive, APPDATA, GRADLE_USER_HOME, _ZO_DOCTOR, EFC_1632_4126798990, JAVA_EXE, Path, NPM_CONFIG_CACHE, VSCODE_CWD, COMPUTERNAME, VSCODE_ESM_ENTRYPOINT, AGENT_TRANSCRIPTS, CURSOR_RIPGREP_PATH, TURBO_CACHE_DIR, CURSOR_CONVERSATION_ID, FIREBASE_TOKEN, ComSpec, CP_HOME_DIR, APP_BASE_NAME, =D:, HOMEDRIVE, NUMBER_OF_PROCESSORS, VSCODE_IPC_HOOK, USERDOMAIN_ROAMINGPROFILE, PROCESSOR_LEVEL, PROCESSOR_ARCHITECTURE, CURSOR_AGENT, PSModulePath, HOMEBREW_CACHE, CHROME_CRASHPAD_PIPE_NAME, APP_HOME, VSCODE_CRASH_REPORTER_PROCESS_TYPE, OneDriveConsumer, YARN_CACHE_FOLDER, NX_CACHE_DIRECTORY, VSCODE_CODE_CACHE_PATH, ProgramData, CARGO_TARGET_DIR, ProgramW6432, GOMODCACHE, BUNDLE_PATH, CONDA_PKGS_DIRS, LOCALAPPDATA, FORCE_COLOR, USERDOMAIN, VSCODE_HANDLES_UNCAUGHT_ERRORS, LOGONSERVER, COMPOSER_HOME, UV_CACHE_DIR, CYPRESS_CACHE_FOLDER, __CURSOR_SANDBOX_ENV_RESTORE, NO_COLOR, GEM_SPEC_CACHE, PLAYWRIGHT_BROWSERS_PATH, CommonProgramFiles, POETRY_CACHE_DIR, OS, npm_config_devdir, PROCESSOR_REVISION, CommonProgramW6432, PSExecutionPolicyPreference, VSCODE_PROCESS_TITLE, CURSOR_WORKSPACE_LABEL, SystemRoot, TEMP, USERPROFILE, TMP, CommonProgramFiles(x86), NUGET_PACKAGES]
+2026-09-02T23:09:07.497+0500 [DEBUG] [org.gradle.launcher.daemon.server.exec.LogToClient] About to start relaying all logs to the client via the connection.
+2026-09-02T23:09:07.497+0500 [INFO] [org.gradle.launcher.daemon.server.exec.LogToClient] The client will now receive all logging from the daemon (pid: 21036). The daemon log file: D:\sukun\.gradle-home\daemon\9.1.0\daemon-21036.out.log
+2026-09-02T23:09:07.499+0500 [DEBUG] [org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon] Requesting daemon stop after processing Build{id=fc9e81df-30c9-49eb-aabe-4a01ec2de93e, currentDir=D:\sukun}
+2026-09-02T23:09:07.499+0500 [LIFECYCLE] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Daemon will be stopped at the end of the build 
+2026-09-02T23:09:07.499+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Stop as soon as idle requested. The daemon is busy
+2026-09-02T23:09:07.499+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] daemon stop has been requested. Sleeping until state changes.
+2026-09-02T23:09:07.504+0500 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] The daemon has started executing the build.
+2026-09-02T23:09:07.505+0500 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] Executing build with daemon context: DefaultDaemonContext[uid=d21f3321-875a-4ceb-af59-c539250b5caf,javaHome=C:\Program Files\Java\jdk-17,javaVersion=17,javaVendor=Oracle Corporation,daemonRegistryDir=D:\sukun\.gradle-home\daemon,pid=21036,idleTimeout=120000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx4608m,-Dfile.encoding=windows-1252,-Duser.country=US,-Duser.language=en,-Duser.variant]
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+A problem occurred configuring root project 'Sukun Minimalistic Launcher'.
+> Could not resolve all artifacts for configuration 'classpath'.
+   > Could not download gradle-9.0.1.jar (com.android.tools.build:gradle:9.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/9.0.1/gradle-9.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/9.0.1/gradle-9.0.1.jar'.
+            > dl.google.com
+   > Could not download kotlin-gradle-plugin-2.2.10-gradle813.jar (org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.10/kotlin-gradle-plugin-2.2.10-gradle813.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.10/kotlin-gradle-plugin-2.2.10-gradle813.jar'.
+            > repo.maven.apache.org
+   > Could not download builder-9.0.1.jar (com.android.tools.build:builder:9.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/builder/9.0.1/builder-9.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/builder/9.0.1/builder-9.0.1.jar'.
+            > dl.google.com
+   > Could not download sdk-common-32.0.1.jar (com.android.tools:sdk-common:32.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/sdk-common/32.0.1/sdk-common-32.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/sdk-common/32.0.1/sdk-common-32.0.1.jar'.
+            > dl.google.com
+   > Could not download sdklib-32.0.1.jar (com.android.tools:sdklib:32.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/sdklib/32.0.1/sdklib-32.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/sdklib/32.0.1/sdklib-32.0.1.jar'.
+            > dl.google.com
+   > Could not download ddmlib-32.0.1.jar (com.android.tools.ddms:ddmlib:32.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/ddms/ddmlib/32.0.1/ddmlib-32.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/ddms/ddmlib/32.0.1/ddmlib-32.0.1.jar'.
+            > dl.google.com
+   > Could not download bundletool-1.18.3.jar (com.android.tools.build:bundletool:1.18.3)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/bundletool/1.18.3/bundletool-1.18.3.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/bundletool/1.18.3/bundletool-1.18.3.jar'.
+            > dl.google.com
+   > Could not download databinding-compiler-common-9.0.1.jar (androidx.databinding:databinding-compiler-common:9.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/androidx/databinding/databinding-compiler-common/9.0.1/databinding-compiler-common-9.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/androidx/databinding/databinding-compiler-common/9.0.1/databinding-compiler-common-9.0.1.jar'.
+            > dl.google.com
+   > Could not download jetifier-processor-1.0.0-beta10.jar (com.android.tools.build.jetifier:jetifier-processor:1.0.0-beta10)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/jetifier/jetifier-processor/1.0.0-beta10/jetifier-processor-1.0.0-beta10.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/jetifier/jetifier-processor/1.0.0-beta10/jetifier-processor-1.0.0-beta10.jar'.
+            > dl.google.com
+   > Could not download jetifier-core-1.0.0-beta10.jar (com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/jetifier/jetifier-core/1.0.0-beta10/jetifier-core-1.0.0-beta10.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/jetifier/jetifier-core/1.0.0-beta10/jetifier-core-1.0.0-beta10.jar'.
+            > dl.google.com
+   > Could not download builder-model-9.0.1.jar (com.android.tools.build:builder-model:9.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/builder-model/9.0.1/builder-model-9.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/builder-model/9.0.1/builder-model-9.0.1.jar'.
+            > dl.google.com
+   > Could not download strict-version-matcher-plugin-1.2.4.jar (com.google.android.gms:strict-version-matcher-plugin:1.2.4)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/google/android/gms/strict-version-matcher-plugin/1.2.4/strict-version-matcher-plugin-1.2.4.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/google/android/gms/strict-version-matcher-plugin/1.2.4/strict-version-matcher-plugin-1.2.4.jar'.
+            > No such host is known (dl.google.com)
+   > Could not download dvlib-32.0.1.jar (com.android.tools:dvlib:32.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/dvlib/32.0.1/dvlib-32.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/dvlib/32.0.1/dvlib-32.0.1.jar'.
+            > dl.google.com
+   > Could not download common-32.0.1.jar (com.android.tools:common:32.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/common/32.0.1/common-32.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/common/32.0.1/common-32.0.1.jar'.
+            > dl.google.com
+   > Could not download kotlin-stdlib-jdk8-2.2.10.jar (org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.10/kotlin-stdlib-jdk8-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.10/kotlin-stdlib-jdk8-2.2.10.jar'.
+            > No such host is known (repo.maven.apache.org)
+   > Could not download kotlin-reflect-2.2.10.jar (org.jetbrains.kotlin:kotlin-reflect:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-reflect/2.2.10/kotlin-reflect-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-reflect/2.2.10/kotlin-reflect-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-compiler-runner-2.2.10.jar (org.jetbrains.kotlin:kotlin-compiler-runner:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-runner/2.2.10/kotlin-compiler-runner-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-runner/2.2.10/kotlin-compiler-runner-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlinx-coroutines-core-jvm-1.9.0.jar (org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.9.0/kotlinx-coroutines-core-jvm-1.9.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.9.0/kotlinx-coroutines-core-jvm-1.9.0.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-stdlib-jdk7-2.2.10.jar (org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.10/kotlin-stdlib-jdk7-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.10/kotlin-stdlib-jdk7-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-stdlib-2.2.10.jar (org.jetbrains.kotlin:kotlin-stdlib:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download httpmime-4.5.6.jar (org.apache.httpcomponents:httpmime:4.5.6)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/apache/httpcomponents/httpmime/4.5.6/httpmime-4.5.6.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/apache/httpcomponents/httpmime/4.5.6/httpmime-4.5.6.jar'.
+            > repo.maven.apache.org
+   > Could not download commons-compress-1.27.1.jar (org.apache.commons:commons-compress:1.27.1)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/apache/commons/commons-compress/1.27.1/commons-compress-1.27.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/apache/commons/commons-compress/1.27.1/commons-compress-1.27.1.jar'.
+            > repo.maven.apache.org
+   > Could not download commons-io-2.16.1.jar (commons-io:commons-io:2.16.1)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/commons-io/commons-io/2.16.1/commons-io-2.16.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/commons-io/commons-io/2.16.1/commons-io-2.16.1.jar'.
+            > repo.maven.apache.org
+   > Could not download asm-commons-9.8.jar (org.ow2.asm:asm-commons:9.8)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-commons/9.8/asm-commons-9.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-commons/9.8/asm-commons-9.8.jar'.
+            > repo.maven.apache.org
+   > Could not download asm-util-9.8.jar (org.ow2.asm:asm-util:9.8)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-util/9.8/asm-util-9.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-util/9.8/asm-util-9.8.jar'.
+            > repo.maven.apache.org
+   > Could not download asm-analysis-9.8.jar (org.ow2.asm:asm-analysis:9.8)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-analysis/9.8/asm-analysis-9.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-analysis/9.8/asm-analysis-9.8.jar'.
+            > repo.maven.apache.org
+   > Could not download asm-tree-9.8.jar (org.ow2.asm:asm-tree:9.8)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-tree/9.8/asm-tree-9.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-tree/9.8/asm-tree-9.8.jar'.
+            > repo.maven.apache.org
+   > Could not download asm-9.8.jar (org.ow2.asm:asm:9.8)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.8/asm-9.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.8/asm-9.8.jar'.
+            > repo.maven.apache.org
+   > Could not download jaxb-runtime-2.3.2.jar (org.glassfish.jaxb:jaxb-runtime:2.3.2)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.jar'.
+            > repo.maven.apache.org
+   > Could not download jopt-simple-4.9.jar (net.sf.jopt-simple:jopt-simple:4.9)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/4.9/jopt-simple-4.9.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/4.9/jopt-simple-4.9.jar'.
+            > repo.maven.apache.org
+   > Could not download javapoet-1.13.0.jar (com.squareup:javapoet:1.13.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/squareup/javapoet/1.13.0/javapoet-1.13.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/squareup/javapoet/1.13.0/javapoet-1.13.0.jar'.
+            > repo.maven.apache.org
+   > Could not download protobuf-java-util-3.25.5.jar (com.google.protobuf:protobuf-java-util:3.25.5)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/protobuf/protobuf-java-util/3.25.5/protobuf-java-util-3.25.5.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/protobuf/protobuf-java-util/3.25.5/protobuf-java-util-3.25.5.jar'.
+            > repo.maven.apache.org
+   > Could not download tink-1.7.0.jar (com.google.crypto.tink:tink:1.7.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/crypto/tink/tink/1.7.0/tink-1.7.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/crypto/tink/tink/1.7.0/tink-1.7.0.jar'.
+            > repo.maven.apache.org
+   > Could not download protos-32.0.1.jar (com.android.tools.analytics-library:protos:32.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/analytics-library/protos/32.0.1/protos-32.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/analytics-library/protos/32.0.1/protos-32.0.1.jar'.
+            > dl.google.com
+   > Could not download protobuf-java-3.25.5.jar (com.google.protobuf:protobuf-java:3.25.5)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/protobuf/protobuf-java/3.25.5/protobuf-java-3.25.5.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/protobuf/protobuf-java/3.25.5/protobuf-java-3.25.5.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-build-statistics-2.2.10.jar (org.jetbrains.kotlin:kotlin-build-statistics:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-build-statistics/2.2.10/kotlin-build-statistics-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-build-statistics/2.2.10/kotlin-build-statistics-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download gson-2.11.0.jar (com.google.code.gson:gson:2.11.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar'.
+            > repo.maven.apache.org
+   > Could not download tensorflow-lite-metadata-0.2.0.jar (org.tensorflow:tensorflow-lite-metadata:0.2.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite-metadata/0.2.0/tensorflow-lite-metadata-0.2.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite-metadata/0.2.0/tensorflow-lite-metadata-0.2.0.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-gradle-plugin-idea-proto-2.2.10.jar (org.jetbrains.kotlin:kotlin-gradle-plugin-idea-proto:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.2.10/kotlin-gradle-plugin-idea-proto-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.2.10/kotlin-gradle-plugin-idea-proto-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-gradle-plugin-idea-2.2.10.jar (org.jetbrains.kotlin:kotlin-gradle-plugin-idea:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10/kotlin-gradle-plugin-idea-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10/kotlin-gradle-plugin-idea-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-klib-commonizer-api-2.2.10.jar (org.jetbrains.kotlin:kotlin-klib-commonizer-api:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.2.10/kotlin-klib-commonizer-api-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.2.10/kotlin-klib-commonizer-api-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-util-klib-metadata-2.2.10.jar (org.jetbrains.kotlin:kotlin-util-klib-metadata:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.2.10/kotlin-util-klib-metadata-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.2.10/kotlin-util-klib-metadata-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download abi-tools-api-2.2.10.jar (org.jetbrains.kotlin:abi-tools-api:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/abi-tools-api/2.2.10/abi-tools-api-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/abi-tools-api/2.2.10/abi-tools-api-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download jimfs-1.1.jar (com.google.jimfs:jimfs:1.1)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/jimfs/jimfs/1.1/jimfs-1.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/jimfs/jimfs/1.1/jimfs-1.1.jar'.
+            > repo.maven.apache.org
+   > Could not download apkzlib-9.0.1.jar (com.android.tools.build:apkzlib:9.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/apkzlib/9.0.1/apkzlib-9.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/apkzlib/9.0.1/apkzlib-9.0.1.jar'.
+            > dl.google.com
+   > Could not download guava-33.3.1-jre.jar (com.google.guava:guava:33.3.1-jre)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.jar'.
+            > repo.maven.apache.org
+   > Could not download dagger-2.28.3.jar (com.google.dagger:dagger:2.28.3)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/dagger/dagger/2.28.3/dagger-2.28.3.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/dagger/dagger/2.28.3/dagger-2.28.3.jar'.
+            > repo.maven.apache.org
+   > Could not download javax.inject-1.jar (javax.inject:javax.inject:1)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/javax/inject/javax.inject/1/javax.inject-1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/javax/inject/javax.inject/1/javax.inject-1.jar'.
+            > repo.maven.apache.org
+   > Could not download kxml2-2.3.0.jar (net.sf.kxml:kxml2:2.3.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0.jar'.
+            > repo.maven.apache.org
+   > Could not download bcpkix-jdk18on-1.79.jar (org.bouncycastle:bcpkix-jdk18on:1.79)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/bouncycastle/bcpkix-jdk18on/1.79/bcpkix-jdk18on-1.79.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/bouncycastle/bcpkix-jdk18on/1.79/bcpkix-jdk18on-1.79.jar'.
+            > repo.maven.apache.org
+   > Could not download bcutil-jdk18on-1.79.jar (org.bouncycastle:bcutil-jdk18on:1.79)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/bouncycastle/bcutil-jdk18on/1.79/bcutil-jdk18on-1.79.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/bouncycastle/bcutil-jdk18on/1.79/bcutil-jdk18on-1.79.jar'.
+            > repo.maven.apache.org
+   > Could not download bcprov-jdk18on-1.79.jar (org.bouncycastle:bcprov-jdk18on:1.79)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/bouncycastle/bcprov-jdk18on/1.79/bcprov-jdk18on-1.79.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/bouncycastle/bcprov-jdk18on/1.79/bcprov-jdk18on-1.79.jar'.
+            > repo.maven.apache.org
+   > Could not download httpclient-4.5.14.jar (org.apache.httpcomponents:httpclient:4.5.14)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/apache/httpcomponents/httpclient/4.5.14/httpclient-4.5.14.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/apache/httpcomponents/httpclient/4.5.14/httpclient-4.5.14.jar'.
+            > repo.maven.apache.org
+   > Could not download httpcore-4.4.16.jar (org.apache.httpcomponents:httpcore:4.4.16)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/apache/httpcomponents/httpcore/4.4.16/httpcore-4.4.16.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/apache/httpcomponents/httpcore/4.4.16/httpcore-4.4.16.jar'.
+            > repo.maven.apache.org
+   > Could not download annotations-23.0.0.jar (org.jetbrains:annotations:23.0.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/annotations/23.0.0/annotations-23.0.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/annotations/23.0.0/annotations-23.0.0.jar'.
+            > repo.maven.apache.org
+   > Could not download signflinger-9.0.1.jar (com.android:signflinger:9.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/signflinger/9.0.1/signflinger-9.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/signflinger/9.0.1/signflinger-9.0.1.jar'.
+            > dl.google.com
+   > Could not download zipflinger-9.0.1.jar (com.android:zipflinger:9.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/zipflinger/9.0.1/zipflinger-9.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/zipflinger/9.0.1/zipflinger-9.0.1.jar'.
+            > dl.google.com
+   > Could not download annotations-32.0.1.jar (com.android.tools:annotations:32.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/annotations/32.0.1/annotations-32.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/annotations/32.0.1/annotations-32.0.1.jar'.
+            > dl.google.com
+   > Could not download jna-platform-5.6.0.jar (net.java.dev.jna:jna-platform:5.6.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/net/java/dev/jna/jna-platform/5.6.0/jna-platform-5.6.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/net/java/dev/jna/jna-platform/5.6.0/jna-platform-5.6.0.jar'.
+            > repo.maven.apache.org
+   > Could not download juniversalchardet-1.0.3.jar (com.googlecode.juniversalchardet:juniversalchardet:1.0.3)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/googlecode/juniversalchardet/juniversalchardet/1.0.3/juniversalchardet-1.0.3.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/googlecode/juniversalchardet/juniversalchardet/1.0.3/juniversalchardet-1.0.3.jar'.
+            > repo.maven.apache.org
+   > Could not download stax-ex-1.8.1.jar (org.jvnet.staxex:stax-ex:1.8.1)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.jar'.
+            > repo.maven.apache.org
+   > Could not download jakarta.xml.bind-api-2.3.2.jar (jakarta.xml.bind:jakarta.xml.bind-api:2.3.2)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.jar'.
+            > repo.maven.apache.org
+   > Could not download txw2-2.3.2.jar (org.glassfish.jaxb:txw2:2.3.2)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.jar'.
+            > repo.maven.apache.org
+   > Could not download istack-commons-runtime-3.0.8.jar (com.sun.istack:istack-commons-runtime:3.0.8)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.jar'.
+            > repo.maven.apache.org
+   > Could not download FastInfoset-1.2.16.jar (com.sun.xml.fastinfoset:FastInfoset:1.2.16)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.jar'.
+            > repo.maven.apache.org
+   > Could not download jakarta.activation-api-1.2.1.jar (jakarta.activation:jakarta.activation-api:1.2.1)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.jar'.
+            > repo.maven.apache.org
+   > Could not download auto-value-annotations-1.6.2.jar (com.google.auto.value:auto-value-annotations:1.6.2)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/auto/value/auto-value-annotations/1.6.2/auto-value-annotations-1.6.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/auto/value/auto-value-annotations/1.6.2/auto-value-annotations-1.6.2.jar'.
+            > repo.maven.apache.org
+   > Could not download error_prone_annotations-2.28.0.jar (com.google.errorprone:error_prone_annotations:2.28.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_annotations/2.28.0/error_prone_annotations-2.28.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_annotations/2.28.0/error_prone_annotations-2.28.0.jar'.
+            > repo.maven.apache.org
+   > Could not download jose4j-0.9.5.jar (org.bitbucket.b_c:jose4j:0.9.5)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/bitbucket/b_c/jose4j/0.9.5/jose4j-0.9.5.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/bitbucket/b_c/jose4j/0.9.5/jose4j-0.9.5.jar'.
+            > repo.maven.apache.org
+   > Could not download slf4j-api-1.7.30.jar (org.slf4j:slf4j-api:1.7.30)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/1.7.30/slf4j-api-1.7.30.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/1.7.30/slf4j-api-1.7.30.jar'.
+            > repo.maven.apache.org
+   > Could not download jdom2-2.0.6.jar (org.jdom:jdom2:2.0.6)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jdom/jdom2/2.0.6/jdom2-2.0.6.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jdom/jdom2/2.0.6/jdom2-2.0.6.jar'.
+            > repo.maven.apache.org
+   > Could not download jsr305-3.0.2.jar (com.google.code.findbugs:jsr305:3.0.2)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar'.
+            > repo.maven.apache.org
+   > Could not download j2objc-annotations-3.0.0.jar (com.google.j2objc:j2objc-annotations:3.0.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/j2objc/j2objc-annotations/3.0.0/j2objc-annotations-3.0.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/j2objc/j2objc-annotations/3.0.0/j2objc-annotations-3.0.0.jar'.
+            > repo.maven.apache.org
+   > Could not download checker-qual-3.43.0.jar (org.checkerframework:checker-qual:3.43.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/checkerframework/checker-qual/3.43.0/checker-qual-3.43.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/checkerframework/checker-qual/3.43.0/checker-qual-3.43.0.jar'.
+            > repo.maven.apache.org
+   > Could not download flatbuffers-java-1.12.0.jar (com.google.flatbuffers:flatbuffers-java:1.12.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/flatbuffers/flatbuffers-java/1.12.0/flatbuffers-java-1.12.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/flatbuffers/flatbuffers-java/1.12.0/flatbuffers-java-1.12.0.jar'.
+            > repo.maven.apache.org
+   > Could not download apksig-9.0.1.jar (com.android.tools.build:apksig:9.0.1)
+      > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/apksig/9.0.1/apksig-9.0.1.jar'.
+         > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/apksig/9.0.1/apksig-9.0.1.jar'.
+            > dl.google.com
+   > Could not download javawriter-2.5.0.jar (com.squareup:javawriter:2.5.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/squareup/javawriter/2.5.0/javawriter-2.5.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/squareup/javawriter/2.5.0/javawriter-2.5.0.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-gradle-plugin-annotations-2.2.10.jar (org.jetbrains.kotlin:kotlin-gradle-plugin-annotations:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.2.10/kotlin-gradle-plugin-annotations-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.2.10/kotlin-gradle-plugin-annotations-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-native-utils-2.2.10.jar (org.jetbrains.kotlin:kotlin-native-utils:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-native-utils/2.2.10/kotlin-native-utils-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-native-utils/2.2.10/kotlin-native-utils-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-tooling-core-2.2.10.jar (org.jetbrains.kotlin:kotlin-tooling-core:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-tooling-core/2.2.10/kotlin-tooling-core-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-tooling-core/2.2.10/kotlin-tooling-core-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-build-tools-api-2.2.10.jar (org.jetbrains.kotlin:kotlin-build-tools-api:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-build-tools-api/2.2.10/kotlin-build-tools-api-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-build-tools-api/2.2.10/kotlin-build-tools-api-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-util-klib-2.2.10.jar (org.jetbrains.kotlin:kotlin-util-klib:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-util-klib/2.2.10/kotlin-util-klib-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-util-klib/2.2.10/kotlin-util-klib-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-util-io-2.2.10.jar (org.jetbrains.kotlin:kotlin-util-io:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-util-io/2.2.10/kotlin-util-io-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-util-io/2.2.10/kotlin-util-io-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download kotlin-daemon-client-2.2.10.jar (org.jetbrains.kotlin:kotlin-daemon-client:2.2.10)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-daemon-client/2.2.10/kotlin-daemon-client-2.2.10.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-daemon-client/2.2.10/kotlin-daemon-client-2.2.10.jar'.
+            > repo.maven.apache.org
+   > Could not download failureaccess-1.0.2.jar (com.google.guava:failureaccess:1.0.2)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/guava/failureaccess/1.0.2/failureaccess-1.0.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/guava/failureaccess/1.0.2/failureaccess-1.0.2.jar'.
+            > repo.maven.apache.org
+   > Could not download listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar'.
+            > repo.maven.apache.org
+   > Could not download commons-codec-1.17.1.jar (commons-codec:commons-codec:1.17.1)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.17.1/commons-codec-1.17.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.17.1/commons-codec-1.17.1.jar'.
+            > repo.maven.apache.org
+   > Could not download commons-lang3-3.16.0.jar (org.apache.commons:commons-lang3:3.16.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.16.0/commons-lang3-3.16.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.16.0/commons-lang3-3.16.0.jar'.
+            > repo.maven.apache.org
+   > Could not download commons-logging-1.2.jar (commons-logging:commons-logging:1.2)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/commons-logging/commons-logging/1.2/commons-logging-1.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/commons-logging/commons-logging/1.2/commons-logging-1.2.jar'.
+            > repo.maven.apache.org
+   > Could not download jna-5.6.0.jar (net.java.dev.jna:jna:5.6.0)
+      > Could not get resource 'https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.jar'.
+            > repo.maven.apache.org
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 29m 30s
+2026-09-02T23:35:48.093+0500 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] The daemon has finished executing the build.
+2026-09-02T23:35:48.117+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] daemon stop has been requested. Sleeping until state changes.
+2026-09-02T23:35:48.119+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Command execution: finished waiting for DaemonCommandExecution[command = Build{id=fc9e81df-30c9-49eb-aabe-4a01ec2de93e, currentDir=D:\sukun}, connection = DefaultDaemonConnection: socket connection from /127.0.0.1:56357 to /127.0.0.1:56358]. Result org.gradle.launcher.daemon.server.DaemonStateCoordinator@38847c with state StopRequested
+2026-09-02T23:35:48.124+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Command execution: completed DaemonCommandExecution[command = Build{id=fc9e81df-30c9-49eb-aabe-4a01ec2de93e, currentDir=D:\sukun}, connection = DefaultDaemonConnection: socket connection from /127.0.0.1:56357 to /127.0.0.1:56358]
+2026-09-02T23:35:48.124+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] resetting idle timer
+2026-09-02T23:35:48.124+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Marking daemon stopped due to command completed and stop requested. The daemon is not running a build
+2026-09-02T23:35:48.124+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] daemon has stopped.
+2026-09-02T23:35:48.129+0500 [DEBUG] [org.gradle.launcher.daemon.server.exec.ReturnResult] Daemon is dispatching the build result: Success[value=org.gradle.launcher.exec.BuildActionResult@465b2f71]
+2026-09-02T23:35:48.129+0500 [DEBUG] [org.gradle.launcher.daemon.server.Daemon] stop() called on daemon
+2026-09-02T23:35:48.130+0500 [INFO] [org.gradle.launcher.daemon.server.Daemon] Stop requested. Daemon is removing its presence from the registry...
+2026-09-02T23:35:48.131+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonRegistryUpdater] Removing our presence to clients, eg. removing this address from the registry: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]]
+2026-09-02T23:35:48.131+0500 [DEBUG] [org.gradle.launcher.daemon.registry.PersistentDaemonRegistry] Removing daemon address: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]]
+2026-09-02T23:35:48.130+0500 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 21: dispatching Success[value=org.gradle.launcher.exec.BuildActionResult@465b2f71]
+2026-09-02T23:35:48.133+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on daemon addresses registry.
+2026-09-02T23:35:48.133+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-09-02T23:35:48.135+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-09-02T23:35:48.135+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonRegistryUpdater] Address removed from registry.
+2026-09-02T23:35:48.229+0500 [DEBUG] [org.gradle.launcher.daemon.server.exec.CleanUpVirtualFileSystemAfterBuild] Cleaning virtual file system after build finished
+2026-09-02T23:35:48.231+0500 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 22: received class org.gradle.launcher.daemon.protocol.CloseInput
+2026-09-02T23:35:48.231+0500 [DEBUG] [org.gradle.launcher.daemon.server.DefaultDaemonConnection] thread 22: Received IO message from client: org.gradle.launcher.daemon.protocol.CloseInput@723df3f6
+2026-09-02T23:35:48.231+0500 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 22: received class org.gradle.launcher.daemon.protocol.Finished
+2026-09-02T23:35:48.231+0500 [DEBUG] [org.gradle.launcher.daemon.server.DefaultDaemonConnection] thread 22: Received non-IO message from client: org.gradle.launcher.daemon.protocol.Finished@79cb6067
+2026-09-02T23:35:48.232+0500 [DEBUG] [org.gradle.launcher.daemon.server.DefaultIncomingConnectionHandler] Finishing executing command: Build{id=fc9e81df-30c9-49eb-aabe-4a01ec2de93e, currentDir=D:\sukun}
+2026-09-02T23:35:48.232+0500 [DEBUG] [org.gradle.launcher.daemon.server.DefaultIncomingConnectionHandler] Received finished message: org.gradle.launcher.daemon.protocol.Finished@79cb6067
+2026-09-02T23:35:48.232+0500 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 21: stopping connection
+2026-09-02T23:35:48.233+0500 [DEBUG] [org.gradle.internal.remote.internal.inet.SocketConnection] Discarding EOFException: java.io.EOFException
+2026-09-02T23:35:48.233+0500 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 22: received null
+2026-09-02T23:35:48.234+0500 [DEBUG] [org.gradle.launcher.daemon.server.DefaultDaemonConnection] thread 22: Received end-of-input from client.
+2026-09-02T23:35:48.234+0500 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 21: stopping connection
+2026-09-02T23:35:48.235+0500 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for jars (D:\sukun\.gradle-home\caches\jars-9)
+2026-09-02T23:35:48.236+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on jars (D:\sukun\.gradle-home\caches\jars-9).
+2026-09-02T23:35:48.237+0500 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for file content cache (D:\sukun\.gradle-home\caches\9.1.0\fileContent)
+2026-09-02T23:35:48.237+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on file content cache (D:\sukun\.gradle-home\caches\9.1.0\fileContent).
+2026-09-02T23:35:48.238+0500 [DEBUG] [org.gradle.internal.watch.vfs.impl.WatchingVirtualFileSystem] Closing VFS, dropping state
+2026-09-02T23:35:48.239+0500 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Cache Generated Gradle JARs cache (D:\sukun\.gradle-home\caches\9.1.0\generated-gradle-jars) was closed 0 times.
+2026-09-02T23:35:48.239+0500 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for artifact cache (D:\sukun\.gradle-home\caches\modules-2)
+2026-09-02T23:35:48.239+0500 [DEBUG] [org.gradle.internal.watch.registry.impl.DefaultFileWatcherRegistry] Finished listening to file system change events
+2026-09-02T23:35:48.240+0500 [DEBUG] [org.gradle.cache.internal.btree.BTreePersistentIndexedCache] Closing cache module-artifact.bin (D:\sukun\.gradle-home\caches\modules-2\metadata-2.107\module-artifact.bin)
+2026-09-02T23:35:48.241+0500 [DEBUG] [org.gradle.cache.internal.btree.BTreePersistentIndexedCache] Closing cache module-metadata.bin (D:\sukun\.gradle-home\caches\modules-2\metadata-2.107\module-metadata.bin)
+2026-09-02T23:35:48.241+0500 [DEBUG] [org.gradle.cache.internal.btree.BTreePersistentIndexedCache] Closing cache resource-at-url.bin (D:\sukun\.gradle-home\caches\modules-2\metadata-2.107\resource-at-url.bin)
+2026-09-02T23:35:48.242+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on artifact cache (D:\sukun\.gradle-home\caches\modules-2).
+2026-09-02T23:35:48.243+0500 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for cache directory 82541fce35c4e910f6046e3fb7c46433 (D:\sukun\.gradle-home\caches\9.1.0\groovy-dsl\82541fce35c4e910f6046e3fb7c46433)
+2026-09-02T23:35:48.244+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on cache directory 82541fce35c4e910f6046e3fb7c46433 (D:\sukun\.gradle-home\caches\9.1.0\groovy-dsl\82541fce35c4e910f6046e3fb7c46433).
+2026-09-02T23:35:48.244+0500 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for cache directory 0622af6f76289007f86c2336b68843d1 (D:\sukun\.gradle-home\caches\9.1.0\groovy-dsl\0622af6f76289007f86c2336b68843d1)
+2026-09-02T23:35:48.244+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on cache directory 0622af6f76289007f86c2336b68843d1 (D:\sukun\.gradle-home\caches\9.1.0\groovy-dsl\0622af6f76289007f86c2336b68843d1).
+2026-09-02T23:35:48.244+0500 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for cache directory efc5d9003b84efb8905580ebb8aaaa7d (D:\sukun\.gradle-home\caches\9.1.0\groovy-dsl\efc5d9003b84efb8905580ebb8aaaa7d)
+2026-09-02T23:35:48.244+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on cache directory efc5d9003b84efb8905580ebb8aaaa7d (D:\sukun\.gradle-home\caches\9.1.0\groovy-dsl\efc5d9003b84efb8905580ebb8aaaa7d).
+2026-09-02T23:35:48.245+0500 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Cache groovy-dsl (D:\sukun\.gradle-home\caches\9.1.0\groovy-dsl) was closed 0 times.
+2026-09-02T23:35:48.246+0500 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Cache Artifact transforms cache (D:\sukun\.gradle-home\caches\9.1.0\transforms) was closed 0 times.
+2026-09-02T23:35:48.246+0500 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for journal cache (D:\sukun\.gradle-home\caches\journal-1)
+2026-09-02T23:35:48.246+0500 [DEBUG] [org.gradle.cache.internal.btree.BTreePersistentIndexedCache] Closing cache file-access.bin (D:\sukun\.gradle-home\caches\journal-1\file-access.bin)
+2026-09-02T23:35:48.247+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on journal cache (D:\sukun\.gradle-home\caches\journal-1).
+2026-09-02T23:35:48.247+0500 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for file hash cache (D:\sukun\.gradle-home\caches\9.1.0\fileHashes)
+2026-09-02T23:35:48.248+0500 [DEBUG] [org.gradle.cache.internal.btree.BTreePersistentIndexedCache] Closing cache fileHashes.bin (D:\sukun\.gradle-home\caches\9.1.0\fileHashes\fileHashes.bin)
+2026-09-02T23:35:48.248+0500 [DEBUG] [org.gradle.cache.internal.btree.BTreePersistentIndexedCache] Closing cache resourceHashesCache.bin (D:\sukun\.gradle-home\caches\9.1.0\fileHashes\resourceHashesCache.bin)
+2026-09-02T23:35:48.248+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on file hash cache (D:\sukun\.gradle-home\caches\9.1.0\fileHashes).
+2026-09-02T23:35:48.250+0500 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Deleting unused version-specific caches in D:\sukun\.gradle-home\caches' started
+2026-09-02T23:35:48.263+0500 [DEBUG] [org.gradle.cache.internal.VersionSpecificCacheCleanupAction] Processed version-specific caches at D:\sukun\.gradle-home\caches for cleanup in 0.012 secs
+2026-09-02T23:35:48.263+0500 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Deleting unused version-specific caches in D:\sukun\.gradle-home\caches'
+2026-09-02T23:35:48.264+0500 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Deleting unused version-specific caches in D:\sukun\.gradle-home\caches' completed
+2026-09-02T23:35:48.266+0500 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Deleting unused Gradle distributions in D:\sukun\.gradle-home\wrapper\dists' started
+2026-09-02T23:35:48.268+0500 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Deleting unused Gradle distributions in D:\sukun\.gradle-home\wrapper\dists'
+2026-09-02T23:35:48.269+0500 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Deleting unused Gradle distributions in D:\sukun\.gradle-home\wrapper\dists' completed
+2026-09-02T23:35:48.269+0500 [DEBUG] [org.gradle.launcher.daemon.server.Daemon] stop() called on daemon
+2026-09-02T23:35:48.272+0500 [INFO] [org.gradle.launcher.daemon.server.Daemon] Stop requested. Daemon is removing its presence from the registry...
+2026-09-02T23:35:48.272+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonRegistryUpdater] Removing our presence to clients, eg. removing this address from the registry: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]]
+2026-09-02T23:35:48.272+0500 [DEBUG] [org.gradle.launcher.daemon.registry.PersistentDaemonRegistry] Removing daemon address: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]]
+2026-09-02T23:35:48.273+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on daemon addresses registry.
+2026-09-02T23:35:48.273+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-09-02T23:35:48.274+0500 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-09-02T23:35:48.274+0500 [DEBUG] [org.gradle.launcher.daemon.server.DaemonRegistryUpdater] Address removed from registry.
+2026-09-02T23:35:48.275+0500 [DEBUG] [org.gradle.cache.internal.locklistener.DefaultFileLockContentionHandler] File lock listener thread completed.
+Daemon vm is shutting down... The daemon has exited normally or was terminated in response to a user interrupt.
+2026-09-02T23:35:48.278+0500 [DEBUG] [org.gradle.launcher.daemon.registry.PersistentDaemonRegistry] Removing daemon address: [96761e0f-7eb9-4456-a064-586201b339eb port:56357, addresses:[localhost/127.0.0.1]]
+2026-09-02T23:35:48.278+0500 [DEBUG] [org.gradle.launcher.daemon.server.Daemon] VM shutdown hook was unable to remove the daemon address from the registry. It will be cleaned up later.
+java.lang.IllegalStateException: Cannot start managing file contention because this handler has been closed.
+	at org.gradle.cache.internal.locklistener.DefaultFileLockContentionHandler.assertNotStopped(DefaultFileLockContentionHandler.java:248)
+	at org.gradle.cache.internal.locklistener.DefaultFileLockContentionHandler.reservePort(DefaultFileLockContentionHandler.java:286)
+	at org.gradle.cache.internal.DefaultFileLockManager.lock(DefaultFileLockManager.java:124)
+	at org.gradle.cache.internal.DefaultFileLockManager.lock(DefaultFileLockManager.java:106)
+	at org.gradle.cache.internal.DefaultFileLockManager.lock(DefaultFileLockManager.java:101)
+	at org.gradle.cache.internal.OnDemandFileAccess.updateFile(OnDemandFileAccess.java:51)
+	at org.gradle.cache.internal.FileBackedObjectHolder.update(FileBackedObjectHolder.java:77)
+	at org.gradle.cache.internal.FileIntegrityViolationSuppressingObjectHolderDecorator.lambda$update$0(FileIntegrityViolationSuppressingObjectHolderDecorator.java:48)
+	at org.gradle.cache.internal.FileIntegrityViolationSuppressingObjectHolderDecorator.doUpdate(FileIntegrityViolationSuppressingObjectHolderDecorator.java:58)
+	at org.gradle.cache.internal.FileIntegrityViolationSuppressingObjectHolderDecorator.update(FileIntegrityViolationSuppressingObjectHolderDecorator.java:48)
+	at org.gradle.launcher.daemon.registry.PersistentDaemonRegistry.remove(PersistentDaemonRegistry.java:133)
+	at org.gradle.launcher.daemon.server.Daemon$1.run(Daemon.java:133)
+	at java.base/java.lang.Thread.run(Thread.java:842)

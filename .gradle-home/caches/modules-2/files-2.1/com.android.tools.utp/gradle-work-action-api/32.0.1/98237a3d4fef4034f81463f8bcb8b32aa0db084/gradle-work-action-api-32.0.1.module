@@ -1,0 +1,122 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.android.tools.utp",
+    "module": "gradle-work-action-api",
+    "version": "32.0.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.1.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "gradle-work-action-api-32.0.1.jar",
+          "url": "gradle-work-action-api-32.0.1.jar",
+          "size": 32270,
+          "sha512": "a5a0cf16fbc291499dbc81210aab819ee7107ab12a9bfaa4e407c9bc1b4ff73f5e01bf446a39411474da18b0536fdb1a27a3fd3baaeac6be95d1520fc45fbe8c",
+          "sha256": "98c07e3f1ac8eafdb85ec391ea7ab2be3189f358745010c530db72d831864816",
+          "sha1": "c1e18faa85f2986ebc02387c903636902a237084",
+          "md5": "ec2089dc4aaedffad70ec4859ca177cf"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "gradle-work-action-api-32.0.1.jar",
+          "url": "gradle-work-action-api-32.0.1.jar",
+          "size": 32270,
+          "sha512": "a5a0cf16fbc291499dbc81210aab819ee7107ab12a9bfaa4e407c9bc1b4ff73f5e01bf446a39411474da18b0536fdb1a27a3fd3baaeac6be95d1520fc45fbe8c",
+          "sha256": "98c07e3f1ac8eafdb85ec391ea7ab2be3189f358745010c530db72d831864816",
+          "sha1": "c1e18faa85f2986ebc02387c903636902a237084",
+          "md5": "ec2089dc4aaedffad70ec4859ca177cf"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "gradle-work-action-api-32.0.1-javadoc.jar",
+          "url": "gradle-work-action-api-32.0.1-javadoc.jar",
+          "size": 261,
+          "sha512": "1487e5a20c9e4d74f298e07c42e96a61be11b7a768c3fbc199ee138cd68e1fc2267d1cfe3f11f288acc05df755315344d052cc5f6f751f126ab4fe1caa5125ea",
+          "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3",
+          "sha1": "2ad14aed781c4a73ed4dbb421966d408a0a06686",
+          "md5": "f43436d6bec321290f6af228ad602604"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "gradle-work-action-api-32.0.1-sources.jar",
+          "url": "gradle-work-action-api-32.0.1-sources.jar",
+          "size": 9735,
+          "sha512": "ded4e09d7ad7fd7a3609eb66a99ff0e692c6569985d185291794cf54f2bf32650672e3bc94819365eab8a2b3832a0715a955fb0a407ba336bbeba8fefd07768d",
+          "sha256": "3bc7a60d2064fcc5cacc5bf040826d995d7184926f2881af84f7356fafaa5d2b",
+          "sha1": "e332de3d74d2d43a05809bc2371abadd70fff0a0",
+          "md5": "4d4a0ef94a8151b4b1b1e61ad2876b68"
+        }
+      ]
+    }
+  ]
+}

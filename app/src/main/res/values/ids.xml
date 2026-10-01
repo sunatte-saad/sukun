@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="settingsSectionBody" type="id" />
+    <item name="settingsDragHandle" type="id" />
+    <item name="settingsBackChevron" type="id" />
+</resources>

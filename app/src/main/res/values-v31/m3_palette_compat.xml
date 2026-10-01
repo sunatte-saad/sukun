@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 1.12/1.13 values-v31 references these tones but does not define them.
+         AGP 9 links every configuration, so the signed bundle fails without these aliases. -->
+    <color name="m3_ref_palette_dynamic_neutral_variant4">@android:color/system_neutral2_1000</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant6">@android:color/system_neutral2_1000</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant12">@android:color/system_neutral2_900</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant17">@android:color/system_neutral2_900</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant22">@android:color/system_neutral2_800</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant24">@android:color/system_neutral2_800</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant87">@android:color/system_neutral2_200</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant92">@android:color/system_neutral2_100</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant94">@android:color/system_neutral2_50</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant96">@android:color/system_neutral2_50</color>
+    <color name="m3_ref_palette_dynamic_neutral_variant98">@android:color/system_neutral2_10</color>
+</resources>

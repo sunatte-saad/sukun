@@ -1,0 +1,61 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.batoulapps.adhan",
+    "module": "adhan",
+    "version": "1.2.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.8.3",
+      "buildId": "4fvfq6lf5ne63l5ywnmb5jva3m"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "adhan-1.2.1.jar",
+          "url": "adhan-1.2.1.jar",
+          "size": 28546,
+          "sha512": "66901d478adf0485036c510ec3b0ec47aecf94975abb900e8f527f0f1cced4255a25dc4ee3ba8e2afad58bdfbb903ffb574f9267cad9b5d387a0c5b8a42f67cb",
+          "sha256": "eba99a3d6a3ab47cd6a622bdece60fff75aaf02f801b54bdb9d3b6edd867bdd8",
+          "sha1": "6dfc87cd15e2e13c3974dfe89f5e4e26e7b777fb",
+          "md5": "e7f0c53be2ab20ae60083edb3ced0227"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "adhan-1.2.1.jar",
+          "url": "adhan-1.2.1.jar",
+          "size": 28546,
+          "sha512": "66901d478adf0485036c510ec3b0ec47aecf94975abb900e8f527f0f1cced4255a25dc4ee3ba8e2afad58bdfbb903ffb574f9267cad9b5d387a0c5b8a42f67cb",
+          "sha256": "eba99a3d6a3ab47cd6a622bdece60fff75aaf02f801b54bdb9d3b6edd867bdd8",
+          "sha1": "6dfc87cd15e2e13c3974dfe89f5e4e26e7b777fb",
+          "md5": "e7f0c53be2ab20ae60083edb3ced0227"
+        }
+      ]
+    }
+  ]
+}

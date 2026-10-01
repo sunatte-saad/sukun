@@ -1,0 +1,1 @@
+v2.0.4: Double-tap lock now enables correctly after accessibility permission. Clearer explanation of why Sukun needs accessibility. Build updated to Android Gradle Plugin 9.
