@@ -1,6 +1,5 @@
 package sukun.minimalist.app.launcher.com.ui
 
-import android.Manifest
 import android.app.admin.DevicePolicyManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -31,7 +30,6 @@ import android.widget.TextClock
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
@@ -54,6 +52,7 @@ import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.data.PrayerState
 import sukun.minimalist.app.launcher.com.data.WeatherData
 import sukun.minimalist.app.launcher.com.data.TodoItem
+import sukun.minimalist.app.launcher.com.data.formatReminderTime
 import sukun.minimalist.app.launcher.com.data.toReminderList
 import sukun.minimalist.app.launcher.com.data.toTodoJson
 import sukun.minimalist.app.launcher.com.data.toTodoList
@@ -72,8 +71,10 @@ import sukun.minimalist.app.launcher.com.helper.getUserHandleFromString
 import sukun.minimalist.app.launcher.com.MainActivity
 import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.isAccessServiceEnabled
+import sukun.minimalist.app.launcher.com.helper.showAccessibilityDisclosure
+import sukun.minimalist.app.launcher.com.helper.MyAccessibilityService
 import sukun.minimalist.app.launcher.com.helper.isPackageInstalled
-import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
+import sukun.minimalist.app.launcher.com.helper.applyDeviceLocationDeniedFallbacks
 import sukun.minimalist.app.launcher.com.helper.openAlarmApp
 import sukun.minimalist.app.launcher.com.helper.openCalendar
 import sukun.minimalist.app.launcher.com.helper.openCameraApp
@@ -84,6 +85,7 @@ import sukun.minimalist.app.launcher.com.helper.showToast
 import sukun.minimalist.app.launcher.com.helper.prayerKeyToMark
 import sukun.minimalist.app.launcher.com.helper.toOverlayText
 import sukun.minimalist.app.launcher.com.listener.OnSwipeTouchListener
+import sukun.minimalist.app.launcher.com.helper.openGooglePrayerTimes
 import sukun.minimalist.app.launcher.com.helper.openGoogleWeather
 import sukun.minimalist.app.launcher.com.listener.ViewSwipeTouchListener
 import java.text.SimpleDateFormat
@@ -111,17 +113,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private var defaultHomeAppsPaddingBottom = 0
     private var topCornerStackRunnable: Runnable? = null
     private var overlayLayoutRunnable: Runnable? = null
-
-    private var locationPermissionRequested = false
-    private val locationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
-                    || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            if (granted) {
-                viewModel.loadWeather(forceRefresh = true)
-                viewModel.loadPrayerState(forceRefresh = true)
-            }
-        }
+    private var pendingFocusModeDuration: Long? = null
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
@@ -158,31 +150,24 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         super.onResume()
         applyReadableHomeTextColors()
         syncFocusModeState()
+        completePendingFocusModeIfReady()
         updateRemindersBellCount()
         updateTodoIconCount()
         populateHomeScreen(false)
         registerSystemTimeReceiver()
+        applyLocationDeniedFallbacksIfNeeded()
         viewModel.loadWeather()
         viewModel.loadPrayerState()
+        populateWeather(viewModel.weatherData.value)
+        populatePrayer(viewModel.prayerData.value)
         viewModel.isSukunDefault()
-        requestLocationPermissionIfNeeded()
     }
 
-    private fun requestLocationPermissionIfNeeded() {
-        if (locationPermissionRequested) return
-        if (requireContext().hasWeatherLocationPermission()) return
-        val needsForWeather = prefs.showWeatherOnHome
-                && prefs.weatherSourceMode == Constants.WeatherSource.DEVICE
-        val needsForPrayer = prefs.showPrayerOnHome
-                && prefs.prayerSourceMode == Constants.PrayerSource.DEVICE
-        if (!needsForWeather && !needsForPrayer) return
-        locationPermissionRequested = true
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-            )
-        )
+    private fun applyLocationDeniedFallbacksIfNeeded() {
+        if (!prefs.privacyAndSetupComplete) return
+        if (!requireContext().applyDeviceLocationDeniedFallbacks(prefs)) return
+        viewModel.cancelWeatherWorker(clearCachedWeather = true)
+        viewModel.cancelPrayerReminder(clearCachedPrayer = true)
     }
 
     override fun onPause() {
@@ -202,10 +187,13 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             R.id.date -> openCalendarApp()
             R.id.ringClock -> openClockApp()
             R.id.ringDate -> openCalendarApp()
-            R.id.prayerText -> { /* mark on long-press only */ }
+            R.id.prayerText -> openGooglePrayerTimesFromHome()
             R.id.weatherText -> openGoogleWeather()
             R.id.remindersBellContainer -> openReminders()
             R.id.todoIconContainer -> openTodoList()
+            R.id.focusModeIconRingContainer,
+            R.id.focusModeIconStandardContainer,
+            -> startFocusModeFromHome()
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
             R.id.tvScreenTime -> openScreenTimeDigitalWellbeing()
 
@@ -312,10 +300,6 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 // Reset so the button reappears if the app later loses default status
                 prefs.hideSetDefaultLauncher = false
             } else {
-                if (prefs.dailyWallpaper && prefs.isEffectivelyDarkTheme()) {
-                    prefs.dailyWallpaper = false
-                    viewModel.cancelWallpaperWorker()
-                }
                 prefs.homeBottomAlignment = false
                 setHomeAlignment()
             }
@@ -347,6 +331,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             populatePrayer(it)
         }
         viewModel.showRecentApps.observe(viewLifecycleOwner) {
+            MyAccessibilityService.showRecents(requireContext())
             binding.recents.performClick()
         }
         syncFocusModeState()
@@ -370,6 +355,12 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             getViewSwipeTouchListener(context, binding.remindersBellContainer)
         )
         binding.todoIconContainer.setOnTouchListener(getViewSwipeTouchListener(context, binding.todoIconContainer))
+        binding.focusModeIconRingContainer.setOnTouchListener(
+            getViewSwipeTouchListener(context, binding.focusModeIconRingContainer)
+        )
+        binding.focusModeIconStandardContainer.setOnTouchListener(
+            getViewSwipeTouchListener(context, binding.focusModeIconStandardContainer)
+        )
         binding.homeApp1.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp1))
         binding.homeApp2.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp2))
         binding.homeApp3.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp3))
@@ -397,8 +388,12 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             true
         }
         binding.weatherText?.setOnClickListener { openGoogleWeather() }
+        binding.prayerText?.setOnClickListener(this)
+        binding.prayerText?.setOnLongClickListener(this)
         binding.remindersBellContainer.setOnClickListener(this)
         binding.todoIconContainer.setOnClickListener(this)
+        binding.focusModeIconRingContainer.setOnClickListener(this)
+        binding.focusModeIconStandardContainer.setOnClickListener(this)
         binding.tvScreenTime?.setOnClickListener(this)
         binding.tvScreenTime?.setOnLongClickListener(this)
     }
@@ -421,6 +416,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
         binding.remindersBell.imageTintList = ColorStateList.valueOf(primaryTextColor)
         binding.todoIcon.imageTintList = ColorStateList.valueOf(primaryTextColor)
+        updateFocusModeIconAppearance()
         binding.readabilityScrim.alpha = if (isLight) 1f else 0.55f
         binding.dayProgressRingView.invalidate()
     }
@@ -480,17 +476,18 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private fun populateDateTime() {
         binding.dateTimeLayout.isVisible = prefs.dateTimeVisibility != Constants.DateTime.OFF
         val showRingClock = prefs.dateTimeVisibility == Constants.DateTime.ON
-                && prefs.clockStyle == Constants.ClockStyle.DAY_RING
+                && PremiumAccess.effectiveClockStyle(prefs) == Constants.ClockStyle.DAY_RING
         binding.dateTimeStandardLayout.isVisible = binding.dateTimeLayout.isVisible && !showRingClock
         binding.ringClockLayout.isVisible = binding.dateTimeLayout.isVisible && showRingClock
         binding.clock.isVisible = Constants.DateTime.isTimeVisible(prefs.dateTimeVisibility) && !showRingClock
         binding.date?.isVisible = Constants.DateTime.isDateVisible(prefs.dateTimeVisibility) && !showRingClock
         binding.ringClock.isVisible = showRingClock
         binding.ringDate.isVisible = showRingClock
-        if (binding.clock.isVisible) resetTextClockToSystem(binding.clock)
-        if (binding.ringClock.isVisible) resetTextClockToSystem(binding.ringClock)
+        if (binding.clock.isVisible) applyClockTimeFormat(binding.clock)
+        if (binding.ringClock.isVisible) applyClockTimeFormat(binding.ringClock)
         updateDateTimeDisplay()
         applyDateTimeLayoutAlignment(prefs.homeAlignment)
+        updateFocusModeIconPlacement(showRingClock)
         if (binding.dateTimeLayout.isVisible) startDateTimeTicker()
         else stopDateTimeTicker()
         positionOverlayText()
@@ -499,6 +496,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             if (safeBinding == null) return@doOnLayout
             positionOverlayText()
             scheduleTopCornerStackLayout()
+            positionFocusModeStandardIcon()
         }
     }
 
@@ -562,7 +560,22 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private fun populatePrayer(prayerState: PrayerState?) {
         currentPrayerState = prayerState
-        if (!prefs.showPrayerOnHome || prayerState == null) {
+        if (!prefs.showPrayerOnHome) {
+            binding.prayerText?.visibility = View.GONE
+            stopPrayerTicker()
+            positionOverlayText()
+            return
+        }
+        if (prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE) {
+            currentPrayerState = null
+            binding.prayerText?.text = getString(R.string.google_prayer_card)
+            binding.prayerText?.visibility = View.VISIBLE
+            stopPrayerTicker()
+            bringOverlayViewsToFront()
+            positionOverlayText()
+            return
+        }
+        if (prayerState == null) {
             binding.prayerText?.visibility = View.GONE
             stopPrayerTicker()
             positionOverlayText()
@@ -573,6 +586,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         bringOverlayViewsToFront()
         positionOverlayText()
         startPrayerTicker()
+    }
+
+    private fun openGooglePrayerTimesFromHome() {
+        if (prefs.prayerSourceMode != Constants.PrayerSource.GOOGLE) return
+        requireContext().openGooglePrayerTimes(
+            locationLabel = prefs.prayerLocationLabel,
+            locationQuery = prefs.prayerLocationQuery,
+        )
     }
 
     private fun promptMarkPrayerDone() {
@@ -636,7 +657,22 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             stopFocusModeTicker()
         }
         updateStatusBarVisibility(isFocusModeActive)
+        updateFocusModeIconAppearance(isFocusModeActive)
         return isFocusModeActive
+    }
+
+    private fun updateFocusModeIconAppearance(active: Boolean = prefs.isFocusModeActive()) {
+        val binding = safeBinding ?: return
+        val context = requireContext()
+        val color = context.getColorFromAttr(
+            if (active) R.attr.primaryColor else R.attr.primaryColorTrans50
+        )
+        val alpha = if (active) 1f else 0.42f
+        val tint = ColorStateList.valueOf(color)
+        binding.focusModeIconRing.imageTintList = tint
+        binding.focusModeIconStandard.imageTintList = tint
+        binding.focusModeIconRingContainer.alpha = alpha
+        binding.focusModeIconStandardContainer.alpha = alpha
     }
 
     private fun updateFocusModeLayout(horizontalGravity: Int = prefs.homeAlignment) {
@@ -649,6 +685,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.weatherText?.bringToFront()
         binding.prayerText?.bringToFront()
         binding.focusModeStatus?.bringToFront()
+        binding.focusModeIconStandardContainer.bringToFront()
         binding.topCornerStack.bringToFront()
     }
 
@@ -752,9 +789,6 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         horizontalGravity: Int,
     ): Int {
         if (!binding.topCornerStack.isVisible) return 0
-        if (frameHorizontalGravity(horizontalGravity) == Gravity.END) {
-            return overlayCornerReserveWidth(binding)
-        }
         if (overlaySharesIconColumn(horizontalGravity)) {
             return overlayCornerReserveWidth(binding)
         }
@@ -766,10 +800,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (frameHorizontalGravity(horizontalGravity) == Gravity.CENTER_HORIZONTAL) {
             return resources.displayMetrics.widthPixels - horizontalMargin * 2
         }
-        val isRtl = resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        val iconsOnStart = frameHorizontalGravity(topCornerHorizontalGravity()) == Gravity.START
         val iconSideInset = horizontalMargin + cornerReserveWidth
-        val marginStart = if (isRtl) iconSideInset else horizontalMargin
-        val marginEnd = if (isRtl) horizontalMargin else iconSideInset
+        val marginStart = if (iconsOnStart) iconSideInset else horizontalMargin
+        val marginEnd = if (iconsOnStart) horizontalMargin else iconSideInset
         return (resources.displayMetrics.widthPixels - marginStart - marginEnd)
             .coerceAtLeast(horizontalMargin * 2)
     }
@@ -833,7 +867,6 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val overlayView = view ?: return
         val params = overlayView.layoutParams as? FrameLayout.LayoutParams ?: return
         val horizontalMargin = 24.dpToPx()
-        val isRtl = resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
         val frameGravity = frameHorizontalGravity(horizontalGravity)
 
         params.topMargin = topMargin
@@ -848,9 +881,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             overlayView.gravity = Gravity.CENTER_HORIZONTAL
         } else {
             val iconSideInset = horizontalMargin + cornerReserveWidth
+            val iconsOnStart = frameHorizontalGravity(topCornerHorizontalGravity()) == Gravity.START
             params.width = FrameLayout.LayoutParams.WRAP_CONTENT
-            params.marginStart = if (isRtl) iconSideInset else horizontalMargin
-            params.marginEnd = if (isRtl) horizontalMargin else iconSideInset
+            params.marginStart = if (iconsOnStart) iconSideInset else horizontalMargin
+            params.marginEnd = if (iconsOnStart) horizontalMargin else iconSideInset
             val availableWidth = resources.displayMetrics.widthPixels - params.marginStart - params.marginEnd
             overlayView.maxWidth = availableWidth.coerceAtLeast(horizontalMargin * 2)
             overlayView.textAlignment = when (frameGravity) {
@@ -920,6 +954,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 val isFocusModeActive = prefs.isFocusModeActive()
                 binding.focusModeStatus?.isVisible = isFocusModeActive
                 if (!isFocusModeActive) {
+                    updateFocusModeIconAppearance(false)
                     updateStatusBarVisibility(false)
                     positionOverlayText()
                     break
@@ -949,8 +984,15 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
     }
 
-    private fun resetTextClockToSystem(clock: TextClock) {
+    private fun applyClockTimeFormat(clock: TextClock) {
         clock.timeZone = java.util.TimeZone.getDefault().id
+        val pattern = if (prefs.timeFormat24h) "HH:mm" else "h:mm"
+        clock.format12Hour = pattern
+        clock.format24Hour = pattern
+    }
+
+    private fun resetTextClockToSystem(clock: TextClock) {
+        applyClockTimeFormat(clock)
     }
 
     private fun currentBatteryLevel(): Int? {
@@ -1012,6 +1054,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (prayerJob?.isActive == true) return
         prayerJob = viewLifecycleOwner.lifecycleScope.launch {
             while (isActive) {
+                if (prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE) break
                 val prayerState = currentPrayerState
                 if (!prefs.showPrayerOnHome || prayerState == null) {
                     binding.prayerText?.isVisible = false
@@ -1055,10 +1098,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun topCornerHorizontalGravity(): Int {
-        return if (resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL) {
-            Gravity.START
-        } else {
-            Gravity.END
+        return when (frameHorizontalGravity(prefs.homeAlignment)) {
+            Gravity.END -> Gravity.START
+            else -> Gravity.END
         }
     }
 
@@ -1178,14 +1220,113 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                     marginEnd = horizontalMargin
                     gravity = iconsGravity or Gravity.TOP
                 }
+            positionFocusModeStandardIcon()
         } catch (_: Throwable) {
         }
+    }
+
+    private fun updateFocusModeIconPlacement(showRingClock: Boolean) {
+        val showFocus = prefs.showFocusOnHome
+        binding.focusModeIconRingContainer.isVisible = showFocus && showRingClock
+        binding.focusModeIconStandardContainer.isVisible = showFocus && !showRingClock
+        if (showFocus && !showRingClock) positionFocusModeStandardIcon()
+    }
+
+    private fun positionFocusModeStandardIcon() {
+        val binding = safeBinding ?: return
+        val icon = binding.focusModeIconStandardContainer
+        if (!icon.isVisible) return
+        val parent = binding.mainLayout
+        val lp = icon.layoutParams as? FrameLayout.LayoutParams ?: return
+
+        if (icon.width <= 0 && icon.measuredWidth <= 0) {
+            icon.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            )
+        }
+        val iconW = icon.width.takeIf { it > 0 } ?: icon.measuredWidth
+        val iconH = icon.height.takeIf { it > 0 } ?: icon.measuredHeight
+        if (iconW <= 0 || iconH <= 0) {
+            icon.post { if (safeBinding != null) positionFocusModeStandardIcon() }
+            return
+        }
+
+        val gap = 12.dpToPx()
+        val edge = 8.dpToPx()
+        val isRtl = resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        val alignment = frameHorizontalGravity(prefs.homeAlignment)
+        val iconsOnStart = frameHorizontalGravity(topCornerHorizontalGravity()) == Gravity.START
+        val focusOnLeftOfClock = alignment != Gravity.START
+        val anchor = when {
+            binding.clock.isVisible -> binding.clock
+            binding.date?.isVisible == true -> binding.date
+            else -> null
+        }
+
+        lp.gravity = Gravity.TOP or Gravity.START
+        lp.leftMargin = 0
+        lp.rightMargin = 0
+        lp.marginEnd = 0
+
+        val leftX: Int
+        val topY: Int
+        if (anchor == null || !binding.dateTimeLayout.isVisible) {
+            val stack = binding.topCornerStack
+            if (stack.isVisible) {
+                val (sx, sy) = offsetInParent(parent, stack)
+                leftX = if (iconsOnStart) {
+                    sx + stack.width + gap
+                } else {
+                    (sx - gap - iconW).coerceAtLeast(edge)
+                }
+                topY = sy
+            } else {
+                leftX = 24.dpToPx()
+                topY = 56.dpToPx()
+            }
+        } else {
+            val (ax, ay) = offsetInParent(parent, anchor)
+            var x = if (focusOnLeftOfClock) ax - gap - iconW else ax + anchor.width + gap
+            val stack = binding.topCornerStack
+            if (stack.isVisible && stack.width > 0) {
+                val (sx, _) = offsetInParent(parent, stack)
+                x = if (iconsOnStart) {
+                    x.coerceAtLeast(sx + stack.width + gap)
+                } else {
+                    x.coerceAtMost(sx - gap - iconW)
+                }
+            }
+            leftX = x
+            topY = ay + ((anchor.height - iconH) / 2).coerceAtLeast(0)
+        }
+
+        val maxLeft = (parent.width - iconW - edge).coerceAtLeast(edge)
+        val clampedLeft = leftX.coerceIn(edge, maxLeft)
+        lp.marginStart = if (isRtl) parent.width - clampedLeft - iconW else clampedLeft
+        lp.topMargin = topY.coerceAtLeast(0)
+        icon.layoutParams = lp
+        icon.bringToFront()
+    }
+
+    private fun offsetInParent(parent: View, child: View): Pair<Int, Int> {
+        var x = 0
+        var y = 0
+        var current: View? = child
+        while (current != null && current !== parent) {
+            x += current.left
+            y += current.top
+            current = current.parent as? View
+        }
+        return x to y
     }
 
     private fun populateHomeScreen(appCountUpdated: Boolean) {
         scheduleMindfulMorningUnmask()
         if (appCountUpdated) hideHomeApps()
         populateDateTime()
+        populateWeather(viewModel.weatherData.value)
+        populatePrayer(viewModel.prayerData.value)
         updateTodoIconCount()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
@@ -1496,7 +1637,12 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private fun showMindfulMorningHardBlockIfNeeded(packageName: String): Boolean {
         if (!viewModel.mindfulMorningManager.isLaunchBlocked(packageName)) return false
         val untilMillis = viewModel.mindfulMorningManager.getBlockedUntilTime()
-        val timeLabel = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(untilMillis))
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = untilMillis }
+        val timeLabel = formatReminderTime(
+            cal.get(java.util.Calendar.HOUR_OF_DAY),
+            cal.get(java.util.Calendar.MINUTE),
+            prefs.timeFormat24h,
+        )
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.mindful_morning)
             .setMessage(getString(R.string.mindful_morning_hard_blocked, timeLabel))
@@ -1719,18 +1865,30 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private fun showLongPressToast() = requireContext().showToast(getString(R.string.long_press_to_select_app))
 
-    private fun startFocusModeFromDoubleTap() {
+    // private fun startFocusModeFromDoubleTap() {
+    //     if (!PremiumAccess.hasPremiumAccess(prefs)) {
+    //         (requireActivity() as? MainActivity)?.showUpgradeDialog()
+    //         return
+    //     }
+    //     if (prefs.isFocusModeActive()) {
+    //         requireContext().showToast(R.string.focus_mode_blocked)
+    //         return
+    //     }
+    //     if (!isAccessServiceEnabled(requireContext())) {
+    //         requireContext().showAccessibilityDisclosure()
+    //         return
+    //     }
+    //     showFocusModeDurationPrompt()
+    // }
+
+    private fun startFocusModeFromHome() {
+        if (!prefs.showFocusOnHome) return
         if (!PremiumAccess.hasPremiumAccess(prefs)) {
             (requireActivity() as? MainActivity)?.showUpgradeDialog()
             return
         }
         if (prefs.isFocusModeActive()) {
             requireContext().showToast(R.string.focus_mode_blocked)
-            return
-        }
-        if (!isAccessServiceEnabled(requireContext())) {
-            requireContext().showToast(R.string.focus_mode_enable_accessibility, Toast.LENGTH_LONG)
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             return
         }
         showFocusModeDurationPrompt()
@@ -1820,7 +1978,22 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             (requireActivity() as? MainActivity)?.showUpgradeDialog()
             return
         }
+        if (!isAccessServiceEnabled(requireContext())) {
+            pendingFocusModeDuration = durationInMillis
+            requireContext().showAccessibilityDisclosure()
+            return
+        }
+        pendingFocusModeDuration = null
         prefs.startFocusMode(durationInMillis)
+        syncFocusModeState()
+        viewModel.refreshHome(false)
+    }
+
+    private fun completePendingFocusModeIfReady() {
+        val duration = pendingFocusModeDuration ?: return
+        if (!isAccessServiceEnabled(requireContext())) return
+        pendingFocusModeDuration = null
+        prefs.startFocusMode(duration)
         syncFocusModeState()
         viewModel.refreshHome(false)
     }
@@ -1925,19 +2098,22 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 openHomeSettings()
             }
 
-            override fun onDoubleClick() {
-                super.onDoubleClick()
-                when (prefs.doubleTapAction) {
-                    Constants.DoubleTapAction.FOCUS -> startFocusModeFromDoubleTap()
-                    else -> {
-                        if (!prefs.lockModeOn) return
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                            binding.lock.performClick()
-                        else
-                            lockPhone()
-                    }
-                }
-            }
+            // Double-tap gesture disabled — settings UI removed.
+            // override fun onDoubleClick() {
+            //     super.onDoubleClick()
+            //     when (prefs.doubleTapAction) {
+            //         Constants.DoubleTapAction.FOCUS -> startFocusModeFromDoubleTap()
+            //         else -> {
+            //             if (!prefs.lockModeOn) return
+            //             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            //                 MyAccessibilityService.lockScreen(requireContext())
+            //                 binding.lock.performClick()
+            //             } else {
+            //                 lockPhone()
+            //             }
+            //         }
+            //     }
+            // }
 
             override fun onClick() {
                 super.onClick()

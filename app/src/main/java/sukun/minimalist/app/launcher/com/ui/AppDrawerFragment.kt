@@ -1,18 +1,23 @@
 package sukun.minimalist.app.launcher.com.ui
 
 import android.graphics.Color
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.animation.AnimationUtils
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -57,6 +62,10 @@ class AppDrawerFragment : Fragment() {
     private var currentPrivateSpaceLocked: Boolean = true
     private var currentPrivateSpaceAvailable: Boolean = false
     private var combineListRunnable: Runnable? = null
+    private var listBottomPadding = 0
+    private val drawerLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+        updateKeyboardOverlapPadding()
+    }
 
     private val viewModel: MainViewModel by activityViewModels()
     private var _binding: FragmentAppDrawerBinding? = null
@@ -85,6 +94,7 @@ class AppDrawerFragment : Fragment() {
         }
 
         initViews()
+        setupDrawerPositioning()
         initSearch()
         initAdapter()
         initObservers()
@@ -108,16 +118,68 @@ class AppDrawerFragment : Fragment() {
         else
             binding.search.queryHint = getString(R.string.search_apps_hint)
         try {
-            val searchTextView = binding.search.findViewById<TextView>(R.id.search_src_text)
+            binding.search.findViewById<View>(androidx.appcompat.R.id.search_mag_icon)?.apply {
+                layoutParams = layoutParams.apply {
+                    width = 0
+                    height = 0
+                }
+                isVisible = false
+            }
+            val searchTextView = binding.search.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
             if (searchTextView != null) {
-                searchTextView.gravity = prefs.appLabelAlignment
+                searchTextView.gravity = Gravity.START or Gravity.CENTER_VERTICAL
                 searchTextView.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
                 searchTextView.setHintTextColor(requireContext().getColorFromAttr(R.attr.primaryColorTrans50))
                 searchTextView.setShadowLayer(4f, 0f, 2f, requireContext().getColorFromAttr(R.attr.primaryTextShadowColor))
+                searchTextView.isCursorVisible = true
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    searchTextView.setTextCursorDrawable(R.drawable.search_cursor)
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    private fun setupDrawerPositioning() {
+        listBottomPadding = binding.recyclerView.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(view.paddingLeft, sys.top, view.paddingRight, view.paddingBottom)
+            insets
+        }
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener(drawerLayoutListener)
+        ViewCompat.requestApplyInsets(binding.root)
+    }
+
+    private fun updateKeyboardOverlapPadding() {
+        val drawer = _binding ?: return
+        val visible = Rect()
+        drawer.root.getWindowVisibleDisplayFrame(visible)
+        val overlap = (drawer.root.rootView.height - visible.bottom).coerceAtLeast(0)
+        val bottom = listBottomPadding + overlap
+        if (drawer.recyclerView.paddingBottom != bottom) {
+            drawer.recyclerView.setPadding(
+                drawer.recyclerView.paddingLeft,
+                drawer.recyclerView.paddingTop,
+                drawer.recyclerView.paddingRight,
+                bottom,
+            )
+            drawer.fastScroller.setPadding(
+                drawer.fastScroller.paddingLeft,
+                drawer.fastScroller.paddingTop,
+                drawer.fastScroller.paddingRight,
+                overlap,
+            )
+            scrollSearchResultsToTop()
+        }
+    }
+
+    private fun scrollSearchResultsToTop() {
+        val drawer = _binding ?: return
+        if (drawer.search.query.isNullOrBlank()) return
+        if (!::linearLayoutManager.isInitialized) return
+        linearLayoutManager.scrollToPositionWithOffset(0, 0)
     }
 
     private fun initSearch() {
@@ -127,8 +189,7 @@ class AppDrawerFragment : Fragment() {
                     requireContext().openUrl(Constants.URL_DUCK_SEARCH + query.replace(" ", "%20"))
                 else if (adapter.itemCount == 0)
                     requireContext().openSearch(query?.trim())
-                else
-                    adapter.launchFirstInList()
+                binding.search.clearFocus()
                 return true
             }
 
@@ -136,11 +197,13 @@ class AppDrawerFragment : Fragment() {
                 try {
                     if (newText.isNotBlank()) {
                         viewModel.reportOnboardingAction(OnboardingAction.SEARCH_APPS)
+                        binding.recyclerView.layoutAnimation = null
                     }
                     adapter.filter.filter(newText)
                     updateFastScroller()
                     binding.appRename.visibility =
                         if (canRename && newText.isNotBlank()) View.VISIBLE else View.GONE
+                    scrollSearchResultsToTop()
                     return true
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -157,6 +220,7 @@ class AppDrawerFragment : Fragment() {
             prefs.showHomeAppIcons,
             onListChanged = {
                 updateFastScroller()
+                scrollSearchResultsToTop()
             },
             appClickListener = { appModel ->
                 if (flag == Constants.FLAG_LAUNCH_APP && appModel.appPackage.isNotBlank() &&
@@ -308,9 +372,10 @@ class AppDrawerFragment : Fragment() {
                 linearLayoutManager.scrollToPositionWithOffset(position, 0)
             }
         }
-        if (requireContext().isEinkDisplay().not())
+        if (requireContext().isEinkDisplay().not() && !prefs.autoShowKeyboard) {
             binding.recyclerView.layoutAnimation =
                 AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_anim_from_bottom)
+        }
         updateFastScroller()
     }
 
@@ -413,6 +478,7 @@ class AppDrawerFragment : Fragment() {
     }
 
     private fun initClickListeners() {
+        binding.drawerSettings.setOnClickListener { openSukunSettings() }
         binding.appRename.setOnClickListener {
             val name = binding.search.query.toString().trim()
             if (name.isEmpty()) {
@@ -433,6 +499,16 @@ class AppDrawerFragment : Fragment() {
             }
             findNavController().popBackStack()
         }
+    }
+
+    private fun openSukunSettings() {
+        if (!isAdded) return
+        binding.search.hideKeyboard()
+        val navController = findNavController()
+        if (navController.currentDestination?.id != R.id.appListFragment) return
+        navController.navigate(R.id.action_appListFragment_to_settingsFragment2)
+        viewModel.reportOnboardingAction(OnboardingAction.OPEN_SETTINGS)
+        viewModel.firstOpen(false)
     }
 
     private fun updateFastScroller() {
@@ -484,8 +560,12 @@ class AppDrawerFragment : Fragment() {
 
     private fun showMindfulMorningHardBlock() {
         val untilMillis = viewModel.mindfulMorningManager.getBlockedUntilTime()
-        val timeLabel = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
-            .format(java.util.Date(untilMillis))
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = untilMillis }
+        val timeLabel = sukun.minimalist.app.launcher.com.data.formatReminderTime(
+            cal.get(java.util.Calendar.HOUR_OF_DAY),
+            cal.get(java.util.Calendar.MINUTE),
+            prefs.timeFormat24h,
+        )
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle(R.string.mindful_morning)
             .setMessage(getString(R.string.mindful_morning_hard_blocked, timeLabel))
@@ -631,6 +711,7 @@ class AppDrawerFragment : Fragment() {
     override fun onDestroyView() {
         combineListRunnable?.let { _binding?.root?.removeCallbacks(it) }
         combineListRunnable = null
+        _binding?.root?.viewTreeObserver?.removeOnGlobalLayoutListener(drawerLayoutListener)
         super.onDestroyView()
         _binding = null
     }

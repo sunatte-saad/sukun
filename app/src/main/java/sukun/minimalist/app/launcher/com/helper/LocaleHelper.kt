@@ -49,19 +49,29 @@ object LocaleHelper {
         AppCompatDelegate.setApplicationLocales(toLocaleList(Prefs(context).appLanguage))
     }
 
-    fun wrapContext(base: Context): Context {
-        val languageCode = Prefs(base).appLanguage
-        if (languageCode.isEmpty()) return base
-
-        val locale = localeForCode(languageCode)
-        Locale.setDefault(locale)
-
-        val config = Configuration(base.resources.configuration)
-        config.setLocale(locale)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            config.setLocales(LocaleList(locale))
+    /**
+     * Writes the saved app locale and text-size scale onto [config].
+     * MainActivity must put both into applyOverrideConfiguration; overlaying only
+     * fontScale copies the system locale and permanently blocks language changes.
+     */
+    fun overlayConfiguration(base: Context, config: Configuration) {
+        val prefs = Prefs(base)
+        val languageCode = prefs.appLanguage
+        if (languageCode.isNotEmpty()) {
+            val locale = localeForCode(languageCode)
+            Locale.setDefault(locale)
+            config.setLocale(locale)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                config.setLocales(LocaleList(locale))
+            }
+            config.setLayoutDirection(locale)
         }
-        config.setLayoutDirection(locale)
+        config.fontScale = prefs.textSizeScale
+    }
+
+    fun wrapContext(base: Context): Context {
+        val config = Configuration(base.resources.configuration)
+        overlayConfiguration(base, config)
         return base.createConfigurationContext(config)
     }
 

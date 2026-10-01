@@ -1,0 +1,3 @@
+int raw com_android_billingclient_heterodyne_info 0x00000000
+int raw com_android_billingclient_registration_info 0x00000000
+int xml com_android_billingclient_phenotype 0x00000000

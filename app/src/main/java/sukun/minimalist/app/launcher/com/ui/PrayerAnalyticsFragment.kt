@@ -42,18 +42,19 @@ class PrayerAnalyticsFragment : Fragment() {
         val cal = Calendar.getInstance()
         val monthName = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date())
         val yearPrefix = String.format("%04d", cal.get(Calendar.YEAR))
-        val daysElapsedMonth = cal.get(Calendar.DAY_OF_MONTH)
-        val daysElapsedYear = cal.get(Calendar.DAY_OF_YEAR)
+        // Each prayer can be marked at most once per day, so capacity is days in the period.
+        val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+        val daysInYear = cal.getActualMaximum(Calendar.DAY_OF_YEAR)
 
         val todayKeys = AnalyticsRollupManager.todayPrayerKeys(prefs)
-        val monthLogs = AnalyticsRollupManager.monthPrayerLogs(prefs)
+        val monthCounts = AnalyticsRollupManager.monthPrayerDayCounts(prefs)
         val yearCounts = AnalyticsRollupManager.yearPrayerDayCounts(prefs)
 
         binding.tvTodayStats.text = buildTodayDashboard(todayKeys)
         binding.tvMonthHeader.text = monthName
-        binding.tvMonthStats.text = buildPrayerCountsFromLogs(monthLogs, daysElapsedMonth, padStart = 2)
+        binding.tvMonthStats.text = buildPrayerCounts(monthCounts, daysInMonth, padStart = 2)
         binding.tvYearHeader.text = yearPrefix
-        binding.tvYearStats.text = buildPrayerCountsFromAnnual(yearCounts, daysElapsedYear, padStart = 3)
+        binding.tvYearStats.text = buildPrayerCounts(yearCounts, daysInYear, padStart = 3)
     }
 
     private fun buildTodayDashboard(prayedKeys: Set<String>): String {
@@ -66,30 +67,18 @@ class PrayerAnalyticsFragment : Fragment() {
         }
     }
 
-    private fun buildPrayerCountsFromLogs(
-        logs: List<sukun.minimalist.app.launcher.com.data.PrayerLog>,
-        daysElapsed: Int,
-        padStart: Int,
-    ): String {
-        return buildString {
-            prayers.forEach { key ->
-                val daysPrayed = logs.count { it.prayerKey == key }
-                val name = getPrayerDisplayName(key).padEnd(8)
-                appendLine("$name ${daysPrayed.toString().padStart(padStart)} / ${daysElapsed.toString().padStart(padStart)}")
-            }
-        }
-    }
-
-    private fun buildPrayerCountsFromAnnual(
+    private fun buildPrayerCounts(
         counts: Map<String, Int>,
-        daysElapsed: Int,
+        totalDays: Int,
         padStart: Int,
     ): String {
         return buildString {
             prayers.forEach { key ->
                 val daysPrayed = counts[key] ?: 0
                 val name = getPrayerDisplayName(key).padEnd(8)
-                appendLine("$name ${daysPrayed.toString().padStart(padStart)} / ${daysElapsed.toString().padStart(padStart)}")
+                appendLine(
+                    "$name ${daysPrayed.toString().padStart(padStart)} / ${totalDays.toString().padStart(padStart)}"
+                )
             }
         }
     }

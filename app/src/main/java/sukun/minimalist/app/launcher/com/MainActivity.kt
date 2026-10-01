@@ -2,6 +2,7 @@ package sukun.minimalist.app.launcher.com
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -47,6 +48,11 @@ import sukun.minimalist.app.launcher.com.helper.isEinkDisplay
 import sukun.minimalist.app.launcher.com.helper.isNetworkAvailable
 import sukun.minimalist.app.launcher.com.helper.isSukunDefault
 import sukun.minimalist.app.launcher.com.helper.LocaleHelper
+import sukun.minimalist.app.launcher.com.helper.FirstRunSetup
+import sukun.minimalist.app.launcher.com.helper.FirstRunHomeAppsSetup
+import sukun.minimalist.app.launcher.com.helper.missingSukunSetupPermissions
+import sukun.minimalist.app.launcher.com.helper.appUsagePermissionGranted
+import sukun.minimalist.app.launcher.com.helper.applyDeviceLocationDeniedFallbacks
 import sukun.minimalist.app.launcher.com.helper.isTablet
 import sukun.minimalist.app.launcher.com.helper.openUrl
 import sukun.minimalist.app.launcher.com.helper.rateApp
@@ -77,6 +83,14 @@ class MainActivity : AppCompatActivity() {
         handleHomeRoleRequestResult()
     }
 
+    private val firstRunPermissionsLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { _ ->
+        applyFirstRunHomeFeatures()
+        applyDeviceLocationDeniedFallbacks(prefs)
+        promptFirstRunUsageAccessThenComplete()
+    }
+
     private lateinit var prefs: Prefs
     private lateinit var navController: NavController
     private lateinit var viewModel: MainViewModel
@@ -89,10 +103,12 @@ class MainActivity : AppCompatActivity() {
     private var driveRestoreDialogShowing = false
     private var driveRestorePromptedUpdatedAt = 0L
     private var driveRestoreChoiceMade = false
+    private var firstRunSetupShowing = false
+    private var premiumNudgeDialogShowing = false
 
     override fun attachBaseContext(context: Context) {
         val config = Configuration(context.resources.configuration)
-        config.fontScale = Prefs(context).textSizeScale
+        LocaleHelper.overlayConfiguration(context, config)
         applyOverrideConfiguration(config)
         super.attachBaseContext(context)
     }
@@ -131,6 +147,7 @@ class MainActivity : AppCompatActivity() {
 
         sukun.minimalist.app.launcher.com.helper.sync.AnalyticsRollupManager.ensureCurrent(this)
         sukun.minimalist.app.launcher.com.helper.sync.ScreenTimeSnapshotWorker.schedule(this)
+        sukun.minimalist.app.launcher.com.helper.sync.AccountSyncWorker.schedule(this)
         prefs.registerSyncDirtyListener {
             if (prefs.isSignedIn) {
                 sukun.minimalist.app.launcher.com.helper.sync.AccountSyncManager
@@ -147,6 +164,9 @@ class MainActivity : AppCompatActivity() {
         viewModel.getAppList()
         setupOrientation()
         initPremiumBilling()
+        if (prefs.dailyWallpaper) {
+            viewModel.setWallpaperWorker(runImmediately = false)
+        }
 
         window.addFlags(FLAG_LAYOUT_NO_LIMITS)
 
@@ -190,6 +210,9 @@ class MainActivity : AppCompatActivity() {
             viewModel.getAppList()
         }
         showFirstRunFlowIfNeeded()
+        maybePromptUsageAccess()
+        enforcePremiumExpiry()
+        if (!isRecreating) maybeShowPremiumNudge()
         viewModel.isSukunDefault()
         checkOnboardingLauncherStep()
         if (viewModel.isOnboardingActive()) {
@@ -197,7 +220,10 @@ class MainActivity : AppCompatActivity() {
         }
         viewModel.syncWallpaperIfPending()
         viewModel.syncAzanIfNeeded()
-        if (prefs.isSignedIn) {
+        if (prefs.isSignedIn &&
+            sukun.minimalist.app.launcher.com.helper.sync.AccountSyncManager
+                .shouldOfferRestorePrompt(applicationContext)
+        ) {
             lifecycleScope.launch(Dispatchers.IO) {
                 val outcome = sukun.minimalist.app.launcher.com.helper.sync.AccountSyncManager
                     .evaluateDrivePull(applicationContext, this@MainActivity)
@@ -224,6 +250,8 @@ class MainActivity : AppCompatActivity() {
         if (driveRestoreDialogShowing) return
         if (remote.updatedAt == driveRestorePromptedUpdatedAt) return
         if (remote.updatedAt <= prefs.syncDeclinedRemoteUpdatedAt) return
+        sukun.minimalist.app.launcher.com.helper.sync.AccountSyncManager
+            .recordRestorePromptShown(applicationContext)
         driveRestorePromptedUpdatedAt = remote.updatedAt
         driveRestoreDialogShowing = true
         driveRestoreChoiceMade = false
@@ -288,10 +316,8 @@ class MainActivity : AppCompatActivity() {
         }
         if (prefs.isSignedIn && !isFinishing && !isRecreating) {
             lifecycleScope.launch(Dispatchers.IO) {
-                sukun.minimalist.app.launcher.com.helper.sync.AccountSyncManager.syncNow(
-                    applicationContext,
-                    activity = this@MainActivity,
-                )
+                sukun.minimalist.app.launcher.com.helper.sync.AccountSyncManager
+                    .pushToDriveIfLocalNewer(applicationContext, activity = this@MainActivity)
             }
         }
         super.onStop()
@@ -408,9 +434,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 Constants.Dialog.DIGITAL_WELLBEING -> {
-                    showMessageDialog(R.string.screen_time, R.string.app_usage_message, R.string.permission) {
-                        startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                    }
+                    showUsageAccessPrompt()
                 }
 
             }
@@ -730,6 +754,8 @@ class MainActivity : AppCompatActivity() {
         if (prefs.firstOpenTime == 0L)
             prefs.firstOpenTime = System.currentTimeMillis()
 
+        if (maybeShowPremiumNudge()) return
+
         val calendar = Calendar.getInstance()
         val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
         if (dayOfYear == 1 && dayOfYear != prefs.shownOnDayOfYear) {
@@ -804,7 +830,17 @@ class MainActivity : AppCompatActivity() {
         navController.popBackStack(R.id.mainFragment, false)
     }
 
+    /** Called after the first-run sign-in screen is dismissed (sign-in or skip). */
+    fun continueFirstRunFlowAfterSignIn() {
+        showFirstRunFlowIfNeeded()
+    }
+
     private fun showFirstRunFlowIfNeeded() {
+        if (firstRunSetupShowing) return
+        if (!prefs.signInPromptShown && !prefs.privacyAndSetupComplete) {
+            startPrivacyAndSetup()
+            return
+        }
         if (!prefs.signInPromptShown) {
             showSignInIfNeeded()
             return
@@ -814,9 +850,91 @@ class MainActivity : AppCompatActivity() {
         viewModel.startOnboarding()
     }
 
+    private fun startPrivacyAndSetup() {
+        firstRunSetupShowing = true
+        FirstRunSetup.showPrivacyNotice(this) {
+            FirstRunSetup.showWakeTimeQuestion(this, prefs) {
+                FirstRunSetup.showRestTimeQuestion(this, prefs) {
+                    FirstRunHomeAppsSetup.start(this, prefs, viewModel) {
+                        promptFirstRunPermissions()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun applyFirstRunHomeFeatures() {
+        prefs.clockStyle = Constants.ClockStyle.DAY_RING
+        prefs.showWeatherOnHome = true
+        prefs.showPrayerOnHome = true
+        prefs.dailyWallpaper = true
+        prefs.wallpaperMsgShown = true
+        prefs.showHomeAppIcons = true
+        prefs.showRemindersOnHome = true
+        prefs.showTodoOnHome = true
+        prefs.showScreenTimeOnHome = true
+        prefs.showFocusOnHome = true
+    }
+
+    private fun promptFirstRunPermissions() {
+        applyFirstRunHomeFeatures()
+        val needed = missingSukunSetupPermissions()
+        if (needed.isEmpty()) {
+            promptFirstRunUsageAccessThenComplete()
+            return
+        }
+        firstRunPermissionsLauncher.launch(needed)
+    }
+
+    private fun promptFirstRunUsageAccessThenComplete() {
+        maybePromptUsageAccess(forceDuringSetup = true)
+        completePrivacyAndSetup()
+    }
+
+    private fun showUsageAccessPrompt() {
+        prefs.usageAccessPromptShown = true
+        showMessageDialog(R.string.screen_time, R.string.app_usage_message, R.string.permission) {
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        }
+    }
+
+    private fun maybePromptUsageAccess(forceDuringSetup: Boolean = false) {
+        if (!forceDuringSetup && firstRunSetupShowing) return
+        if (!forceDuringSetup && !prefs.privacyAndSetupComplete) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        if (!prefs.showScreenTimeOnHome) return
+        if (appUsagePermissionGranted()) return
+        if (prefs.usageAccessPromptShown) return
+        if (binding.messageLayout.visibility == View.VISIBLE) return
+        showUsageAccessPrompt()
+    }
+
+    private fun completePrivacyAndSetup() {
+        applyDeviceLocationDeniedFallbacks(prefs)
+        prefs.privacyAndSetupComplete = true
+        firstRunSetupShowing = false
+        viewModel.refreshHome(false)
+        if (prefs.showWeatherOnHome) viewModel.loadWeather(forceRefresh = true)
+        if (prefs.showPrayerOnHome) {
+            viewModel.refreshPrayerData(forceLocationRefresh = true)
+        }
+        if (prefs.dailyWallpaper) {
+            viewModel.setWallpaperWorker(runImmediately = false)
+        }
+        showFirstRunFlowIfNeeded()
+    }
+
     private fun showSignInIfNeeded() {
+        openSignInScreen()
+    }
+
+    fun openSignInScreen() {
+        if (prefs.isSignedIn) return
         if (navController.currentDestination?.id == R.id.signInFragment) return
         try {
+            if (navController.currentDestination?.id != R.id.mainFragment) {
+                navController.popBackStack(R.id.mainFragment, false)
+            }
             navController.navigate(R.id.action_mainFragment_to_signInFragment)
         } catch (e: Exception) {
             android.util.Log.w("Sukun", "Failed to open sign-in screen", e)
@@ -948,11 +1066,90 @@ class MainActivity : AppCompatActivity() {
         fragment.childFragmentManager.fragments.forEach { dismissDialogFragments(it) }
     }
 
+    private fun maybeShowPremiumNudge(): Boolean {
+        if (premiumNudgeDialogShowing) return true
+        if (isRecreating || isFinishing || isDestroyed) return false
+        if (prefs.premiumNudgeShown) return false
+        if (firstRunSetupShowing || viewModel.isOnboardingActive()) return false
+        if (!prefs.privacyAndSetupComplete) return false
+        if (navController.currentDestination?.id == R.id.signInFragment) return false
+        if (prefs.firstOpenTime == 0L) return false
+        if (!prefs.firstOpenTime.hasBeenDays(Constants.PREMIUM_NUDGE_DAYS)) return false
+        val needsPremium = !prefs.isProUser
+        val needsSignIn = !prefs.isSignedIn
+        if (!needsPremium && !needsSignIn) {
+            prefs.premiumNudgeShown = true
+            return false
+        }
+        showPremiumNudgeDialog(needsPremium, needsSignIn)
+        return true
+    }
+
+    private fun showPremiumNudgeDialog(needsPremium: Boolean, needsSignIn: Boolean) {
+        if (isFinishing || isDestroyed) return
+        premiumNudgeDialogShowing = true
+        val title = if (needsPremium) R.string.premium_nudge_title else R.string.sign_in_with_google
+        val message = when {
+            needsPremium && needsSignIn && PremiumAccess.trialExpired(prefs) ->
+                getString(R.string.premium_trial_ended) + "\n\n" + getString(R.string.premium_nudge_sign_in_message)
+            needsPremium && needsSignIn -> getString(R.string.premium_nudge_both_message)
+            needsPremium && PremiumAccess.trialExpired(prefs) -> getString(R.string.premium_trial_ended)
+            needsPremium -> getString(R.string.premium_nudge_message)
+            else -> getString(R.string.premium_nudge_sign_in_message)
+        }
+        val builder = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setNegativeButton(R.string.not_now, null)
+            .setOnDismissListener {
+                premiumNudgeDialogShowing = false
+                prefs.premiumNudgeShown = true
+            }
+        if (needsPremium && needsSignIn) {
+            builder.setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
+                premiumBillingManager?.launchPremiumPurchase()
+            }
+            builder.setNeutralButton(R.string.sign_in_with_google) { _, _ ->
+                binding.root.post { openSignInScreen() }
+            }
+        } else if (needsPremium) {
+            builder.setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
+                premiumBillingManager?.launchPremiumPurchase()
+            }
+        } else {
+            builder.setPositiveButton(R.string.sign_in_with_google) { _, _ ->
+                binding.root.post { openSignInScreen() }
+            }
+        }
+        builder.show()
+    }
+
     private fun enforcePremiumExpiry() {
         if (PremiumAccess.hasPremiumAccess(prefs)) return
-        if (prefs.dailyWallpaper) {
-            prefs.dailyWallpaper = false
+        val result = PremiumAccess.applyExpiredTrialDefaults(prefs)
+        if (result.wallpaperDisabled) {
             viewModel.cancelWallpaperWorker()
+        }
+        if (result.prayerDisabled) {
+            viewModel.cancelPrayerReminder(clearCachedPrayer = true)
+        }
+        if (!prefs.freeTierDefaultsApplied) {
+            prefs.freeTierDefaultsApplied = true
+            if (result.changed) showToast(R.string.premium_trial_ended)
+        }
+        if (!result.changed) return
+        if (result.themeChanged) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            setupAmbientThemeController()
+            if (isResumed && !isRecreating) {
+                isRecreating = true
+                safeRecreate()
+            }
+            return
+        }
+        if (isResumed) {
+            viewModel.toggleDateTime()
+            viewModel.refreshHome(false)
         }
     }
 
@@ -986,14 +1183,18 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
-            Constants.REQUEST_CODE_ENABLE_ADMIN -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    prefs.lockModeOn = true
-                    prefs.doubleTapAction = sukun.minimalist.app.launcher.com.data.Constants.DoubleTapAction.LOCK
-                }
-            }
+            // Constants.REQUEST_CODE_ENABLE_ADMIN -> {
+            //     if (resultCode == Activity.RESULT_OK) {
+            //         prefs.lockModeOn = true
+            //         prefs.doubleTapAction = sukun.minimalist.app.launcher.com.data.Constants.DoubleTapAction.LOCK
+            //     }
+            // }
             sukun.minimalist.app.launcher.com.helper.sync.GoogleDriveAuthHelper.REQUEST_CODE_DRIVE_AUTH -> {
                 sukun.minimalist.app.launcher.com.helper.sync.GoogleDriveAuthHelper
+                    .handleActivityResult(this, requestCode, resultCode, data)
+            }
+            sukun.minimalist.app.launcher.com.helper.GoogleAuthHelper.REQUEST_CODE_GOOGLE_AUTH -> {
+                sukun.minimalist.app.launcher.com.helper.GoogleAuthHelper
                     .handleActivityResult(this, requestCode, resultCode, data)
             }
         }

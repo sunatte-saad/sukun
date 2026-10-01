@@ -3,11 +3,13 @@ package sukun.minimalist.app.launcher.com.ui
 import android.Manifest
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
@@ -19,9 +21,10 @@ import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.BottomSheetWeatherSettingsBinding
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
+import sukun.minimalist.app.launcher.com.helper.applyDeviceLocationDeniedFallbacks
 import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
 import sukun.minimalist.app.launcher.com.helper.isLocationServicesEnabled
-import sukun.minimalist.app.launcher.com.helper.showLocationPermissionRationaleDialog
+import sukun.minimalist.app.launcher.com.helper.missingSukunSetupPermissions
 import sukun.minimalist.app.launcher.com.helper.showLocationServicesDisabledDialog
 
 class WeatherSettingsSheet : DialogFragment() {
@@ -47,7 +50,8 @@ class WeatherSettingsSheet : DialogFragment() {
             if (granted && source != null) {
                 applyWeatherSource(source)
             } else if (!granted) {
-                requireContext().showLocationPermissionRationaleDialog()
+                requireContext().applyDeviceLocationDeniedFallbacks(prefs)
+                applyWeatherSource(prefs.weatherSourceMode)
             }
         }
 
@@ -75,7 +79,14 @@ class WeatherSettingsSheet : DialogFragment() {
             window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             window.setGravity(Gravity.BOTTOM)
             window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            window.setDimAmount(0.55f)
+            window.setDimAmount(0.45f)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                window.setBackgroundBlurRadius(36)
+                val params = window.attributes
+                params.blurBehindRadius = 36
+                params.flags = params.flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+                window.attributes = params
+            }
         }
     }
 
@@ -96,34 +107,41 @@ class WeatherSettingsSheet : DialogFragment() {
     }
 
     private fun setupClickListeners() {
-        binding.weatherToggleRow.setOnClickListener { toggleWeather() }
-        binding.weatherSourceRow.setOnClickListener { toggleSourceChips() }
+        binding.weatherSourceRow.setOnClickListener {
+            val show = !binding.weatherSourceChips.isVisible
+            hideSelectors()
+            binding.weatherSourceChips.isVisible = show
+        }
         binding.chipWeatherDevice.setOnClickListener { selectWeatherSource(Constants.WeatherSource.DEVICE) }
         binding.chipWeatherManual.setOnClickListener { selectWeatherSource(Constants.WeatherSource.MANUAL) }
         binding.chipWeatherGoogle.setOnClickListener { selectWeatherSource(Constants.WeatherSource.GOOGLE) }
-        binding.weatherUnitsRow.setOnClickListener { toggleUnits() }
+        binding.weatherLocationRow.setOnClickListener {
+            hideSelectors()
+            dismiss()
+            listener?.onWeatherLocationNeeded()
+        }
+        binding.weatherUnitsRow.setOnClickListener {
+            val show = !binding.weatherUnitsSelectLayout.isVisible
+            hideSelectors()
+            binding.weatherUnitsSelectLayout.isVisible = show
+        }
+        binding.chipWeatherCelsius.setOnClickListener { selectUnits(Constants.WeatherUnit.CELSIUS) }
+        binding.chipWeatherFahrenheit.setOnClickListener { selectUnits(Constants.WeatherUnit.FAHRENHEIT) }
+    }
+
+    private fun hideSelectors() {
+        binding.weatherSourceChips.isVisible = false
+        binding.weatherUnitsSelectLayout.isVisible = false
     }
 
     private fun updateUI() {
-        val isOn = prefs.showWeatherOnHome
-        binding.weatherToggle.text = getString(if (isOn) R.string.on else R.string.off)
-        binding.weatherSubSettings.isVisible = isOn
-        if (isOn) {
-            updateSourceLabel()
-            updateSourceChips()
-            updateUnitChips()
-        }
-    }
-
-    private fun toggleWeather() {
-        prefs.showWeatherOnHome = !prefs.showWeatherOnHome
-        updateUI()
-        refreshWeather()
-        listener?.onWeatherSettingsChanged()
-    }
-
-    private fun toggleSourceChips() {
-        binding.weatherSourceChips.isVisible = !binding.weatherSourceChips.isVisible
+        hideSelectors()
+        updateSourceLabel()
+        updateSourceChips()
+        updateLocationLabel()
+        updateUnitLabel()
+        binding.weatherLocationRow.isVisible =
+            prefs.weatherSourceMode != Constants.WeatherSource.GOOGLE
     }
 
     private fun updateSourceLabel() {
@@ -136,31 +154,38 @@ class WeatherSettingsSheet : DialogFragment() {
         )
     }
 
-    private fun updateSourceChips() {
-        setSourceChipState(binding.chipWeatherDevice, prefs.weatherSourceMode == Constants.WeatherSource.DEVICE)
-        setSourceChipState(binding.chipWeatherManual, prefs.weatherSourceMode == Constants.WeatherSource.MANUAL)
-        setSourceChipState(binding.chipWeatherGoogle, prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE)
+    private fun updateLocationLabel() {
+        binding.weatherLocationValue.text = when {
+            prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE ->
+                getString(R.string.google_weather_short)
+            prefs.weatherSourceMode == Constants.WeatherSource.DEVICE ->
+                prefs.weatherLocationLabel.ifBlank { getString(R.string.device_location) }
+            prefs.weatherLocationLabel.isNotBlank() -> prefs.weatherLocationLabel
+            else -> getString(R.string.not_set)
+        }
     }
 
-    private fun setSourceChipState(chip: TextView, selected: Boolean) {
-        chip.setTextColor(
-            requireContext().getColorFromAttr(
-                if (selected) R.attr.primaryColor else R.attr.primaryColorTrans50
-            )
-        )
-        chip.paint.isFakeBoldText = selected
+    private fun updateSourceChips() {
+        setOptionState(binding.chipWeatherDevice, prefs.weatherSourceMode == Constants.WeatherSource.DEVICE)
+        setOptionState(binding.chipWeatherManual, prefs.weatherSourceMode == Constants.WeatherSource.MANUAL)
+        setOptionState(binding.chipWeatherGoogle, prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE)
+    }
+
+    private fun setOptionState(option: TextView, selected: Boolean) {
+        option.alpha = if (selected) 1f else 0.4f
+        option.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
     }
 
     private fun selectWeatherSource(source: String) {
         if (prefs.weatherSourceMode == source) {
-            binding.weatherSourceChips.isVisible = false
+            hideSelectors()
             return
         }
         when (source) {
             Constants.WeatherSource.DEVICE -> requestDeviceWeatherSource()
             Constants.WeatherSource.MANUAL -> {
                 if (prefs.weatherLocationQuery.isBlank()) {
-                    binding.weatherSourceChips.isVisible = false
+                    hideSelectors()
                     dismiss()
                     listener?.onWeatherLocationNeeded()
                     return
@@ -182,12 +207,12 @@ class WeatherSettingsSheet : DialogFragment() {
             return
         }
         pendingWeatherSource = Constants.WeatherSource.DEVICE
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
+        val needed = context.missingSukunSetupPermissions()
+        if (needed.isEmpty()) {
+            applyWeatherSource(Constants.WeatherSource.DEVICE)
+            return
+        }
+        locationPermissionLauncher.launch(needed)
     }
 
     private fun applyWeatherSource(source: String) {
@@ -195,37 +220,39 @@ class WeatherSettingsSheet : DialogFragment() {
         if (source == Constants.WeatherSource.GOOGLE || source == Constants.WeatherSource.DEVICE) {
             prefs.clearWeatherCache()
         }
-        binding.weatherSourceChips.isVisible = false
-        updateSourceLabel()
-        updateSourceChips()
+        hideSelectors()
+        updateUI()
         refreshWeather()
         listener?.onWeatherSettingsChanged()
     }
 
-    private fun updateUnitChips() {
+    private fun updateUnitLabel() {
         binding.weatherUnitsValue.text = getString(
             if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT)
                 R.string.fahrenheit_short
             else
                 R.string.celsius_short
         )
-    }
-
-    private fun toggleUnits() {
-        val next = if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT) {
-            Constants.WeatherUnit.CELSIUS
-        } else {
-            Constants.WeatherUnit.FAHRENHEIT
-        }
-        selectUnits(next)
+        setOptionState(
+            binding.chipWeatherCelsius,
+            prefs.weatherUnits != Constants.WeatherUnit.FAHRENHEIT,
+        )
+        setOptionState(
+            binding.chipWeatherFahrenheit,
+            prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT,
+        )
     }
 
     private fun selectUnits(units: String) {
-        if (prefs.weatherUnits == units) return
+        if (prefs.weatherUnits == units) {
+            hideSelectors()
+            return
+        }
         prefs.weatherUnits = units
         prefs.clearWeatherCache()
+        hideSelectors()
         refreshWeather()
-        updateUnitChips()
+        updateUnitLabel()
         listener?.onWeatherSettingsChanged()
     }
 

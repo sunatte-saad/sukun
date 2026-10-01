@@ -1,0 +1,4 @@
+com.android.billingclient
+raw com_android_billingclient_heterodyne_info
+raw com_android_billingclient_registration_info
+xml com_android_billingclient_phenotype

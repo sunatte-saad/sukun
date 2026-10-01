@@ -44,6 +44,7 @@ class PrayerSettingsSheet : DialogFragment() {
 
     interface Listener {
         fun onPrayerSettingsChanged()
+        fun onPrayerLocationNeeded()
     }
 
     private var _binding: BottomSheetPrayerSettingsBinding? = null
@@ -97,7 +98,7 @@ class PrayerSettingsSheet : DialogFragment() {
             window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             window.setGravity(Gravity.BOTTOM)
             window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            window.setDimAmount(0.4f)
+            window.setDimAmount(0.45f)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 window.setBackgroundBlurRadius(40)
                 val params = window.attributes
@@ -125,7 +126,16 @@ class PrayerSettingsSheet : DialogFragment() {
     }
 
     private fun setupClickListeners() {
-        binding.prayerToggleRow.setOnClickListener { togglePrayer() }
+        binding.prayerLocationRow.setOnClickListener {
+            hideSelectors()
+            dismiss()
+            listener?.onPrayerLocationNeeded()
+        }
+        binding.azanRow.setOnClickListener {
+            val show = !binding.azanSelectLayout.isVisible
+            hideSelectors()
+            binding.azanSelectLayout.isVisible = show
+        }
         binding.chipAzanOff.setOnClickListener { selectAzan(Constants.AzanSound.OFF) }
         binding.chipAzanMakkah.setOnClickListener { selectAzan(Constants.AzanSound.MAKKAH) }
         binding.chipAzanMarylebone.setOnClickListener { selectAzan(Constants.AzanSound.MARYLEBONE) }
@@ -137,16 +147,31 @@ class PrayerSettingsSheet : DialogFragment() {
         }
     }
 
+    private fun hideSelectors() {
+        binding.azanSelectLayout.isVisible = false
+    }
+
     private fun updateUI() {
-        val isOn = prefs.showPrayerOnHome
-        binding.prayerToggle.text = getString(if (isOn) R.string.on else R.string.off)
-        binding.prayerSubSettings.isVisible = isOn
-        if (isOn) {
-            updateAzanChips()
-            updateCustomAzanRow()
-            ensureAzanDownloaded()
-        }
+        hideSelectors()
+        updateLocationLabel()
+        updateAzanChips()
+        updateCustomAzanRow()
+        ensureAzanDownloaded()
         applyPremiumVisuals()
+    }
+
+    private fun updateLocationLabel() {
+        binding.prayerLocationValue.text = when {
+            prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE ->
+                getString(R.string.google_prayer_times)
+            prefs.prayerSourceMode == Constants.PrayerSource.DEVICE ->
+                prefs.prayerLocationLabel.ifBlank {
+                    prefs.weatherLocationLabel.ifBlank { getString(R.string.device_location) }
+                }
+            prefs.prayerLocationLabel.isNotBlank() -> prefs.prayerLocationLabel
+            prefs.weatherLocationLabel.isNotBlank() -> prefs.weatherLocationLabel
+            else -> getString(R.string.not_set)
+        }
     }
 
     private fun applyPremiumVisuals() {
@@ -166,25 +191,20 @@ class PrayerSettingsSheet : DialogFragment() {
         return false
     }
 
-    private fun togglePrayer() {
-        if (!prefs.showPrayerOnHome && !requirePremiumAccess()) return
-        prefs.showPrayerOnHome = !prefs.showPrayerOnHome
-        updateUI()
-        if (prefs.showPrayerOnHome) {
-            requestNotificationPermissionIfNeeded()
-            refreshPrayer(promptForAlarmPermission = true)
-        } else {
-            refreshPrayer()
-        }
-        listener?.onPrayerSettingsChanged()
-    }
-
     private fun updateAzanChips() {
         val sound = prefs.azanSound
-        setChipState(binding.chipAzanOff, sound == Constants.AzanSound.OFF)
-        setChipState(binding.chipAzanMakkah, sound == Constants.AzanSound.MAKKAH)
-        setChipState(binding.chipAzanMarylebone, sound == Constants.AzanSound.MARYLEBONE)
-        setChipState(binding.chipAzanCustom, sound == Constants.AzanSound.CUSTOM)
+        binding.azanValue.text = getString(
+            when (sound) {
+                Constants.AzanSound.MAKKAH -> R.string.azan_sound_makkah
+                Constants.AzanSound.MARYLEBONE -> R.string.azan_sound_marylebone
+                Constants.AzanSound.CUSTOM -> R.string.custom
+                else -> R.string.off
+            }
+        )
+        setOptionState(binding.chipAzanOff, sound == Constants.AzanSound.OFF)
+        setOptionState(binding.chipAzanMakkah, sound == Constants.AzanSound.MAKKAH)
+        setOptionState(binding.chipAzanMarylebone, sound == Constants.AzanSound.MARYLEBONE)
+        setOptionState(binding.chipAzanCustom, sound == Constants.AzanSound.CUSTOM)
     }
 
     private fun updateCustomAzanRow() {
@@ -195,15 +215,9 @@ class PrayerSettingsSheet : DialogFragment() {
             getString(R.string.change)
     }
 
-    private fun setChipState(chip: TextView, selected: Boolean) {
-        chip.setBackgroundResource(
-            if (selected) R.drawable.bg_chip_selected else R.drawable.bg_chip_unselected
-        )
-        chip.setTextColor(
-            requireContext().getColorFromAttr(
-                if (selected) R.attr.primaryInverseColor else R.attr.primaryColor
-            )
-        )
+    private fun setOptionState(option: TextView, selected: Boolean) {
+        option.alpha = if (selected) 1f else 0.4f
+        option.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
     }
 
     private fun selectAzan(sound: String) {
@@ -211,9 +225,13 @@ class PrayerSettingsSheet : DialogFragment() {
             if (requirePremiumAccess()) customAzanPickerLauncher.launch(arrayOf("audio/*"))
             return
         }
-        if (prefs.azanSound == sound) return
+        if (prefs.azanSound == sound) {
+            hideSelectors()
+            return
+        }
         prefs.azanSound = sound
         prefs.azanEnabled = sound != Constants.AzanSound.OFF
+        hideSelectors()
         updateAzanChips()
         updateCustomAzanRow()
         if (prefs.azanEnabled) {
@@ -256,12 +274,17 @@ class PrayerSettingsSheet : DialogFragment() {
             viewModel.cancelPrayerReminder(clearCachedPrayer = true)
             return
         }
+        if (prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE) {
+            viewModel.cancelPrayerReminder(clearCachedPrayer = true)
+            return
+        }
         if (prefs.prayerSourceMode == Constants.PrayerSource.MANUAL && prefs.prayerLocationQuery.isBlank()) {
             viewModel.cancelPrayerReminder(clearCachedPrayer = true)
             return
         }
         val canRefresh = when (prefs.prayerSourceMode) {
             Constants.PrayerSource.DEVICE -> requireContext().hasWeatherLocationPermission()
+            Constants.PrayerSource.GOOGLE -> false
             else -> prefs.prayerLocationQuery.isNotBlank()
         }
         if (canRefresh) {

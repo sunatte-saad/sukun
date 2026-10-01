@@ -37,7 +37,6 @@ class ScreenTimeSnapshotWorker(
             0L
         }
         AnalyticsRollupManager.recordScreenTimeMinutes(context, day, minutes.toInt())
-        AccountSyncManager.pushToDriveIfLocalNewer(context)
         return Result.success()
     }
 

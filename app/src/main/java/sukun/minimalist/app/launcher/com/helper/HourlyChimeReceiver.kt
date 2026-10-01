@@ -20,7 +20,9 @@ class HourlyChimeReceiver : BroadcastReceiver() {
             pendingResult.finish()
             return
         }
-        val holdMs = HourlyChimeEffects.holdMsForStyle(prefs.hourlyChimeStyle)
+        val holdMs = HourlyChimeEffects.holdMsForStyle(
+            HourlyChimeEffects.resolveStyle(appContext, prefs.hourlyChimeStyle)
+        )
         try {
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             if (isInChimeWindow(hour, prefs.hourlyChimeStartHour, prefs.hourlyChimeEndHour)) {

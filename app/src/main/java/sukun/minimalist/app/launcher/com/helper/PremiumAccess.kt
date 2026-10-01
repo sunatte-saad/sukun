@@ -1,5 +1,6 @@
 package sukun.minimalist.app.launcher.com.helper
 
+import androidx.appcompat.app.AppCompatDelegate
 import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
 
@@ -29,4 +30,73 @@ object PremiumAccess {
     }
 
     fun lockedAlpha(prefs: Prefs): Float = if (hasPremiumAccess(prefs)) 1f else LOCKED_ALPHA
+
+    fun effectiveClockStyle(prefs: Prefs): String {
+        return if (prefs.clockStyle == Constants.ClockStyle.DAY_RING && !hasPremiumAccess(prefs)) {
+            Constants.ClockStyle.STANDARD
+        } else {
+            prefs.clockStyle
+        }
+    }
+
+    data class ExpiredTrialCleanup(
+        val changed: Boolean,
+        val wallpaperDisabled: Boolean,
+        val prayerDisabled: Boolean,
+        val themeChanged: Boolean,
+    )
+
+    /** Persist free-tier defaults once the 30-day trial ends (clock, wallpaper, prayer, etc.). */
+    fun applyExpiredTrialDefaults(prefs: Prefs): ExpiredTrialCleanup {
+        if (hasPremiumAccess(prefs)) {
+            return ExpiredTrialCleanup(
+                changed = false,
+                wallpaperDisabled = false,
+                prayerDisabled = false,
+                themeChanged = false,
+            )
+        }
+        var wallpaperDisabled = false
+        var prayerDisabled = false
+        var themeChanged = false
+        var changed = false
+
+        if (prefs.clockStyle != Constants.ClockStyle.STANDARD) {
+            prefs.clockStyle = Constants.ClockStyle.STANDARD
+            changed = true
+        }
+        if (prefs.dailyWallpaper) {
+            prefs.dailyWallpaper = false
+            wallpaperDisabled = true
+            changed = true
+        }
+        if (prefs.appTheme == Constants.THEME_MODE_AMBIENT_LIGHT) {
+            prefs.appTheme = AppCompatDelegate.MODE_NIGHT_YES
+            themeChanged = true
+            changed = true
+        }
+        if (prefs.mindfulMorningHard) {
+            prefs.mindfulMorningHard = false
+            changed = true
+        }
+        if (prefs.isFocusModeActive()) {
+            prefs.clearFocusMode()
+            changed = true
+        }
+        if (prefs.showPrayerOnHome) {
+            prefs.showPrayerOnHome = false
+            prayerDisabled = true
+            changed = true
+        }
+        if (prefs.azanEnabled || prefs.azanSound != Constants.AzanSound.OFF) {
+            prefs.azanEnabled = false
+            prefs.azanSound = Constants.AzanSound.OFF
+            changed = true
+        }
+        if (prefs.hourlyChimeSound == Constants.ChimeSound.CUSTOM) {
+            prefs.hourlyChimeSound = Constants.ChimeSound.BUNDLED
+            changed = true
+        }
+        return ExpiredTrialCleanup(changed, wallpaperDisabled, prayerDisabled, themeChanged)
+    }
 }

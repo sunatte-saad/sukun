@@ -42,6 +42,7 @@ object SyncSettingsCodec {
         BoolKey("afs", { it.appDrawerFastScroller }, { p, v -> p.appDrawerFastScroller = v }),
         BoolKey("hbr", { it.homeButtonShowRecents }, { p, v -> p.homeButtonShowRecents = v }),
         BoolKey("st", { it.showScreenTimeOnHome }, { p, v -> p.showScreenTimeOnHome = v }),
+        BoolKey("fh", { it.showFocusOnHome }, { p, v -> p.showFocusOnHome = v }),
         BoolKey("pr", { it.showPrayerOnHome }, { p, v -> p.showPrayerOnHome = v }),
         BoolKey("wx", { it.showWeatherOnHome }, { p, v -> p.showWeatherOnHome = v }),
         BoolKey("dn", { it.showDailyNotesOnHome }, { p, v -> p.showDailyNotesOnHome = v }),

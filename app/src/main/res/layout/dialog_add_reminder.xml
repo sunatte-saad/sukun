@@ -53,62 +53,67 @@
                     android:textColorHint="?attr/primaryColorTrans50" />
 
                 <!-- Schedule type -->
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    style="@style/TextSmall"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:text="@string/reminder_schedule"
+                    android:textColor="?attr/primaryColor" />
 
-                    <TextView
-                        style="@style/TextSmall"
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fillViewport="true"
+                    android:overScrollMode="never"
+                    android:scrollbars="none">
+
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/reminder_schedule"
-                        android:textColor="?attr/primaryColor" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                    <Space
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
+                        <TextView
+                            android:id="@+id/typeDailyBtn"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="6dp"
+                            android:text="@string/schedule_daily" />
 
-                    <TextView
-                        android:id="@+id/typeDailyBtn"
-                        style="@style/TextSmallBold"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="6dp"
-                        android:text="@string/schedule_daily" />
+                        <TextView
+                            android:id="@+id/typeHourlyBtn"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="6dp"
+                            android:text="@string/schedule_hourly" />
 
-                    <TextView
-                        android:id="@+id/typeHourlyBtn"
-                        style="@style/TextSmallBold"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="6dp"
-                        android:text="@string/schedule_hourly" />
+                        <TextView
+                            android:id="@+id/typeWeeklyBtn"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="6dp"
+                            android:text="@string/schedule_weekly" />
 
-                    <TextView
-                        android:id="@+id/typeWeeklyBtn"
-                        style="@style/TextSmallBold"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="6dp"
-                        android:text="@string/schedule_weekly" />
+                        <TextView
+                            android:id="@+id/typeOnceBtn"
+                            style="@style/TextSmallBold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="6dp"
+                            android:text="@string/schedule_once" />
 
-                    <TextView
-                        android:id="@+id/typeOnceBtn"
-                        style="@style/TextSmallBold"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="6dp"
-                        android:text="@string/schedule_once" />
+                    </LinearLayout>
 
-                </LinearLayout>
+                </HorizontalScrollView>
 
                 <!-- Date row (ONCE only) -->
                 <LinearLayout

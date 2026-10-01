@@ -67,7 +67,7 @@ class SignInFragment : Fragment() {
         viewModel.isAuthFlowActive = true
         requireActivity().lifecycleScope.launch {
             try {
-                val result = withTimeout(90_000L) {
+                val result = withTimeout(180_000L) {
                     googleAuthHelper.signIn(requireActivity())
                 }
                 handleSignInResult(result)
@@ -101,49 +101,15 @@ class SignInFragment : Fragment() {
                 android.util.Log.i(GoogleAuthHelper.TAG, "SignInFragment result=Success email=${result.account.email}")
                 if (!isAdded) return
                 val account = result.account
-                val ctx = requireContext()
+                val appContext = requireContext().applicationContext
                 prefs.saveAccount(account.id, account.name, account.email, account.photoUrl)
-                val syncResult = withContext(Dispatchers.IO) {
-                    AccountSyncManager.onSignInSuccess(ctx, requireActivity())
-                }
-                when (syncResult) {
-                    is AccountSyncManager.SyncResult.Success -> {
-                        val msg = if (syncResult.restored) {
-                            getString(R.string.signed_in_settings_restored, account.email)
-                        } else {
-                            getString(R.string.signed_in_backup_saved, account.email)
-                        }
-                        requireActivity().showToast(msg, Toast.LENGTH_LONG)
-                        finishOnboarding()
+                val activity = requireActivity() as MainActivity
+                finishOnboarding()
+                activity.lifecycleScope.launch {
+                    val syncResult = withContext(Dispatchers.IO) {
+                        AccountSyncManager.onSignInSuccess(appContext, activity)
                     }
-                    is AccountSyncManager.SyncResult.NeedsRestoreConfirm -> {
-                        val activity = requireActivity() as? MainActivity
-                        if (activity != null) {
-                            activity.promptDriveRestoreIfNeeded(
-                                syncResult.remote,
-                                onKeepLocal = {
-                                    lifecycleScope.launch(Dispatchers.IO) {
-                                        AccountSyncManager.keepLocalAndPushToDrive(
-                                            ctx,
-                                            syncResult.remote.updatedAt,
-                                            activity,
-                                        )
-                                    }
-                                    finishOnboarding()
-                                },
-                                onRestored = { finishOnboarding() },
-                            )
-                        } else {
-                            finishOnboarding()
-                        }
-                    }
-                    is AccountSyncManager.SyncResult.Error -> {
-                        requireActivity().showToast(
-                            getString(R.string.signed_in_sync_failed, account.email),
-                            Toast.LENGTH_LONG,
-                        )
-                        finishOnboarding()
-                    }
+                    handlePostSignInSync(activity, syncResult, account)
                 }
             }
             is GoogleAuthHelper.SignInResult.Cancelled -> {
@@ -153,6 +119,32 @@ class SignInFragment : Fragment() {
             is GoogleAuthHelper.SignInResult.Error -> {
                 android.util.Log.e(GoogleAuthHelper.TAG, "SignInFragment result=Error ${result.message}")
                 showSignInFeedback(result.message, isError = true)
+            }
+        }
+    }
+
+    private fun handlePostSignInSync(
+        activity: MainActivity,
+        syncResult: AccountSyncManager.SyncResult,
+        account: GoogleAuthHelper.GoogleAccount,
+    ) {
+        when (syncResult) {
+            is AccountSyncManager.SyncResult.Success -> {
+                val msg = if (syncResult.restored) {
+                    activity.getString(R.string.signed_in_settings_restored, account.email)
+                } else {
+                    activity.getString(R.string.signed_in_backup_saved, account.email)
+                }
+                activity.showToast(msg, Toast.LENGTH_LONG)
+            }
+            is AccountSyncManager.SyncResult.NeedsRestoreConfirm -> {
+                activity.promptDriveRestoreIfNeeded(syncResult.remote)
+            }
+            is AccountSyncManager.SyncResult.Error -> {
+                activity.showToast(
+                    activity.getString(R.string.signed_in_sync_failed, account.email),
+                    Toast.LENGTH_LONG,
+                )
             }
         }
     }
@@ -171,9 +163,11 @@ class SignInFragment : Fragment() {
 
     private fun finishOnboarding() {
         prefs.signInPromptShown = true
+        val activity = requireActivity() as? MainActivity
         if (!findNavController().popBackStack(R.id.mainFragment, false)) {
             findNavController().popBackStack()
         }
+        activity?.continueFirstRunFlowAfterSignIn()
     }
 
     override fun onDestroyView() {

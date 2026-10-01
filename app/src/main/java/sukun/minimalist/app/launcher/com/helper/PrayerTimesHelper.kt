@@ -58,7 +58,8 @@ suspend fun refreshPrayerState(
     val prayerState = calculatePrayerState(
         latitude = location.latitude.toDoubleOrNull() ?: return@withContext null,
         longitude = location.longitude.toDoubleOrNull() ?: return@withContext null,
-        locationLabel = location.label
+        locationLabel = location.label,
+        use24h = prefs.timeFormat24h,
     )
 
     prefs.prayerLatitude = location.latitude
@@ -124,6 +125,7 @@ private suspend fun resolvePrayerLocation(
     forceLocationRefresh: Boolean,
 ): PrayerLocationResult? = withContext(Dispatchers.IO) {
     when (prefs.prayerSourceMode) {
+        Constants.PrayerSource.GOOGLE -> null
         Constants.PrayerSource.DEVICE -> {
             resolveDevicePrayerLocation(context, prefs)
                 ?: storedPrayerLocation(
@@ -292,11 +294,13 @@ private fun calculatePrayerState(
     latitude: Double,
     longitude: Double,
     locationLabel: String,
+    use24h: Boolean,
 ): PrayerState {
     val coordinates = Coordinates(latitude, longitude)
     val now = Date()
     val nextPrayer = findNextPrayer(coordinates, now)
-    val formatter = SimpleDateFormat("h:mm a", Locale.getDefault())
+    val pattern = if (use24h) "HH:mm" else "h:mm a"
+    val formatter = SimpleDateFormat(pattern, Locale.getDefault())
     return PrayerState(
         prayerKey = nextPrayer.first,
         prayerTimeMillis = nextPrayer.second.time,

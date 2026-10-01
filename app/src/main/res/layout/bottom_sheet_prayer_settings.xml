@@ -1,153 +1,184 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_weather_sheet"
-    android:fillViewport="false">
+    android:clipToPadding="false"
+    android:fillViewport="false"
+    android:overScrollMode="never">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:animateLayoutChanges="true"
         android:orientation="vertical"
-        android:paddingBottom="40dp">
+        android:paddingHorizontal="12dp"
+        android:paddingBottom="32dp">
 
         <View
-            android:layout_width="40dp"
+            android:layout_width="36dp"
             android:layout_height="4dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="8dp"
-            android:background="@drawable/bg_chip_unselected" />
+            android:background="@drawable/bg_sheet_handle" />
 
-        <!-- Prayer on/off toggle -->
+        <TextView
+            style="@style/TextSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:paddingVertical="4dp"
+            android:text="@string/prayer_options"
+            android:textColor="?attr/primaryColorTrans80" />
+
         <FrameLayout
-            android:id="@+id/prayerToggleRow"
+            android:id="@+id/prayerLocationRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp">
-
-            <TextView
-                style="@style/TextSmallBold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:paddingVertical="12dp"
-                android:text="@string/prayer_times" />
-
-            <TextView
-                android:id="@+id/prayerToggle"
-                style="@style/TextSmallBold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end|center_vertical"
-                android:layout_marginEnd="24dp"
-                android:paddingVertical="12dp"
-                android:text="@string/off" />
-
-        </FrameLayout>
-
-        <!-- Sub-settings — shown only when prayer is on -->
-        <LinearLayout
-            android:id="@+id/prayerSubSettings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <!-- Azan -->
+            android:layout_marginTop="8dp">
 
             <TextView
                 style="@style/TextSmall"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginBottom="10dp"
+                android:layout_marginStart="8dp"
+                android:paddingVertical="8dp"
+                android:text="@string/location"
+                android:textColor="?attr/primaryColor" />
+
+            <TextView
+                android:id="@+id/prayerLocationValue"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="4dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:padding="8dp"
+                tools:text="Lahore" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/azanRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:animateLayoutChanges="true">
+
+            <TextView
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:paddingVertical="8dp"
                 android:text="@string/azan"
-                android:textColor="?attr/primaryColorTrans80" />
+                android:textColor="?attr/primaryColor" />
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/azanValue"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="4dp"
+                android:padding="8dp"
+                android:text="@string/off"
+                tools:text="@string/azan_sound_makkah" />
+
+            <HorizontalScrollView
+                android:id="@+id/azanSelectLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
+                android:animateLayoutChanges="true"
+                android:background="@drawable/rounded_primary_gradient"
+                android:elevation="8dp"
+                android:fadingEdgeLength="8dp"
+                android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="2dp"
+                android:requiresFadingEdge="horizontal"
+                android:scrollbars="none"
+                android:visibility="gone"
+                tools:ignore="UnusedAttribute">
 
-                <TextView
-                    android:id="@+id/chipAzanOff"
-                    style="@style/TextSmallBold"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingVertical="10dp"
-                    android:text="@string/off" />
+                    android:layout_gravity="end"
+                    android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/chipAzanMakkah"
-                    style="@style/TextSmallBold"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingVertical="10dp"
-                    android:text="@string/azan_sound_makkah" />
+                    <TextView
+                        android:id="@+id/chipAzanOff"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:paddingVertical="6dp"
+                        android:text="@string/off" />
 
-                <TextView
-                    android:id="@+id/chipAzanMarylebone"
-                    style="@style/TextSmallBold"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingVertical="10dp"
-                    android:text="@string/azan_sound_marylebone" />
+                    <TextView
+                        android:id="@+id/chipAzanMakkah"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:paddingVertical="6dp"
+                        android:text="@string/azan_sound_makkah" />
 
-                <TextView
-                    android:id="@+id/chipAzanCustom"
-                    style="@style/TextSmallBold"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingVertical="10dp"
-                    android:text="@string/custom" />
+                    <TextView
+                        android:id="@+id/chipAzanMarylebone"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:paddingVertical="6dp"
+                        android:text="@string/azan_sound_marylebone" />
 
-            </LinearLayout>
+                    <TextView
+                        android:id="@+id/chipAzanCustom"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:paddingVertical="6dp"
+                        android:text="@string/custom" />
+                </LinearLayout>
+            </HorizontalScrollView>
+        </FrameLayout>
 
-            <!-- Custom azan file row -->
-            <FrameLayout
-                android:id="@+id/customAzanRow"
-                android:layout_width="match_parent"
+        <FrameLayout
+            android:id="@+id/customAzanRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:visibility="gone">
+                android:layout_marginStart="8dp"
+                android:paddingVertical="8dp"
+                android:text="@string/custom_azan_file"
+                android:textColor="?attr/primaryColor" />
 
-                <TextView
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="24dp"
-                    android:paddingVertical="10dp"
-                    android:text="@string/custom_azan_file"
-                    android:textColor="?attr/primaryColorTrans80" />
-
-                <TextView
-                    android:id="@+id/customAzanFile"
-                    style="@style/TextSmallBold"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end|center_vertical"
-                    android:layout_marginEnd="24dp"
-                    android:paddingVertical="10dp"
-                    android:text="@string/not_set" />
-
-            </FrameLayout>
-
-        </LinearLayout>
-
+            <TextView
+                android:id="@+id/customAzanFile"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="4dp"
+                android:padding="8dp"
+                android:text="@string/not_set" />
+        </FrameLayout>
     </LinearLayout>
-
 </ScrollView>

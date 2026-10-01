@@ -36,11 +36,26 @@ object HourlyChimeEffects {
         else -> CHIME_MAX_PLAYBACK_MS + 500L
     }
 
+    /**
+     * Auto follows the phone ringer: silent → flash, vibrate → vibrate, ring → sound.
+     * Any other stored style is an explicit Sukun setting and is used as-is.
+     */
+    fun resolveStyle(context: Context, storedStyle: String): String {
+        if (storedStyle.isNotBlank() && storedStyle != Constants.ChimeStyle.AUTO) return storedStyle
+        val ringer = (context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager)?.ringerMode
+            ?: AudioManager.RINGER_MODE_NORMAL
+        return when (ringer) {
+            AudioManager.RINGER_MODE_SILENT -> Constants.ChimeStyle.FLASH
+            AudioManager.RINGER_MODE_VIBRATE -> Constants.ChimeStyle.VIBRATE
+            else -> Constants.ChimeStyle.SOUND
+        }
+    }
+
     fun playStyle(context: Context, style: String, prefs: Prefs = Prefs(context)) {
         val appContext = context.applicationContext
-        when (style) {
+        when (resolveStyle(appContext, style)) {
             Constants.ChimeStyle.VIBRATE -> doVibrate(appContext)
-            Constants.ChimeStyle.FLASH -> doFlash(appContext)
+            Constants.ChimeStyle.FLASH -> if (!doFlash(appContext)) doVibrate(appContext)
             Constants.ChimeStyle.SILENT_NOTIFICATION -> {
                 val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
                 postSilentNotification(appContext, hour)
@@ -52,7 +67,6 @@ object HourlyChimeEffects {
     fun playSound(context: Context, sound: String, customUri: String = Prefs(context).hourlyChimeCustomUri) {
         val appContext = context.applicationContext
         val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-        if (audioManager?.ringerMode == AudioManager.RINGER_MODE_SILENT) return
 
         when (sound) {
             Constants.ChimeSound.DEFAULT -> playDefaultNotificationSound(appContext)
@@ -88,10 +102,10 @@ object HourlyChimeEffects {
         }
     }
 
-    fun doFlash(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
-        val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager ?: return
-        val cameraId = findTorchCameraId(cameraManager) ?: return
+    fun doFlash(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
+        val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager ?: return false
+        val cameraId = findTorchCameraId(cameraManager) ?: return false
         val handler = Handler(Looper.getMainLooper())
         val wakeLock = acquireWakeLock(context, "sukun:hourly_chime_flash", FLASH_SEQUENCE_MS + 500L)
 
@@ -115,9 +129,11 @@ object HourlyChimeEffects {
                     if (i == blinks - 1) releaseWakeLock(wakeLock)
                 }, offAt)
             }
+            return true
         } catch (_: Exception) {
             setTorch(false)
             releaseWakeLock(wakeLock)
+            return false
         }
     }
 
@@ -137,7 +153,8 @@ object HourlyChimeEffects {
                 nm.createNotificationChannel(channel)
             }
         }
-        val timeLabel = String.format("%02d:00", hour)
+        val prefs = Prefs(context)
+        val timeLabel = sukun.minimalist.app.launcher.com.data.formatReminderTime(hour, 0, prefs.timeFormat24h)
         val notification = NotificationCompat.Builder(context, Constants.HourlyChime.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(context.getString(R.string.hourly_chime))

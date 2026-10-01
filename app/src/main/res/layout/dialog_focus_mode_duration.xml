@@ -13,6 +13,25 @@
         android:paddingVertical="8dp">
 
         <TextView
+            style="@style/TextSmallBold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="4dp"
+            android:text="@string/focus_mode_duration_prompt"
+            android:textColor="?attr/primaryColor" />
+
+        <TextView
+            style="@style/TextSmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="24dp"
+            android:paddingBottom="8dp"
+            android:text="@string/focus_mode_duration_prompt_subtitle"
+            android:textColor="?attr/primaryColorTrans80" />
+
+        <TextView
             android:id="@+id/focusDuration15m"
             style="@style/TextSmallBold"
             android:layout_width="match_parent"

@@ -30,14 +30,22 @@ data class PrayerRollup(
             val annual = mutableMapOf<String, Int>()
             obj.optJSONObject("a")?.let { a ->
                 a.keys().forEach { key ->
-                    annual[key] = CompactNumber.decode(a.optString(key, "0"))
+                    annual[key] = when (val value = a.opt(key)) {
+                        is Number -> value.toInt()
+                        else -> CompactNumber.decode(value?.toString() ?: "0")
+                    }
                 }
             }
             val monthDays = mutableMapOf<String, MutableList<Int>>()
             obj.optJSONObject("d")?.let { d ->
                 d.keys().forEach { key ->
                     val arr = d.optJSONArray(key) ?: return@forEach
-                    monthDays[key] = (0 until arr.length()).map { arr.getInt(it) }.toMutableList()
+                    monthDays[key] = (0 until arr.length()).map { i ->
+                        when (val value = arr.opt(i)) {
+                            is Number -> value.toInt()
+                            else -> CompactNumber.decode(value?.toString() ?: "0")
+                        }
+                    }.toMutableList()
                 }
             }
             return PrayerRollup(
@@ -81,19 +89,18 @@ data class PrayerRollup(
             now.get(Calendar.YEAR),
             now.get(Calendar.MONTH) + 1,
         )
-        if (year.isNotEmpty() && year != currentYear) {
+        val yearChanged = year.isNotEmpty() && year != currentYear
+        val monthChanged = month.isNotEmpty() && month != currentMonth
+        if (yearChanged) {
+            // The stored month belongs to the old year, so it must not be flushed forward.
             annual.clear()
-            year = currentYear
-        } else if (year.isEmpty()) {
-            year = currentYear
-        }
-        if (month.isNotEmpty() && month != currentMonth) {
-            flushMonthToAnnual()
-            month = currentMonth
             monthDays.clear()
-        } else if (month.isEmpty()) {
-            month = currentMonth
+        } else if (monthChanged) {
+            flushMonthToAnnual()
+            monthDays.clear()
         }
+        year = currentYear
+        month = currentMonth
     }
 
     private fun flushMonthToAnnual() {

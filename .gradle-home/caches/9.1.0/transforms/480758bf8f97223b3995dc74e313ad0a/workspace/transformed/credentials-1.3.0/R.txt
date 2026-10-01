@@ -1,0 +1,5 @@
+int drawable ic_other_sign_in 0x0
+int drawable ic_passkey 0x0
+int drawable ic_password 0x0
+int string android_credentials_TYPE_PASSWORD_CREDENTIAL 0x0
+int string androidx_credentials_TYPE_PUBLIC_KEY_CREDENTIAL 0x0

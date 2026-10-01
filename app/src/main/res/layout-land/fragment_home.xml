@@ -13,14 +13,20 @@
         android:id="@+id/lock"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:contentDescription="@string/lock_layout_description" />
+        android:clickable="true"
+        android:contentDescription="@string/lock_layout_description"
+        android:focusable="true"
+        android:importantForAccessibility="yes" />
 
     <!-- Placeholder layout for showing recent apps-->
     <FrameLayout
         android:id="@+id/recents"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:contentDescription="@string/recents_layout_description" />
+        android:clickable="true"
+        android:contentDescription="@string/recents_layout_description"
+        android:focusable="true"
+        android:importantForAccessibility="yes" />
 
     <View
         android:id="@+id/readabilityScrim"
@@ -116,9 +122,48 @@
                     android:textAlignment="center"
                     android:textSize="@dimen/date_size"
                     tools:text="Sunday, 11 April" />
+
+                <FrameLayout
+                    android:id="@+id/focusModeIconRingContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:clickable="true"
+                    android:contentDescription="@string/start_focus_mode"
+                    android:focusable="true">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/focusModeIconRing"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/rounded_rect_shade_color"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_focus" />
+                </FrameLayout>
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/focusModeIconStandardContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:clickable="true"
+        android:contentDescription="@string/start_focus_mode"
+        android:elevation="8dp"
+        android:focusable="true"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/focusModeIconStandard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_rect_shade_color"
+            android:padding="10dp"
+            android:src="@drawable/ic_focus" />
+    </FrameLayout>
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/weatherText"
@@ -127,11 +172,14 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="104dp"
+        android:alpha="0.92"
         android:ellipsize="end"
+        android:fontFamily="sans-serif-light"
+        android:letterSpacing="0.02"
         android:maxLines="1"
         android:textSize="@dimen/date_size"
         android:visibility="gone"
-        tools:text="24°C  Partly cloudy&#10;Lahore"
+        tools:text="24°C · Partly cloudy"
         tools:visibility="visible" />
 
     <androidx.appcompat.widget.AppCompatTextView
@@ -141,11 +189,14 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="118dp"
+        android:alpha="0.92"
         android:ellipsize="end"
+        android:fontFamily="sans-serif-light"
+        android:letterSpacing="0.02"
         android:maxLines="1"
         android:textSize="@dimen/date_size"
         android:visibility="gone"
-        tools:text="Maghrib  6:43 PM  24m left"
+        tools:text="Maghrib · 6:43 PM · 24m left"
         tools:visibility="visible" />
 
     <androidx.appcompat.widget.AppCompatTextView

@@ -59,6 +59,7 @@ object Constants {
     object PrayerSource {
         const val MANUAL = "manual"
         const val DEVICE = "device"
+        const val GOOGLE = "google"
     }
 
     object WeatherUnit {
@@ -155,6 +156,7 @@ object Constants {
     const val ONE_DAY_IN_MILLIS = 86400000L
     const val PREMIUM_TRIAL_DAYS = 30
     const val PREMIUM_TRIAL_DURATION_MS = PREMIUM_TRIAL_DAYS * ONE_DAY_IN_MILLIS
+    const val PREMIUM_NUDGE_DAYS = 15
     const val ONE_HOUR_IN_MILLIS = 3600000L
     const val ONE_MINUTE_IN_MILLIS = 60000L
     const val MIN_CUSTOM_FOCUS_MINUTES = 1L
@@ -208,6 +210,7 @@ object Constants {
     }
 
     object ChimeStyle {
+        const val AUTO = "auto"
         const val SOUND = "sound"
         const val VIBRATE = "vibrate"
         const val SILENT_NOTIFICATION = "silent"

@@ -55,6 +55,15 @@
         android:theme="@style/AppTheme"
         tools:ignore="UnusedAttribute">
 
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
         <activity
             android:name=".MainActivity"
             android:configChanges="uiMode"
@@ -73,9 +82,15 @@
         </activity>
 
         <activity
+            android:name=".helper.GoogleSignInHostActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/TransparentActivityTheme" />
+
+        <activity
             android:name=".helper.PinItemActivity"
             android:exported="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            android:theme="@style/TransparentActivityTheme">
             <intent-filter>
                 <action android:name="android.content.pm.action.CONFIRM_PIN_SHORTCUT" />
                 <category android:name="android.intent.category.DEFAULT" />

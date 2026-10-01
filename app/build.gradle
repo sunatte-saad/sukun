@@ -1,27 +1,21 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdk 35
+    compileSdk 36
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
     defaultConfig {
         applicationId "sukun.minimalist.app.launcher.com"
         minSdkVersion 24
-        targetSdkVersion 35
-        versionCode 109
-        versionName "v2.0.3"
+        targetSdkVersion 36
+        versionCode 113
+        versionName "v2.0.7"
 
-        resourceConfigurations += ["en", "ar", "de", "es", "es-rES", "es-rUS", "fr", "he", "hr", "hu", "id", "in", "it", "ja", "ko", "nl", "pl", "pt", "pt-rBR", "ru", "ru-rRU", "sv", "tr", "uk", "zh"]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -31,6 +25,9 @@ android {
             storePassword 'SaadRehman@123'
             keyAlias 'key0'
             keyPassword 'SaadRehman@123'
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
         }
     }
 
@@ -42,6 +39,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
+            // Same cert as assembleRelease so Android Studio Run can use Google Sign-In.
+            // Uninstall first if a Play-signed or debug-keystore build is already on the device.
+            signingConfig signingConfigs.release
             debuggable true
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -57,6 +57,12 @@ android {
         }
     }
     namespace 'sukun.minimalist.app.launcher.com'
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
 }
 
 dependencies {

@@ -7,6 +7,8 @@ import android.app.WallpaperManager
 import android.app.role.RoleManager
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.ComponentName
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -643,6 +645,23 @@ suspend fun getCurrentDeviceLocationLabel(context: Context): String? {
 
 fun getBackupWallpaper(wallType: String): String = getDefaultWallpaperUrl()
 
+/** Device GPS needs permission. Without it, weather and prayer fall back to Google. */
+fun Context.applyDeviceLocationDeniedFallbacks(prefs: Prefs): Boolean {
+    if (hasWeatherLocationPermission()) return false
+    var changed = false
+    if (prefs.weatherSourceMode == Constants.WeatherSource.DEVICE) {
+        prefs.weatherSourceMode = Constants.WeatherSource.GOOGLE
+        prefs.clearWeatherCache()
+        changed = true
+    }
+    if (prefs.prayerSourceMode == Constants.PrayerSource.DEVICE) {
+        prefs.prayerSourceMode = Constants.PrayerSource.GOOGLE
+        prefs.clearPrayerCache()
+        changed = true
+    }
+    return changed
+}
+
 fun Context.hasWeatherLocationPermission(): Boolean {
     val hasFineLocation = ContextCompat.checkSelfPermission(
         this,
@@ -653,6 +672,27 @@ fun Context.hasWeatherLocationPermission(): Boolean {
         android.Manifest.permission.ACCESS_COARSE_LOCATION
     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     return hasFineLocation || hasCoarseLocation
+}
+
+fun Context.hasCameraPermission(): Boolean =
+    ContextCompat.checkSelfPermission(
+        this,
+        android.Manifest.permission.CAMERA
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+/** Location, camera, and notifications — requested together so setup is one system prompt. */
+fun Context.missingSukunSetupPermissions(): Array<String> {
+    val requested = mutableListOf(
+        android.Manifest.permission.ACCESS_FINE_LOCATION,
+        android.Manifest.permission.ACCESS_COARSE_LOCATION,
+        android.Manifest.permission.CAMERA,
+    )
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        requested += android.Manifest.permission.POST_NOTIFICATIONS
+    }
+    return requested.filter { permission ->
+        ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED
+    }.toTypedArray()
 }
 
 fun Context.isLocationServicesEnabled(): Boolean {
@@ -685,11 +725,25 @@ fun Context.showLocationServicesDisabledDialog() {
         .show()
 }
 
+fun Context.showLocationPermissionPrompt(
+    onContinue: () -> Unit,
+    onDecline: () -> Unit = {},
+) {
+    androidx.appcompat.app.AlertDialog.Builder(this)
+        .setTitle(R.string.location_permission_title)
+        .setMessage(R.string.location_permission_message)
+        .setPositiveButton(R.string.continue_action) { _, _ -> onContinue() }
+        .setNegativeButton(R.string.not_now) { _, _ -> onDecline() }
+        .setCancelable(false)
+        .show()
+}
+
 fun Context.showLocationPermissionRationaleDialog(
-    messageRes: Int = R.string.weather_permission_needed,
+    messageRes: Int = R.string.location_permission_message,
     onOpenSettings: () -> Unit = { openAppPermissionSettings() },
 ) {
     androidx.appcompat.app.AlertDialog.Builder(this)
+        .setTitle(R.string.location_permission_title)
         .setMessage(messageRes)
         .setPositiveButton(R.string.permission) { _, _ -> onOpenSettings() }
         .setNegativeButton(R.string.cancel, null)
@@ -1196,16 +1250,25 @@ fun openCalendar(context: Context) {
 }
 
 fun isAccessServiceEnabled(context: Context): Boolean {
-    val enabled = try {
-        Settings.Secure.getInt(context.applicationContext.contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED)
-    } catch (e: Exception) {
-        0
+    val expected = ComponentName(context, MyAccessibilityService::class.java)
+    val accessibilityManager = context.getSystemService(Context.ACCESSIBILITY_SERVICE)
+        as? android.view.accessibility.AccessibilityManager
+    val enabledServices = accessibilityManager?.getEnabledAccessibilityServiceList(
+        AccessibilityServiceInfo.FEEDBACK_ALL_MASK
+    ).orEmpty()
+    if (enabledServices.any { info ->
+            ComponentName(info.resolveInfo.serviceInfo.packageName, info.resolveInfo.serviceInfo.name) == expected
+        }
+    ) {
+        return true
     }
-    if (enabled == 1) {
-        val enabledServicesString: String? = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-        return enabledServicesString?.contains(context.packageName + "/" + MyAccessibilityService::class.java.name) ?: false
+    val enabledServicesString = Settings.Secure.getString(
+        context.contentResolver,
+        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+    ) ?: return false
+    return enabledServicesString.split(':').any { setting ->
+        ComponentName.unflattenFromString(setting.trim()) == expected
     }
-    return false
 }
 
 fun isTablet(context: Context): Boolean {
@@ -1246,6 +1309,16 @@ fun Context.openUrl(url: String) {
 fun Context.openGoogleWeather(locationLabel: String = "", locationQuery: String = "") {
     val location = locationLabel.ifBlank { locationQuery }.trim()
     val query = if (location.isBlank()) "weather" else "weather $location"
+    openGoogleSearch(query, getString(R.string.google_weather), R.string.weather_open_failed)
+}
+
+fun Context.openGooglePrayerTimes(locationLabel: String = "", locationQuery: String = "") {
+    val location = locationLabel.ifBlank { locationQuery }.trim()
+    val query = if (location.isBlank()) "prayer times" else "prayer times $location"
+    openGoogleSearch(query, getString(R.string.google_prayer_times), R.string.prayer_open_failed)
+}
+
+private fun Context.openGoogleSearch(query: String, chooserTitle: String, failedRes: Int) {
     val uri = Uri.parse("https://www.google.com/search")
         .buildUpon()
         .appendQueryParameter("q", query)
@@ -1257,9 +1330,9 @@ fun Context.openGoogleWeather(locationLabel: String = "", locationQuery: String 
         startActivity(intent)
     } catch (_: Exception) {
         try {
-            startActivity(Intent.createChooser(intent, getString(R.string.google_weather)))
+            startActivity(Intent.createChooser(intent, chooserTitle))
         } catch (_: Exception) {
-            showToast(R.string.weather_open_failed)
+            showToast(failedRes)
         }
     }
 }

@@ -52,6 +52,19 @@
         <item name="android:windowExitAnimation">@android:anim/fade_out</item>
     </style>
 
+    <!--
+      Invisible host activities that extend AppCompatActivity. Theme.Translucent is not an
+      AppCompat descendant, so AppCompat aborts onPostCreate when it is used here.
+    -->
+    <style name="TransparentActivityTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
     <style name="AppSearchText" parent="Widget.AppCompat.SearchView">
         <item name="android:maxLength">200</item>
         <item name="android:textSize">@dimen/text_large</item>
@@ -60,7 +73,8 @@
         <item name="android:textColorHint">?attr/primaryColor</item>
         <item name="android:fontFamily">sans-serif-light</item>
         <item name="android:inputType">textCapSentences|textNoSuggestions</item>
-        <item name="android:cursorVisible">false</item>
+        <item name="android:cursorVisible">true</item>
+        <item name="android:textCursorDrawable">@drawable/search_cursor</item>
     </style>
 
     <style name="TextDefault" parent="@android:style/TextAppearance.Large">
@@ -91,6 +105,20 @@
 
     <style name="TextSmallLight" parent="TextSmall">
         <item name="android:textColor">@drawable/text_colors_light</item>
+    </style>
+
+    <style name="SettingsOnOffSwitchTheme">
+        <item name="colorControlActivated">?attr/primaryColor</item>
+        <item name="colorSwitchThumbNormal">?attr/primaryColorTrans50</item>
+        <item name="android:colorForeground">?attr/primaryColorTrans50</item>
+    </style>
+
+    <style name="SettingsOnOffSwitch" parent="Widget.AppCompat.CompoundButton.Switch">
+        <item name="android:showText">false</item>
+        <item name="showText">false</item>
+        <item name="android:padding">4dp</item>
+        <item name="android:layout_marginEnd">4dp</item>
+        <item name="android:theme">@style/SettingsOnOffSwitchTheme</item>
     </style>
 
 </resources>

@@ -1,24 +1,35 @@
 package sukun.minimalist.app.launcher.com.helper
 
 import android.accessibilityservice.AccessibilityService
-import android.app.KeyguardManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
 import sukun.minimalist.app.launcher.com.BuildConfig
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Prefs
-import sukun.minimalist.app.launcher.com.helper.canOpenNotificationsInFocusMode
-import sukun.minimalist.app.launcher.com.helper.getFocusModeAllowedPackages
 
 class MyAccessibilityService : AccessibilityService() {
     private val prefs by lazy { Prefs(applicationContext) }
-    private val keyguardManager by lazy {
-        getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-    }
     private var notificationShadeActive = false
     private var lastBlockedPackage: String? = null
+    private var actionReceiverRegistered = false
+
+    private val actionReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                ACTION_LOCK_SCREEN -> lockScreen()
+                ACTION_SHOW_RECENTS -> performGlobalAction(GLOBAL_ACTION_RECENTS)
+            }
+        }
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        registerActionReceiver()
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return START_STICKY
@@ -34,26 +45,31 @@ class MyAccessibilityService : AccessibilityService() {
             return
         }
 
-        try {
-            val source: AccessibilityNodeInfo = event.source ?: return
-            if (source.className != "android.widget.FrameLayout") return
-
-            when (source.contentDescription) {
-                getString(R.string.lock_layout_description) -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                        performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
-                }
-                getString(R.string.recents_layout_description) -> {
-                    performGlobalAction(GLOBAL_ACTION_RECENTS)
-                }
-            }
-        } catch (e: Exception) {
-            return
-        }
+        handleGestureAction(event)
     }
 
     override fun onInterrupt() {
+    }
 
+    override fun onDestroy() {
+        unregisterActionReceiver()
+        super.onDestroy()
+    }
+
+    private fun handleGestureAction(event: AccessibilityEvent) {
+        val description = event.contentDescription?.toString()
+            ?: event.source?.contentDescription?.toString()
+            ?: return
+        when (description) {
+            getString(R.string.lock_layout_description) -> lockScreen()
+            getString(R.string.recents_layout_description) -> performGlobalAction(GLOBAL_ACTION_RECENTS)
+        }
+    }
+
+    private fun lockScreen() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+        }
     }
 
     private fun shouldBlockPackage(packageName: String, event: AccessibilityEvent): Boolean {
@@ -100,8 +116,49 @@ class MyAccessibilityService : AccessibilityService() {
         }
     }
 
+    private fun registerActionReceiver() {
+        if (actionReceiverRegistered) return
+        val filter = IntentFilter().apply {
+            addAction(ACTION_LOCK_SCREEN)
+            addAction(ACTION_SHOW_RECENTS)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(actionReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(actionReceiver, filter)
+        }
+        actionReceiverRegistered = true
+    }
+
+    private fun unregisterActionReceiver() {
+        if (!actionReceiverRegistered) return
+        try {
+            unregisterReceiver(actionReceiver)
+        } catch (_: Exception) {
+        }
+        actionReceiverRegistered = false
+    }
+
     companion object {
         private const val ANDROID_PACKAGE = "android"
         private const val SYSTEM_UI_PACKAGE = "com.android.systemui"
+        const val ACTION_LOCK_SCREEN = "${BuildConfig.APPLICATION_ID}.ACTION_LOCK_SCREEN"
+        const val ACTION_SHOW_RECENTS = "${BuildConfig.APPLICATION_ID}.ACTION_SHOW_RECENTS"
+
+        fun lockScreen(context: Context) {
+            context.sendBroadcast(
+                Intent(ACTION_LOCK_SCREEN)
+                    .setPackage(context.packageName)
+                    .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+            )
+        }
+
+        fun showRecents(context: Context) {
+            context.sendBroadcast(
+                Intent(ACTION_SHOW_RECENTS)
+                    .setPackage(context.packageName)
+                    .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+            )
+        }
     }
 }

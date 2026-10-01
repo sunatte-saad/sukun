@@ -3,6 +3,7 @@ package sukun.minimalist.app.launcher.com.data
 import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -80,8 +81,18 @@ fun String.toReminderList(): List<Reminder> {
     }
 }
 
-fun Reminder.scheduleDescription(): String {
-    val timeStr = String.format("%02d:%02d", hour, minute)
+fun formatReminderTime(hour: Int, minute: Int, use24h: Boolean): String {
+    if (use24h) return String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
+    val suffix = if (hour < 12) "AM" else "PM"
+    val displayHour = when {
+        hour % 12 == 0 -> 12
+        else -> hour % 12
+    }
+    return String.format(Locale.getDefault(), "%d:%02d %s", displayHour, minute, suffix)
+}
+
+fun Reminder.scheduleDescription(use24h: Boolean = true): String {
+    val timeStr = formatReminderTime(hour, minute, use24h)
     return when (type) {
         Reminder.Type.DAILY -> "Daily at $timeStr"
         Reminder.Type.HOURLY -> {

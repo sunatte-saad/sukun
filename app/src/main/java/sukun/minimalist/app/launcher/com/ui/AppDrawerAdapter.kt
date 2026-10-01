@@ -81,8 +81,6 @@ class AppDrawerAdapter(
         }
     }
 
-    private var autoLaunch = true
-    private var isBangSearch = false
     private val appFilter = createAppFilter()
     private val myUserHandle = android.os.Process.myUserHandle()
     private val sectionPositions = linkedMapOf<String, Int>()
@@ -171,18 +169,18 @@ class AppDrawerAdapter(
     private fun createAppFilter(): Filter {
         return object : Filter() {
             override fun performFiltering(charSearch: CharSequence?): FilterResults {
-                isBangSearch = charSearch?.startsWith("!") ?: false
-                autoLaunch = charSearch?.startsWith(" ")?.not() ?: true
-
                 val appFilteredList = if (charSearch.isNullOrBlank()) {
                     appsList
                 } else {
+                    val query = charSearch.trim()
                     appsList.filter { app ->
                         app !is AppModel.PrivateSpaceHeader &&
                                 app !is AppModel.SectionHeader &&
-                                appLabelMatches(app.appLabel, charSearch)
+                                appLabelMatches(app.appLabel, query)
                     }.distinctBy { app ->
                         if (app is AppModel.App) app.appPackage to app.user else app
+                    }.sortedBy { app ->
+                        if (app.appLabel.startsWith(query, ignoreCase = true)) 0 else 1
                     }.toMutableList()
                 }
 
@@ -199,25 +197,9 @@ class AppDrawerAdapter(
                     rebuildSectionPositions(items)
                     submitList(items.toList()) {
                         onListChanged(appFilteredList.toList())
-                        autoLaunch()
                     }
                 }
             }
-        }
-    }
-
-    private fun autoLaunch() {
-        try {
-            if (itemCount == 1
-                && autoLaunch
-                && isBangSearch.not()
-                && flag == Constants.FLAG_LAUNCH_APP
-                && appFilteredList.isNotEmpty()
-                && appFilteredList[0] !is AppModel.PrivateSpaceHeader
-                && appFilteredList[0] !is AppModel.SectionHeader
-            ) appClickListener(appFilteredList[0])
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -249,13 +231,6 @@ class AppDrawerAdapter(
         submitList(this.appFilteredList.toList()) {
             onListChanged(appFilteredList.toList())
         }
-    }
-
-    fun launchFirstInList() {
-        val first = appFilteredList.firstOrNull {
-            it !is AppModel.PrivateSpaceHeader && it !is AppModel.SectionHeader
-        }
-        if (first != null) appClickListener(first)
     }
 
     fun updateCooledOff(packages: Set<String>) {

@@ -58,6 +58,7 @@ class Prefs(context: Context) {
     private val APP_DRAWER_FAST_SCROLLER = "APP_DRAWER_FAST_SCROLLER"
     private val SCREEN_TIME_LAST_UPDATED = "SCREEN_TIME_LAST_UPDATED"
     private val SHOW_SCREEN_TIME_ON_HOME = "SHOW_SCREEN_TIME_ON_HOME"
+    private val USAGE_ACCESS_PROMPT_SHOWN = "USAGE_ACCESS_PROMPT_SHOWN"
     private val LAUNCHER_RESTART_TIMESTAMP = "LAUNCHER_RECREATE_TIMESTAMP"
     private val SHOWN_ON_DAY_OF_YEAR = "SHOWN_ON_DAY_OF_YEAR"
     private val HOME_BUTTON_SHOW_RECENTS = "HOME_BUTTON_SHOW_RECENTS"
@@ -65,6 +66,7 @@ class Prefs(context: Context) {
     private val FOCUS_MODE_LAST_DURATION = "FOCUS_MODE_LAST_DURATION"
     private val FOCUS_MODE_LOCK_NOTIFICATIONS = "FOCUS_MODE_LOCK_NOTIFICATIONS"
     private val FOCUS_MODE_HIDE_STATUS_BAR = "FOCUS_MODE_HIDE_STATUS_BAR"
+    private val SHOW_FOCUS_ON_HOME = "SHOW_FOCUS_ON_HOME"
     private val DOUBLE_TAP_ACTION = "DOUBLE_TAP_ACTION"
     private val SHOW_WEATHER_ON_HOME = "SHOW_WEATHER_ON_HOME"
     private val WEATHER_UNITS = "WEATHER_UNITS"
@@ -101,6 +103,9 @@ class Prefs(context: Context) {
     private val HOURLY_CHIME_STYLE = "HOURLY_CHIME_STYLE"
     private val HOURLY_CHIME_SOUND = "HOURLY_CHIME_SOUND"
     private val HOURLY_CHIME_CUSTOM_URI = "HOURLY_CHIME_CUSTOM_URI"
+    private val SETTINGS_SECTION_ORDER = "SETTINGS_SECTION_ORDER"
+    private val SETTINGS_SECTION_WIDE = "SETTINGS_SECTION_WIDE"
+    private val SETTINGS_SECTION_EXPANDED = "SETTINGS_SECTION_EXPANDED"
     private val RECENT_APPS = "RECENT_APPS"
     private val REMINDERS_JSON = "REMINDERS_JSON"
     private val PRAYER_LOGS = "PRAYER_LOGS"
@@ -112,6 +117,7 @@ class Prefs(context: Context) {
     private val MINDFUL_MORNING_WAKE_HOUR = "MINDFUL_MORNING_WAKE_HOUR"
     private val MINDFUL_MORNING_WAKE_MINUTE = "MINDFUL_MORNING_WAKE_MINUTE"
     private val MINDFUL_MORNING_HARD = "MINDFUL_MORNING_HARD"
+    private val REMINDER_TIME_24H = "REMINDER_TIME_24H"
     private val PRAYER_ROLLUP_JSON = "PRAYER_ROLLUP_JSON"
     private val SCREEN_TIME_ROLLUP_JSON = "SCREEN_TIME_ROLLUP_JSON"
     private val PRAYER_ROLLUP_MIGRATED = "PRAYER_ROLLUP_MIGRATED"
@@ -119,6 +125,7 @@ class Prefs(context: Context) {
     private val SYNC_PAYLOAD_UPDATED_AT = "SYNC_PAYLOAD_UPDATED_AT"
     private val SYNC_LAST_UPLOAD_AT = "SYNC_LAST_UPLOAD_AT"
     private val SYNC_DECLINED_REMOTE_UPDATED_AT = "SYNC_DECLINED_REMOTE_UPDATED_AT"
+    private val SYNC_RESTORE_PROMPT_LAST_AT = "SYNC_RESTORE_PROMPT_LAST_AT"
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -194,6 +201,9 @@ class Prefs(context: Context) {
     private val IS_SHORTCUT_SWIPE_RIGHT = "IS_SHORTCUT_SWIPE_RIGHT"
 
     private val SIGN_IN_PROMPT_SHOWN = "SIGN_IN_PROMPT_SHOWN"
+    private val PREMIUM_NUDGE_SHOWN = "PREMIUM_NUDGE_SHOWN"
+    private val FREE_TIER_DEFAULTS_APPLIED = "FREE_TIER_DEFAULTS_APPLIED"
+    private val PRIVACY_AND_SETUP_COMPLETE = "PRIVACY_AND_SETUP_COMPLETE"
     private val ONBOARDING_COMPLETE = "ONBOARDING_COMPLETE"
     private val ONBOARDING_TOUR_ACTIVE = "ONBOARDING_TOUR_ACTIVE"
     private val ONBOARDING_TOUR_STEP = "ONBOARDING_TOUR_STEP"
@@ -201,6 +211,9 @@ class Prefs(context: Context) {
     private val ACCOUNT_NAME = "ACCOUNT_NAME"
     private val ACCOUNT_EMAIL = "ACCOUNT_EMAIL"
     private val ACCOUNT_PHOTO_URL = "ACCOUNT_PHOTO_URL"
+
+    /** applicationContext is still null while Application.attachBaseContext runs. */
+    private val appContext: Context = context.applicationContext ?: context
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_FILENAME, 0)
 
@@ -236,6 +249,18 @@ class Prefs(context: Context) {
     var signInPromptShown: Boolean
         get() = prefs.getBoolean(SIGN_IN_PROMPT_SHOWN, false)
         set(value) = prefs.edit { putBoolean(SIGN_IN_PROMPT_SHOWN, value).apply() }
+
+    var premiumNudgeShown: Boolean
+        get() = prefs.getBoolean(PREMIUM_NUDGE_SHOWN, false)
+        set(value) = prefs.edit { putBoolean(PREMIUM_NUDGE_SHOWN, value).apply() }
+
+    var freeTierDefaultsApplied: Boolean
+        get() = prefs.getBoolean(FREE_TIER_DEFAULTS_APPLIED, false)
+        set(value) = prefs.edit { putBoolean(FREE_TIER_DEFAULTS_APPLIED, value).apply() }
+
+    var privacyAndSetupComplete: Boolean
+        get() = prefs.getBoolean(PRIVACY_AND_SETUP_COMPLETE, false) || signInPromptShown
+        set(value) = prefs.edit { putBoolean(PRIVACY_AND_SETUP_COMPLETE, value).apply() }
 
     var onboardingComplete: Boolean
         get() = prefs.getBoolean(ONBOARDING_COMPLETE, false)
@@ -310,7 +335,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(KEYBOARD_MESSAGE, value).apply() }
 
     var dailyWallpaper: Boolean
-        get() = prefs.getBoolean(DAILY_WALLPAPER, false)
+        get() = prefs.getBoolean(DAILY_WALLPAPER, true)
         set(value) = prefs.edit { putBoolean(DAILY_WALLPAPER, value).apply() }
 
     var dailyWallpaperUrl: String
@@ -347,7 +372,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(HOME_BOTTOM_ALIGNMENT, value).apply() }
 
     var showHomeAppIcons: Boolean
-        get() = prefs.getBoolean(SHOW_HOME_APP_ICONS, false)
+        get() = prefs.getBoolean(SHOW_HOME_APP_ICONS, true)
         set(value) = prefs.edit { putBoolean(SHOW_HOME_APP_ICONS, value).apply() }
 
     var appLabelAlignment: Int
@@ -363,7 +388,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putInt(DATE_TIME_VISIBILITY, value).apply() }
 
     var clockStyle: String
-        get() = prefs.getString(CLOCK_STYLE, Constants.ClockStyle.STANDARD).toString()
+        get() = prefs.getString(CLOCK_STYLE, Constants.ClockStyle.DAY_RING).toString()
         set(value) = prefs.edit { putString(CLOCK_STYLE, value).apply() }
 
     var dayStartHour: Int
@@ -440,10 +465,14 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putLong(SCREEN_TIME_LAST_UPDATED, value).apply() }
 
     var showScreenTimeOnHome: Boolean
-        get() = prefs.getBoolean(SHOW_SCREEN_TIME_ON_HOME, false)
+        get() = prefs.getBoolean(SHOW_SCREEN_TIME_ON_HOME, true)
         set(value) = prefs.edit { putBoolean(SHOW_SCREEN_TIME_ON_HOME, value).apply() }
 
     fun hasShowScreenTimeOnHomePref(): Boolean = prefs.contains(SHOW_SCREEN_TIME_ON_HOME)
+
+    var usageAccessPromptShown: Boolean
+        get() = prefs.getBoolean(USAGE_ACCESS_PROMPT_SHOWN, false)
+        set(value) = prefs.edit { putBoolean(USAGE_ACCESS_PROMPT_SHOWN, value).apply() }
 
     var launcherRestartTimestamp: Long
         get() = getLongCompat(LAUNCHER_RESTART_TIMESTAMP, 0L)
@@ -473,6 +502,10 @@ class Prefs(context: Context) {
     var focusModeHideStatusBar: Boolean
         get() = prefs.getBoolean(FOCUS_MODE_HIDE_STATUS_BAR, true)
         set(value) = prefs.edit { putBoolean(FOCUS_MODE_HIDE_STATUS_BAR, value).apply() }
+
+    var showFocusOnHome: Boolean
+        get() = prefs.getBoolean(SHOW_FOCUS_ON_HOME, true)
+        set(value) = prefs.edit { putBoolean(SHOW_FOCUS_ON_HOME, value).apply() }
 
     var doubleTapAction: String
         get() = prefs.getString(DOUBLE_TAP_ACTION, Constants.DoubleTapAction.LOCK).toString()
@@ -557,7 +590,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(DAILY_NOTES_LIST, value).apply() }
 
     var showTodoOnHome: Boolean
-        get() = prefs.getBoolean(SHOW_TODO_ON_HOME, false)
+        get() = prefs.getBoolean(SHOW_TODO_ON_HOME, true)
         set(value) = prefs.edit { putBoolean(SHOW_TODO_ON_HOME, value).apply() }
 
     var todoItemsJson: String
@@ -613,7 +646,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(AZAN_CUSTOM_URI, value).apply() }
 
     var hourlyChimeEnabled: Boolean
-        get() = prefs.getBoolean(HOURLY_CHIME_ENABLED, false)
+        get() = prefs.getBoolean(HOURLY_CHIME_ENABLED, true)
         set(value) = prefs.edit { putBoolean(HOURLY_CHIME_ENABLED, value).apply() }
 
     var hourlyChimeStartHour: Int
@@ -625,7 +658,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putInt(HOURLY_CHIME_END_HOUR, value).apply() }
 
     var hourlyChimeStyle: String
-        get() = prefs.getString(HOURLY_CHIME_STYLE, Constants.ChimeStyle.SOUND).toString()
+        get() = prefs.getString(HOURLY_CHIME_STYLE, Constants.ChimeStyle.AUTO).toString()
         set(value) = prefs.edit { putString(HOURLY_CHIME_STYLE, value).apply() }
 
     var hourlyChimeSound: String
@@ -651,6 +684,30 @@ class Prefs(context: Context) {
             .map { it.trim() }
             .filter { it.isNotBlank() }
         set(value) = prefs.edit { putString(RECENT_APPS, value.joinToString(",")).apply() }
+
+    /** Settings card keys in the order the user arranged them. */
+    var settingsSectionOrder: List<String>
+        get() = prefs.getString(SETTINGS_SECTION_ORDER, "")
+            .orEmpty()
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+        set(value) = prefs.edit { putString(SETTINGS_SECTION_ORDER, value.joinToString(",")).apply() }
+
+    /** Settings card keys the user pinned to a full-width row. */
+    var settingsSectionWide: Set<String>
+        get() = prefs.getString(SETTINGS_SECTION_WIDE, null)
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: emptySet()
+        set(value) = prefs.edit { putString(SETTINGS_SECTION_WIDE, value.joinToString(",")).apply() }
+
+    /** Key of the settings card currently expanded, or blank when all are collapsed. */
+    var settingsExpandedSection: String
+        get() = prefs.getString(SETTINGS_SECTION_EXPANDED, "").orEmpty()
+        set(value) = prefs.edit { putString(SETTINGS_SECTION_EXPANDED, value).apply() }
 
     var hiddenAppsUpdated: Boolean
         get() = prefs.getBoolean(HIDDEN_APPS_UPDATED, false)
@@ -1287,6 +1344,24 @@ class Prefs(context: Context) {
         get() = prefs.getBoolean(MINDFUL_MORNING_HARD, false)
         set(value) = prefs.edit { putBoolean(MINDFUL_MORNING_HARD, value) }
 
+    /**
+     * App-wide 12h/24h preference (home clock, reminders, chime, prayer, etc.).
+     * Defaults to the device clock setting. Key kept as [REMINDER_TIME_24H] for existing installs.
+     */
+    var timeFormat24h: Boolean
+        get() = prefs.getBoolean(
+            REMINDER_TIME_24H,
+            android.text.format.DateFormat.is24HourFormat(appContext),
+        )
+        set(value) = prefs.edit { putBoolean(REMINDER_TIME_24H, value).apply() }
+
+    @Deprecated("Use timeFormat24h", ReplaceWith("timeFormat24h"))
+    var reminderTime24h: Boolean
+        get() = timeFormat24h
+        set(value) {
+            timeFormat24h = value
+        }
+
     var prayerRollupJson: String
         get() = prefs.getString(PRAYER_ROLLUP_JSON, "").orEmpty()
         set(value) = prefs.edit { putString(PRAYER_ROLLUP_JSON, value).apply() }
@@ -1317,6 +1392,11 @@ class Prefs(context: Context) {
         get() = getLongCompat(SYNC_DECLINED_REMOTE_UPDATED_AT, 0L)
         set(value) = prefs.edit { putLong(SYNC_DECLINED_REMOTE_UPDATED_AT, value).apply() }
 
+    /** Last time the Drive restore confirmation dialog was shown (monthly throttle). */
+    var syncRestorePromptLastAt: Long
+        get() = getLongCompat(SYNC_RESTORE_PROMPT_LAST_AT, 0L)
+        set(value) = prefs.edit { putLong(SYNC_RESTORE_PROMPT_LAST_AT, value).apply() }
+
     private var suppressSyncDirty = false
 
     /** Skip sync-dirty callbacks while applying a cloud snapshot locally. */
@@ -1343,6 +1423,7 @@ class Prefs(context: Context) {
             "SYNC_PAYLOAD_UPDATED_AT",
             "SYNC_LAST_UPLOAD_AT",
             "SYNC_DECLINED_REMOTE_UPDATED_AT",
+            "SYNC_RESTORE_PROMPT_LAST_AT",
             "PRO_USER",
             "PRO_PURCHASE_TOKEN",
             "SCREEN_TIME_LAST_UPDATED",
@@ -1358,6 +1439,8 @@ class Prefs(context: Context) {
             "LAUNCHER_RESTART_TIMESTAMP",
             "WALLPAPER_PENDING_SYNC",
             "LAST_WALLPAPER_UPDATE_TIME",
+            "PREMIUM_NUDGE_SHOWN",
+            "FREE_TIER_DEFAULTS_APPLIED",
         )
     }
 }

@@ -68,18 +68,17 @@ data class ScreenTimeRollup(
             now.get(Calendar.YEAR),
             now.get(Calendar.MONTH) + 1,
         )
-        if (year.isNotEmpty() && year != currentYear) {
+        val yearChanged = year.isNotEmpty() && year != currentYear
+        val monthChanged = month.isNotEmpty() && month != currentMonth
+        if (yearChanged) {
+            // The stored month belongs to the old year, so it must not be flushed forward.
             annualMinutes = 0
-            year = currentYear
-        } else if (year.isEmpty()) {
-            year = currentYear
-        }
-        if (month.isNotEmpty() && month != currentMonth) {
-            annualMinutes += monthTotalMinutes()
-            month = currentMonth
             dailyMinutes.clear()
-        } else if (month.isEmpty()) {
-            month = currentMonth
+        } else if (monthChanged) {
+            annualMinutes += monthTotalMinutes()
+            dailyMinutes.clear()
         }
+        year = currentYear
+        month = currentMonth
     }
 }

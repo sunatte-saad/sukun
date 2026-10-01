@@ -5,12 +5,18 @@ import org.json.JSONObject
 import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.data.PrayerLog
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 object AnalyticsRollupManager {
+
+    /**
+     * Call after local Import or Drive restore so prayer marks in legacy [PRAYER_LOGS]
+     * are merged into [PRAYER_ROLLUP_JSON] even when a prior migration flag was restored.
+     */
+    fun reconcileAfterRestore(context: Context) {
+        reconcilePrayerAnalytics(context, forceMergeLegacy = true, markDirty = false)
+    }
 
     fun ensureCurrent(context: Context) {
         val prefs = Prefs(context)
@@ -18,13 +24,13 @@ object AnalyticsRollupManager {
             rollup.rolloverIfNeeded()
             savePrayerRollup(prefs, rollup)
         }
-        if (prefs.showScreenTimeOnHome) {
+        if (prefs.showScreenTimeOnHome || prefs.screenTimeRollupJson.isNotBlank()) {
             loadScreenTimeRollup(prefs).also { rollup ->
                 rollup.rolloverIfNeeded()
                 saveScreenTimeRollup(prefs, rollup)
             }
         }
-        migrateLegacyPrayerLogsIfNeeded(context)
+        reconcilePrayerAnalytics(context)
     }
 
     fun onPrayerMarked(context: Context, prayerKey: String) {
@@ -56,19 +62,21 @@ object AnalyticsRollupManager {
 
     fun loadPrayerRollup(prefs: Prefs): PrayerRollup {
         val raw = prefs.prayerRollupJson
-        return if (raw.isBlank()) {
-            PrayerRollup.emptyForNow()
-        } else {
+        if (raw.isBlank()) return PrayerRollup.emptyForNow()
+        return try {
             PrayerRollup.fromJson(JSONObject(raw)) ?: PrayerRollup.emptyForNow()
+        } catch (_: Exception) {
+            PrayerRollup.emptyForNow()
         }
     }
 
     fun loadScreenTimeRollup(prefs: Prefs): ScreenTimeRollup {
         val raw = prefs.screenTimeRollupJson
-        return if (raw.isBlank()) {
-            ScreenTimeRollup.emptyForNow()
-        } else {
+        if (raw.isBlank()) return ScreenTimeRollup.emptyForNow()
+        return try {
             ScreenTimeRollup.fromJson(JSONObject(raw)) ?: ScreenTimeRollup.emptyForNow()
+        } catch (_: Exception) {
+            ScreenTimeRollup.emptyForNow()
         }
     }
 
@@ -84,6 +92,7 @@ object AnalyticsRollupManager {
         if (rollup == null) return
         rollup.rolloverIfNeeded()
         savePrayerRollup(prefs, rollup)
+        prefs.prayerRollupMigrated = true
     }
 
     fun applyScreenTimeRollup(prefs: Prefs, rollup: ScreenTimeRollup?) {
@@ -115,15 +124,37 @@ object AnalyticsRollupManager {
         return counts
     }
 
-    private fun migrateLegacyPrayerLogsIfNeeded(context: Context) {
+    private fun reconcilePrayerAnalytics(
+        context: Context,
+        forceMergeLegacy: Boolean = false,
+        markDirty: Boolean = true,
+    ) {
         val prefs = Prefs(context)
-        if (prefs.prayerRollupMigrated) return
         val logs = prefs.getPrayerLogs()
+        val rollup = loadPrayerRollup(prefs).apply { rolloverIfNeeded() }
+        val rollupHasData = !rollup.isEmpty()
+
         if (logs.isEmpty()) {
             prefs.prayerRollupMigrated = true
+            if (!rollupHasData && prefs.prayerRollupJson.isBlank()) {
+                savePrayerRollup(prefs, rollup)
+            }
             return
         }
-        val rollup = PrayerRollup.emptyForNow()
+
+        // Remigrate when never migrated, or when restore left logs but an empty rollup
+        // (common when PRAYER_ROLLUP_MIGRATED was true but the JSON blob was missing).
+        if (prefs.prayerRollupMigrated && rollupHasData && !forceMergeLegacy) return
+
+        mergeLegacyLogsIntoRollup(rollup, logs)
+        savePrayerRollup(prefs, rollup)
+        prefs.prayerRollupMigrated = true
+        if (markDirty && (forceMergeLegacy || !rollupHasData)) {
+            AccountSyncManager.markLocalDirty(context)
+        }
+    }
+
+    private fun mergeLegacyLogsIntoRollup(rollup: PrayerRollup, logs: List<PrayerLog>) {
         val monthPrefix = rollup.month
         logs.filter { it.dateKey.startsWith(monthPrefix) }.forEach { log ->
             val day = log.dateKey.substringAfterLast('-').toIntOrNull() ?: return@forEach
@@ -131,32 +162,70 @@ object AnalyticsRollupManager {
         }
         val yearPrefix = rollup.year
         Constants.Prayer.ALL.forEach { key ->
-            val priorMonths = logs
+            val priorDays = logs
                 .filter { it.dateKey.startsWith(yearPrefix) && !it.dateKey.startsWith(monthPrefix) }
                 .filter { it.prayerKey == key }
                 .map { it.dateKey }
                 .toSet()
                 .size
-            if (priorMonths > 0) rollup.annual[key] = priorMonths
+            if (priorDays > rollup.annualCount(key)) rollup.annual[key] = priorDays
         }
-        savePrayerRollup(prefs, rollup)
-        prefs.prayerRollupMigrated = true
-        AccountSyncManager.markLocalDirty(context)
     }
 
     fun todayPrayerKeys(prefs: Prefs): Set<String> {
         val rollup = loadPrayerRollup(prefs).apply { rolloverIfNeeded() }
         val today = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
-        return Constants.Prayer.ALL.filter { today in rollup.daysMarkedThisMonth(it) }.toSet()
+        val fromRollup = Constants.Prayer.ALL.filter { today in rollup.daysMarkedThisMonth(it) }.toSet()
+        if (fromRollup.isNotEmpty()) return fromRollup
+        // Fallback to legacy logs if rollup is empty after a partial restore.
+        val dateKey = String.format(
+            Locale.US,
+            "%04d-%02d-%02d",
+            Calendar.getInstance().get(Calendar.YEAR),
+            Calendar.getInstance().get(Calendar.MONTH) + 1,
+            today,
+        )
+        return prefs.getPrayerLogs()
+            .filter { it.dateKey == dateKey }
+            .map { it.prayerKey }
+            .toSet()
     }
 
     fun monthPrayerLogs(prefs: Prefs): List<PrayerLog> {
         val rollup = loadPrayerRollup(prefs).apply { rolloverIfNeeded() }
-        return prayerLogsForMonth(rollup, rollup.month)
+        val fromRollup = prayerLogsForMonth(rollup, rollup.month)
+        if (fromRollup.isNotEmpty()) return fromRollup
+        val monthPrefix = rollup.month
+        return prefs.getPrayerLogs().filter { it.dateKey.startsWith(monthPrefix) }
+    }
+
+    /** Days prayed per prayer in the current month (at most one mark per calendar day). */
+    fun monthPrayerDayCounts(prefs: Prefs): Map<String, Int> {
+        val rollup = loadPrayerRollup(prefs).apply { rolloverIfNeeded() }
+        val fromRollup = Constants.Prayer.ALL.associateWith { key ->
+            rollup.monthDays[key]?.size ?: 0
+        }
+        if (fromRollup.values.any { it > 0 }) return fromRollup
+        val monthPrefix = rollup.month
+        val logs = prefs.getPrayerLogs().filter { it.dateKey.startsWith(monthPrefix) }
+        if (logs.isEmpty()) return fromRollup
+        return Constants.Prayer.ALL.associateWith { key ->
+            logs.filter { it.prayerKey == key }.map { it.dateKey }.toSet().size
+        }
     }
 
     fun yearPrayerDayCounts(prefs: Prefs): Map<String, Int> {
         val rollup = loadPrayerRollup(prefs).apply { rolloverIfNeeded() }
-        return prayerAnnualCounts(rollup, includeCurrentMonth = true)
+        val fromRollup = prayerAnnualCounts(rollup, includeCurrentMonth = true)
+        if (fromRollup.values.any { it > 0 }) return fromRollup
+        val yearPrefix = rollup.year
+        val logs = prefs.getPrayerLogs().filter { it.dateKey.startsWith(yearPrefix) }
+        if (logs.isEmpty()) return fromRollup
+        return Constants.Prayer.ALL.associateWith { key ->
+            logs.filter { it.prayerKey == key }.map { it.dateKey }.toSet().size
+        }
     }
 }
+
+private fun PrayerRollup.isEmpty(): Boolean =
+    monthDays.values.all { it.isEmpty() } && annual.values.all { it <= 0 }

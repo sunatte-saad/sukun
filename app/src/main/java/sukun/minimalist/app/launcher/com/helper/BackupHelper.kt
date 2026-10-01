@@ -7,6 +7,7 @@ import androidx.core.content.edit
 import org.json.JSONArray
 import org.json.JSONObject
 import sukun.minimalist.app.launcher.com.data.Prefs
+import sukun.minimalist.app.launcher.com.helper.sync.AnalyticsRollupManager
 
 object BackupHelper {
 
@@ -31,6 +32,7 @@ object BackupHelper {
         "SYNC_PAYLOAD_UPDATED_AT",
         "SYNC_LAST_UPLOAD_AT",
         "SYNC_DECLINED_REMOTE_UPDATED_AT",
+        "SYNC_RESTORE_PROMPT_LAST_AT",
     )
 
     /** Keys always stripped from Export files. */
@@ -55,6 +57,7 @@ object BackupHelper {
         "SYNC_PAYLOAD_UPDATED_AT",
         "SYNC_LAST_UPLOAD_AT",
         "SYNC_DECLINED_REMOTE_UPDATED_AT",
+        "SYNC_RESTORE_PROMPT_LAST_AT",
     )
 
     fun buildBackupRoot(
@@ -76,6 +79,7 @@ object BackupHelper {
 
     fun exportToUri(context: Context, uri: Uri): Boolean {
         return try {
+            AnalyticsRollupManager.ensureCurrent(context)
             val root = buildBackupRoot(context, excludeKeys = EXPORT_EXCLUDE_KEYS)
             context.contentResolver.openOutputStream(uri, "wt")?.use { out ->
                 out.write(root.toString(2).toByteArray(Charsets.UTF_8))
@@ -174,6 +178,7 @@ object BackupHelper {
                 restorePreservedValues(this, preserved)
             }
             enforceMonotonicTrial(context, beforeTrial)
+            AnalyticsRollupManager.reconcileAfterRestore(context)
             true
         } catch (_: Exception) {
             false
@@ -210,6 +215,7 @@ object BackupHelper {
 
     fun exportToInternal(context: Context, accountId: String): Boolean {
         return try {
+            AnalyticsRollupManager.ensureCurrent(context)
             val root = buildBackupRoot(context, excludeKeys = EXPORT_EXCLUDE_KEYS)
             internalBackupFile(context, accountId).writeText(root.toString(2), Charsets.UTF_8)
             true

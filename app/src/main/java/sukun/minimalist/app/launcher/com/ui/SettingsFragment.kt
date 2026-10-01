@@ -9,16 +9,17 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Process
 import android.provider.Settings
 import android.text.InputType
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import sukun.minimalist.app.launcher.com.helper.applyLauncherStatusBarVisibility
 import androidx.appcompat.app.AlertDialog
@@ -28,13 +29,13 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
-import sukun.minimalist.app.launcher.com.BuildConfig
 import sukun.minimalist.app.launcher.com.MainActivity
 import sukun.minimalist.app.launcher.com.MainViewModel
 import sukun.minimalist.app.launcher.com.data.OnboardingAction
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
+import sukun.minimalist.app.launcher.com.data.formatReminderTime
 import sukun.minimalist.app.launcher.com.databinding.FragmentSettingsBinding
 import sukun.minimalist.app.launcher.com.helper.HourlyChimeScheduler
 import sukun.minimalist.app.launcher.com.helper.HourlyChimeEffects
@@ -48,9 +49,11 @@ import sukun.minimalist.app.launcher.com.helper.GoogleAuthHelper
 import sukun.minimalist.app.launcher.com.helper.getFocusModeStatus
 import sukun.minimalist.app.launcher.com.helper.AmbientThemeController
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
+import sukun.minimalist.app.launcher.com.helper.hasCameraPermission
 import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
+import sukun.minimalist.app.launcher.com.helper.applyDeviceLocationDeniedFallbacks
 import sukun.minimalist.app.launcher.com.helper.isLocationServicesEnabled
-import sukun.minimalist.app.launcher.com.helper.showLocationPermissionRationaleDialog
+import sukun.minimalist.app.launcher.com.helper.missingSukunSetupPermissions
 import sukun.minimalist.app.launcher.com.helper.showLocationServicesDisabledDialog
 import sukun.minimalist.app.launcher.com.helper.hideKeyboard
 import sukun.minimalist.app.launcher.com.helper.getCurrentDeviceLocationLabel
@@ -66,12 +69,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.isAccessServiceEnabled
+import sukun.minimalist.app.launcher.com.helper.showAccessibilityDisclosure
 import sukun.minimalist.app.launcher.com.helper.isDarkThemeOn
 import sukun.minimalist.app.launcher.com.helper.isEinkDisplay
 import sukun.minimalist.app.launcher.com.helper.isNetworkAvailable
 import sukun.minimalist.app.launcher.com.helper.isSukunDefault
 import sukun.minimalist.app.launcher.com.helper.isTablet
-import sukun.minimalist.app.launcher.com.helper.openAppInfo
 import sukun.minimalist.app.launcher.com.helper.openUrl
 import sukun.minimalist.app.launcher.com.helper.setPlainWallpaper
 import sukun.minimalist.app.launcher.com.helper.showKeyboard
@@ -91,9 +94,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
     private var pendingScreenTimePermissionRequest = false
+    private var pendingFocusModeDuration: Long? = null
+    // private var pendingDoubleTapLock = false
     private var onboardingHighlightView: View? = null
     private var onboardingHighlightOriginalBackground: android.graphics.drawable.Drawable? = null
     private var scrollLayoutBaseBottomPadding = 0
+    private var sectionsController: SettingsSectionsController? = null
 
     private val googleAuthHelper by lazy { GoogleAuthHelper(requireContext().applicationContext) }
 
@@ -133,7 +139,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
 
     private val cameraPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            val granted = result[Manifest.permission.CAMERA] == true
+                || requireContext().hasCameraPermission()
             if (granted) {
                 prefs.hourlyChimeStyle = Constants.ChimeStyle.FLASH
                 binding.chimeStyleSelectLayout?.visibility = View.GONE
@@ -153,9 +161,20 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             if (granted) {
                 action?.invoke() ?: setAppLocationDevice()
             } else {
-                requireContext().showLocationPermissionRationaleDialog()
+                requireContext().applyDeviceLocationDeniedFallbacks(prefs)
+                populateWeatherSettings()
+                populatePrayerSettings()
+                populateLocationSettings()
+                viewModel.cancelWeatherWorker(clearCachedWeather = true)
+                viewModel.loadWeather()
+                viewModel.cancelPrayerReminder(clearCachedPrayer = true)
+                viewModel.loadPrayerState()
+                viewModel.refreshHome(false)
             }
         }
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
 
     private val backupExportLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -231,6 +250,29 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         backupImportLauncher.launch(arrayOf("application/json", "*/*"))
     }
 
+    private fun showPremiumInfoDialog() {
+        val message = buildString {
+            append(getString(R.string.premium_trial_welcome))
+            append("\n\n")
+            when {
+                PremiumAccess.isTrialActive(prefs) -> append(
+                    getString(
+                        R.string.premium_trial_days_left,
+                        PremiumAccess.trialDaysRemaining(prefs),
+                    ),
+                )
+                PremiumAccess.trialExpired(prefs) -> append(getString(R.string.premium_trial_ended))
+            }
+            append("\n\n")
+            append(getString(R.string.premium_mindful_morning_hard_feature))
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.premium_info_title)
+            .setMessage(message)
+            .setPositiveButton(R.string.okay, null)
+            .show()
+    }
+
     private fun showBackupInfoDialog() {
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.backup_info_title)
@@ -267,9 +309,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 prefs.azanSound = Constants.AzanSound.OFF
             }
             // Migrate: users who had lockModeOn=false but doubleTapAction=lock (the old default)
-            if (!prefs.lockModeOn && prefs.doubleTapAction == Constants.DoubleTapAction.LOCK) {
-                prefs.doubleTapAction = Constants.DoubleTapAction.OFF
-            }
+            // if (!prefs.lockModeOn && prefs.doubleTapAction == Constants.DoubleTapAction.LOCK) {
+            //     prefs.doubleTapAction = Constants.DoubleTapAction.OFF
+            // }
 
             binding.homeAppsNum.text = prefs.homeAppsNum.toString()
             updateHomeAppsNumSelectorVisibility()
@@ -299,10 +341,23 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             populateDateTime()
             populateSwipeApps()
             populateSwipeDownAction()
-            populateDoubleTapAction()
+            // populateDoubleTapAction()
             populateActionHints()
             initClickListeners()
             initObservers()
+            (binding.root as? ViewGroup)?.layoutTransition = null
+            binding.scrollView.layoutTransition = null
+            initSectionsController()
+            requireActivity().onBackPressedDispatcher.addCallback(
+                viewLifecycleOwner,
+                object : OnBackPressedCallback(true) {
+                    override fun handleOnBackPressed() {
+                        if (sectionsController?.collapseAll() == true) return
+                        isEnabled = false
+                        requireActivity().onBackPressedDispatcher.onBackPressed()
+                    }
+                },
+            )
         } catch (e: Exception) {
             e.printStackTrace()
             try {
@@ -313,6 +368,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     override fun onClick(view: View) {
         binding.clockStyleSelectLayout?.visibility = View.GONE
+        binding.timeFormatSelectLayout?.visibility = View.GONE
         binding.appsNumSelectLayout.visibility = View.GONE
         binding.dateTimeSelectLayout.visibility = View.GONE
         binding.appThemeSelectLayout.visibility = View.GONE
@@ -320,7 +376,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.focusModeSelectLayout?.visibility = View.GONE
         binding.mindfulMorningDurationSelectLayout?.visibility = View.GONE
         binding.mindfulMorningSeveritySelectLayout?.visibility = View.GONE
-        binding.doubleTapActionSelectLayout.visibility = View.GONE
+        // binding.doubleTapActionSelectLayout.visibility = View.GONE
         if (view.id != R.id.textSizeSmall && view.id != R.id.textSizeMedium && view.id != R.id.textSizeLarge
             && view.id != R.id.textSizeXLarge
         ) {
@@ -356,16 +412,17 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 viewModel.reportOnboardingAction(action)
                 if (!isOnboardingDiscoveryStep(action)) {
                     toggleScreenTime()
+                } else {
+                    populateScreenTimeOnOff()
                 }
             }
-            R.id.appInfo -> openAppInfo(requireContext(), Process.myUserHandle(), BuildConfig.APPLICATION_ID)
-            R.id.setLauncher -> {
+            R.id.turnOffSukun -> {
                 if (viewModel.isSukunDefault.value == true) {
                     confirmTurnOffSukunLauncher()
-                } else {
-                    viewModel.resetLauncherLiveData.call()
                 }
             }
+            R.id.setLauncher -> onDefaultLauncherChecked()
+            R.id.editSections -> toggleSectionsEditMode()
             R.id.startTour -> startOnboardingTour()
             R.id.homeAppsNum -> {
                 updateHomeAppsNumSelectorVisibility()
@@ -388,8 +445,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.homeAppIcons -> toggleHomeAppIcons()
             R.id.todoOnOff -> toggleTodo()
             R.id.goPremium -> showUpgradeDialog()
-            R.id.weatherSettings -> showWeatherSettingsSheet()
-            R.id.weatherOnOff -> toggleInlineWeather()
+            R.id.weatherSettings, R.id.weatherOnOff -> toggleInlineWeather()
+            R.id.weatherManage, R.id.weatherManageRow -> showWeatherSettingsSheet()
             R.id.weatherSource -> binding.weatherSourceSelectLayout?.visibility = View.VISIBLE
             R.id.weatherSourceManual -> selectInlineWeatherSource(Constants.WeatherSource.MANUAL)
             R.id.weatherSourceDevice -> selectInlineWeatherSource(Constants.WeatherSource.DEVICE)
@@ -400,13 +457,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.weatherUnits -> binding.weatherUnitsSelectLayout?.visibility = View.VISIBLE
             R.id.weatherUnitCelsius -> selectInlineWeatherUnits(Constants.WeatherUnit.CELSIUS)
             R.id.weatherUnitFahrenheit -> selectInlineWeatherUnits(Constants.WeatherUnit.FAHRENHEIT)
-            R.id.prayerSettings -> {
-                val action = OnboardingAction.TAP_PRAYER_SETTINGS
-                viewModel.reportOnboardingAction(action)
-                if (!isOnboardingDiscoveryStep(action)) {
-                    showPrayerSettingsSheet()
-                }
-            }
+            R.id.prayerSettings, R.id.prayerOnOff -> togglePrayerOnOff()
+            R.id.prayerManage, R.id.prayerManageRow -> showPrayerSettingsSheet()
+            R.id.prayerSettingsToggle -> showPrayerSettingsSheet()
             R.id.prayerAnalyticsLink ->
                 findNavController().navigate(R.id.action_settingsFragment_to_prayerAnalyticsFragment)
             R.id.screenTimeAnalyticsLink ->
@@ -436,6 +489,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.focus2h -> if (canUsePremiumFeature()) startFocusMode(Constants.FocusModeDuration.TWO_HOURS)
             R.id.focusCustom -> if (canUsePremiumFeature()) showFocusCustomEditor()
             R.id.focusCustomStart -> startCustomFocusMode()
+            R.id.focusOnOff -> toggleFocusOnOff()
             R.id.focusModeNotificationsLock -> toggleFocusModeNotificationsLock()
             R.id.focusModeHideStatusBar -> toggleFocusModeHideStatusBar()
             R.id.focusCustomClose -> {
@@ -447,6 +501,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 viewModel.reportOnboardingAction(action)
                 if (!isOnboardingDiscoveryStep(action)) {
                     toggleMindfulMorning()
+                } else {
+                    populateMindfulMorning()
                 }
             }
             R.id.mindfulMorningDuration -> binding.mindfulMorningDurationSelectLayout?.visibility = View.VISIBLE
@@ -466,6 +522,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 binding.chimeSoundSelectLayout?.visibility = View.GONE
                 requireContext().showToast(R.string.chime_preview_tap_style)
             }
+            R.id.chimeStyleAuto -> updateChimeStyle(Constants.ChimeStyle.AUTO)
             R.id.chimeStyleSound -> updateChimeStyle(Constants.ChimeStyle.SOUND)
             R.id.chimeStyleVibrate -> updateChimeStyle(Constants.ChimeStyle.VIBRATE)
             R.id.chimeStyleSilent -> updateChimeStyle(Constants.ChimeStyle.SILENT_NOTIFICATION)
@@ -487,8 +544,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.clockStyle -> binding.clockStyleSelectLayout?.visibility = View.VISIBLE
             R.id.clockStyleStandard -> selectClockStyle(Constants.ClockStyle.STANDARD)
             R.id.clockStyleDayRing -> selectClockStyle(Constants.ClockStyle.DAY_RING)
-            R.id.dayStartHour -> showDayHourEditor(isStartHour = true)
-            R.id.dayEndHour -> showDayHourEditor(isStartHour = false)
+            R.id.timeFormat -> binding.timeFormatSelectLayout?.visibility = View.VISIBLE
+            R.id.timeFormat12h -> selectTimeFormat(use24h = false)
+            R.id.timeFormat24h -> selectTimeFormat(use24h = true)
+            R.id.dayStartHour -> showDayHourPicker(isStartHour = true)
+            R.id.dayEndHour -> showDayHourPicker(isStartHour = false)
             R.id.appThemeText -> {
                 val action = OnboardingAction.TAP_APPEARANCE
                 viewModel.reportOnboardingAction(action)
@@ -510,10 +570,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             }
             R.id.textSizeValue -> binding.textSizesLayout.visibility = View.VISIBLE
             R.id.actionAccessibility -> openAccessibilityService()
-            R.id.closeAccessibility -> toggleAccessibilityVisibility(false)
+            R.id.closeAccessibility -> {
+                pendingFocusModeDuration = null
+                toggleAccessibilityVisibility(false)
+            }
             R.id.notWorking -> {
-                if (Constants.URL_DOUBLE_TAP.isBlank()) requireContext().showToast(R.string.not_set)
-                else requireContext().openUrl(Constants.URL_DOUBLE_TAP)
+                requireContext().showToast(R.string.accessibility_not_working_help, Toast.LENGTH_LONG)
             }
 
             R.id.maxApps0 -> updateHomeAppsNum(0)
@@ -548,10 +610,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.swipeDownAction -> binding.swipeDownSelectLayout.visibility = View.VISIBLE
             R.id.notifications -> updateSwipeDownAction(Constants.SwipeDownAction.NOTIFICATIONS)
             R.id.search -> updateSwipeDownAction(Constants.SwipeDownAction.SEARCH)
-            R.id.doubleTapAction -> binding.doubleTapActionSelectLayout.visibility = View.VISIBLE
-            R.id.doubleTapOff -> selectDoubleTapMode(Constants.DoubleTapAction.OFF)
-            R.id.doubleTapLock -> selectDoubleTapMode(Constants.DoubleTapAction.LOCK)
-            R.id.doubleTapFocus -> selectDoubleTapMode(Constants.DoubleTapAction.FOCUS)
+            // R.id.doubleTapAction -> binding.doubleTapActionSelectLayout.visibility = View.VISIBLE
+            // R.id.doubleTapOff -> selectDoubleTapMode(Constants.DoubleTapAction.OFF)
+            // R.id.doubleTapLock -> selectDoubleTapMode(Constants.DoubleTapAction.LOCK)
+            // R.id.doubleTapFocus -> selectDoubleTapMode(Constants.DoubleTapAction.FOCUS)
 
         }
     }
@@ -574,7 +636,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
             R.id.swipeLeftApp -> toggleSwipeLeft()
             R.id.swipeRightApp -> toggleSwipeRight()
-            R.id.doubleTapAction -> startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            // R.id.doubleTapAction -> startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
         return true
     }
@@ -593,7 +655,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.mindfulMorningSeverityHard?.setOnClickListener(this)
         binding.sukunHiddenApps.setOnClickListener(this)
         binding.scrollLayout.setOnClickListener(this)
-        binding.appInfo.setOnClickListener(this)
+        binding.turnOffSukun.setOnClickListener(this)
+        binding.editSections?.setOnClickListener(this)
         binding.setLauncher.setOnClickListener(this)
         binding.startTour?.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
@@ -612,6 +675,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.goPremium.setOnClickListener(this)
         binding.weatherSettings?.setOnClickListener(this)
         binding.weatherOnOff?.setOnClickListener(this)
+        binding.weatherManage?.setOnClickListener(this)
+        binding.weatherManageRow?.setOnClickListener(this)
         binding.weatherSource?.setOnClickListener(this)
         binding.weatherSourceManual?.setOnClickListener(this)
         binding.weatherSourceDevice?.setOnClickListener(this)
@@ -623,6 +688,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.weatherUnitCelsius?.setOnClickListener(this)
         binding.weatherUnitFahrenheit?.setOnClickListener(this)
         binding.prayerSettings?.setOnClickListener(this)
+        binding.prayerOnOff?.setOnClickListener(this)
+        binding.prayerManage?.setOnClickListener(this)
+        binding.prayerManageRow?.setOnClickListener(this)
+        binding.prayerSettingsToggle?.setOnClickListener(this)
         binding.prayerAnalyticsLink?.setOnClickListener(this)
         binding.screenTimeAnalyticsLink?.setOnClickListener(this)
         binding.locationSettings?.setOnClickListener(this)
@@ -630,6 +699,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.chipLocationManual?.setOnClickListener(this)
         binding.btnSaveLocationSettings?.setOnClickListener(this)
         binding.btnCloseLocationSettings?.setOnClickListener(this)
+        binding.focusOnOff.setOnClickListener(this)
         binding.focusMode.setOnClickListener(this)
         binding.focus15m.setOnClickListener(this)
         binding.focus30m.setOnClickListener(this)
@@ -645,6 +715,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.hourlyChimeStartHour?.setOnClickListener(this)
         binding.hourlyChimeEndHour?.setOnClickListener(this)
         binding.hourlyChimeStyle?.setOnClickListener(this)
+        binding.chimeStyleAuto?.setOnClickListener(this)
         binding.chimeStyleSound?.setOnClickListener(this)
         binding.chimeStyleVibrate?.setOnClickListener(this)
         binding.chimeStyleSilent?.setOnClickListener(this)
@@ -661,6 +732,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.clockStyle.setOnClickListener(this)
         binding.clockStyleStandard?.setOnClickListener(this)
         binding.clockStyleDayRing?.setOnClickListener(this)
+        binding.timeFormat?.setOnClickListener(this)
+        binding.timeFormat12h?.setOnClickListener(this)
+        binding.timeFormat24h?.setOnClickListener(this)
         binding.dayStartHour.setOnClickListener(this)
         binding.dayEndHour.setOnClickListener(this)
         binding.swipeLeftApp.setOnClickListener(this)
@@ -668,10 +742,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.swipeDownAction.setOnClickListener(this)
         binding.search.setOnClickListener(this)
         binding.notifications.setOnClickListener(this)
-        binding.doubleTapAction.setOnClickListener(this)
-        binding.doubleTapOff?.setOnClickListener(this)
-        binding.doubleTapLock.setOnClickListener(this)
-        binding.doubleTapFocus.setOnClickListener(this)
+        // binding.doubleTapAction.setOnClickListener(this)
+        // binding.doubleTapOff?.setOnClickListener(this)
+        // binding.doubleTapLock.setOnClickListener(this)
+        // binding.doubleTapFocus.setOnClickListener(this)
         binding.appThemeText.setOnClickListener(this)
         binding.themeLight.setOnClickListener(this)
         binding.themeDark.setOnClickListener(this)
@@ -702,12 +776,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.backupExport?.setOnClickListener { if (canUsePremiumFeature()) launchBackupExport() }
         binding.backupImport?.setOnClickListener { if (canUsePremiumFeature()) launchBackupImport() }
         binding.backupInfo?.setOnClickListener { showBackupInfoDialog() }
+        binding.premiumInfo?.setOnClickListener { showPremiumInfoDialog() }
 
         binding.alignment.setOnLongClickListener(this)
         binding.appThemeText.setOnLongClickListener(this)
         binding.swipeLeftApp.setOnLongClickListener(this)
         binding.swipeRightApp.setOnLongClickListener(this)
-        binding.doubleTapAction.setOnLongClickListener(this)
+        // binding.doubleTapAction.setOnLongClickListener(this)
     }
 
     private fun initObservers() {
@@ -716,10 +791,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             prefs.firstSettingsOpen = false
         }
         viewModel.isSukunDefault.observe(viewLifecycleOwner) {
-            binding.setLauncher.text = getString(
-                if (it) R.string.turn_off_sukun_launcher
-                else R.string.set_as_default_launcher
-            )
+            populateDefaultLauncher(it == true)
             if (it) {
                 prefs.toShowHintCounter += 1
             }
@@ -777,6 +849,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             clearOnboardingHighlight()
             return
         }
+        sectionsController?.expandContaining(target)
         updateOnboardingScrollPadding(true)
         binding.scrollView.post {
             scrollToShowOnboardingTarget(target)
@@ -794,6 +867,37 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         try {
             findNavController().popBackStack(R.id.mainFragment, false)
         } catch (_: Exception) {
+        }
+    }
+
+    private fun initSectionsController() {
+        val controller = SettingsSectionsController(binding.scrollLayout, prefs)
+        controller.attach()
+        controller.onEditModeChanged = {
+            updateEditSectionsIcon()
+            requireContext().showToast(
+                if (it) R.string.settings_edit_layout_on else R.string.settings_edit_layout_off
+            )
+        }
+        binding.scrollLayout.onDragScrollBy = { dy -> binding.scrollView.scrollBy(0, dy) }
+        sectionsController = controller
+        updateEditSectionsIcon()
+        binding.sukunSettingsLogo?.clipToOutline = true
+    }
+
+    private fun toggleSectionsEditMode() {
+        val controller = sectionsController ?: return
+        controller.setEditMode(!controller.editMode)
+    }
+
+    private fun updateEditSectionsIcon() {
+        val editing = sectionsController?.editMode == true
+        binding.editSections?.apply {
+            setImageResource(if (editing) R.drawable.ic_check else R.drawable.ic_rename)
+            alpha = if (editing) 1f else 0.7f
+            contentDescription = context.getString(
+                if (editing) R.string.settings_edit_layout_done else R.string.settings_edit_layout,
+            )
         }
     }
 
@@ -875,9 +979,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateHomeAppIcons() {
-        binding.homeAppIcons?.text = getString(
-            if (prefs.showHomeAppIcons) R.string.on else R.string.off
-        )
+        binding.homeAppIcons?.setOnOff(prefs.showHomeAppIcons)
     }
 
     private fun toggleTodo() {
@@ -887,7 +989,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateTodoSettings() {
-        binding.todoOnOff?.text = getString(if (prefs.showTodoOnHome) R.string.on else R.string.off)
+        binding.todoOnOff?.setOnOff(prefs.showTodoOnHome)
     }
 
     private fun toggleReminders() {
@@ -902,7 +1004,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateRemindersSettings() {
-        binding.remindersOnOff?.text = getString(if (prefs.showRemindersOnHome) R.string.on else R.string.off)
+        binding.remindersOnOff?.setOnOff(prefs.showRemindersOnHome)
     }
 
     private fun populateAccount() {
@@ -956,7 +1058,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         viewModel.isAuthFlowActive = true
         requireActivity().lifecycleScope.launch {
             try {
-                val result = kotlinx.coroutines.withTimeout(90_000L) {
+                val result = kotlinx.coroutines.withTimeout(180_000L) {
                     googleAuthHelper.signIn(requireActivity())
                 }
                 handleSignInResult(result)
@@ -1121,19 +1223,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         if (prefs.isProUser) return
         binding.goPremium.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
         binding.goPremium.text = getString(R.string.upgrade_to_premium)
-        if (PremiumAccess.isTrialActive(prefs)) {
-            binding.premiumTrialStatus.isVisible = true
-            binding.premiumTrialStatus.text = getString(
-                R.string.premium_trial_days_left,
-                PremiumAccess.trialDaysRemaining(prefs),
-            )
-        } else {
-            binding.premiumTrialStatus.isVisible = false
-        }
     }
 
     private fun applyPremiumVisuals() {
         val alpha = PremiumAccess.lockedAlpha(prefs)
+        binding.focusOnOff.alpha = alpha
         binding.focusMode.alpha = alpha
         binding.focusModeNotificationsLock.alpha = alpha
         binding.focusModeHideStatusBar.alpha = alpha
@@ -1143,6 +1237,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.changeWallpaperNow.alpha = alpha
         binding.chimeSoundCustom?.alpha = alpha
         binding.mindfulMorningSeverityHard?.alpha = alpha
+        binding.clockStyleDayRing?.alpha = alpha
     }
 
     private fun showUpgradeDialog() {
@@ -1171,7 +1266,23 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             binding.focusModeSelectLayout?.visibility = View.GONE
             binding.focusCustomLayout.visibility = View.GONE
         }
+        populateFocusOnOff()
         populateFocusModeHideStatusBar()
+    }
+
+    private fun toggleFocusOnOff() {
+        prefs.showFocusOnHome = !prefs.showFocusOnHome
+        if (!prefs.showFocusOnHome && prefs.isFocusModeActive()) {
+            prefs.clearFocusMode()
+            populateFocusMode()
+        } else {
+            populateFocusOnOff()
+        }
+        viewModel.refreshHome(false)
+    }
+
+    private fun populateFocusOnOff() {
+        binding.focusOnOff.setOnOff(prefs.showFocusOnHome)
     }
 
     private fun toggleFocusModeNotificationsLock() {
@@ -1186,15 +1297,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateFocusModeNotificationsLock() {
-        binding.focusModeNotificationsLock.text = getString(
-            if (prefs.focusModeLockNotifications) R.string.on else R.string.off
-        )
+        binding.focusModeNotificationsLock.setOnOff(prefs.focusModeLockNotifications)
     }
 
     private fun populateFocusModeHideStatusBar() {
-        binding.focusModeHideStatusBar.text = getString(
-            if (prefs.focusModeHideStatusBar) R.string.on else R.string.off
-        )
+        binding.focusModeHideStatusBar.setOnOff(prefs.focusModeHideStatusBar)
     }
 
     private fun startFocusMode(durationInMillis: Long) {
@@ -1203,10 +1310,14 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             return
         }
         if (!isAccessServiceEnabled(requireContext())) {
-            requireContext().showToast(R.string.focus_mode_enable_accessibility, Toast.LENGTH_LONG)
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            pendingFocusModeDuration = durationInMillis
+            toggleAccessibilityVisibility(true)
             return
         }
+        completeFocusModeStart(durationInMillis)
+    }
+
+    private fun completeFocusModeStart(durationInMillis: Long) {
         prefs.startFocusMode(durationInMillis)
         populateFocusMode()
         viewModel.refreshHome(false)
@@ -1240,15 +1351,16 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateWeatherSettings() {
-        binding.weatherSettingsSummary?.text = if (prefs.showWeatherOnHome) buildWeatherSummary() else getString(R.string.off)
         populateInlineWeatherSettings()
     }
 
     private fun populateInlineWeatherSettings() {
-        val weatherOnOff = binding.weatherOnOff ?: return
         val isOn = prefs.showWeatherOnHome
-        weatherOnOff.text = getString(if (isOn) R.string.on else R.string.off)
-        binding.weatherOptionsLayout?.isVisible = isOn
+        binding.weatherOnOff?.setOnOff(isOn)
+        binding.weatherManageRow?.isVisible = isOn
+        // Portrait uses Manage → sheet; keep legacy landscape inline options hidden.
+        binding.weatherOptionsLayout?.isVisible = false
+        binding.weatherLocationRow?.isVisible = false
         if (!isOn) return
 
         binding.weatherSource?.text = getString(
@@ -1262,7 +1374,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE ->
                 getString(R.string.google_weather_short)
             prefs.weatherSourceMode == Constants.WeatherSource.DEVICE ->
-                getString(R.string.device_location)
+                prefs.weatherLocationLabel.ifBlank { getString(R.string.device_location) }
             prefs.weatherLocationLabel.isNotBlank() -> prefs.weatherLocationLabel
             else -> getString(R.string.not_set)
         }
@@ -1272,8 +1384,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             else
                 R.string.celsius_short
         )
-        binding.weatherLocationRow?.isVisible =
-            prefs.weatherSourceMode != Constants.WeatherSource.GOOGLE
         updateInlineWeatherSourceChips()
         updateInlineWeatherUnitChips()
     }
@@ -1315,7 +1425,24 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun toggleInlineWeather() {
-        prefs.showWeatherOnHome = !prefs.showWeatherOnHome
+        if (prefs.showWeatherOnHome) {
+            prefs.showWeatherOnHome = false
+            populateWeatherSettings()
+            refreshWeatherIfConfigured()
+            viewModel.refreshHome(false)
+            return
+        }
+        val needsLocation = prefs.weatherSourceMode == Constants.WeatherSource.DEVICE
+        if (needsLocation && !requireContext().hasWeatherLocationPermission()) {
+            prefs.weatherSourceMode = Constants.WeatherSource.GOOGLE
+            prefs.clearWeatherCache()
+            prefs.showWeatherOnHome = true
+            populateWeatherSettings()
+            refreshWeatherIfConfigured()
+            viewModel.refreshHome(false)
+            return
+        }
+        prefs.showWeatherOnHome = true
         populateWeatherSettings()
         refreshWeatherIfConfigured()
         viewModel.refreshHome(false)
@@ -1366,12 +1493,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             return
         }
         pendingLocationAction = onGranted
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
+        val needed = context.missingSukunSetupPermissions()
+        if (needed.isEmpty()) {
+            onGranted()
+            return
+        }
+        locationPermissionLauncher.launch(needed)
     }
 
     private fun saveInlineWeatherLocation() {
@@ -1407,13 +1534,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         refreshWeatherIfConfigured()
         viewModel.refreshHome(false)
     }
-
-    private fun buildWeatherSummary(): String = getString(
-        if (prefs.weatherUnits == Constants.WeatherUnit.FAHRENHEIT)
-            R.string.fahrenheit_short
-        else
-            R.string.celsius_short
-    )
 
     private fun showWeatherSettingsSheet() {
         WeatherSettingsSheet.newInstance().also { sheet ->
@@ -1460,18 +1580,64 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populatePrayerSettings() {
-        binding.prayerSettingsSummary?.text =
-            if (prefs.showPrayerOnHome) buildPrayerSummary() else getString(R.string.off)
+        val isOn = prefs.showPrayerOnHome
+        binding.prayerOnOff?.setOnOff(isOn)
+        binding.prayerManageRow?.isVisible = isOn
+        binding.prayerOptionsLayout?.isVisible = false
+        binding.prayerLocationRow?.isVisible = false
+        // Landscape: expose the on/off switch without expanding the old submenu.
+        binding.prayerSubMenuLayout?.isVisible = true
+        binding.prayerSettingsHeader?.isVisible = false
     }
 
-    private fun buildPrayerSummary(): String {
-        val azan = when (prefs.azanSound) {
-            Constants.AzanSound.OFF -> null
-            Constants.AzanSound.MARYLEBONE -> getString(R.string.azan_sound_marylebone)
-            Constants.AzanSound.CUSTOM -> getString(R.string.custom)
-            else -> getString(R.string.azan_sound_makkah)
+    private fun togglePrayerOnOff() {
+        val action = OnboardingAction.TAP_PRAYER_SETTINGS
+        viewModel.reportOnboardingAction(action)
+        if (isOnboardingDiscoveryStep(action)) {
+            populatePrayerSettings()
+            return
         }
-        return azan ?: getString(R.string.on)
+        if (prefs.showPrayerOnHome) {
+            prefs.showPrayerOnHome = false
+            populatePrayerSettings()
+            viewModel.cancelPrayerReminder(clearCachedPrayer = true)
+            viewModel.refreshHome(false)
+            return
+        }
+        if (!canUsePremiumFeature()) {
+            populatePrayerSettings()
+            return
+        }
+        if (prefs.prayerSourceMode == Constants.PrayerSource.DEVICE &&
+            !requireContext().hasWeatherLocationPermission()
+        ) {
+            prefs.prayerSourceMode = Constants.PrayerSource.GOOGLE
+            prefs.clearPrayerCache()
+            prefs.showPrayerOnHome = true
+            requestNotificationPermissionIfNeeded()
+            populatePrayerSettings()
+            viewModel.cancelPrayerReminder(clearCachedPrayer = true)
+            viewModel.loadPrayerState()
+            viewModel.refreshHome(false)
+            return
+        }
+        prefs.showPrayerOnHome = true
+        requestNotificationPermissionIfNeeded()
+        populatePrayerSettings()
+        viewModel.refreshPrayerData(
+            forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE
+        )
+        viewModel.refreshHome(false)
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) return
+        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     private fun populateLocationSettings() {
@@ -1479,6 +1645,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             prefs.weatherSourceMode == Constants.WeatherSource.DEVICE
                     || prefs.prayerSourceMode == Constants.PrayerSource.DEVICE ->
                 getString(R.string.device_location)
+            prefs.weatherSourceMode == Constants.WeatherSource.GOOGLE
+                    || prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE ->
+                getString(R.string.google_weather_short)
             prefs.weatherLocationLabel.isNotBlank() -> prefs.weatherLocationLabel
             prefs.prayerLocationLabel.isNotBlank() -> prefs.prayerLocationLabel
             else -> getString(R.string.not_set)
@@ -1493,7 +1662,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.locationEditorLayout?.visibility = View.VISIBLE
         updateLocationChips()
         val showInput = prefs.weatherSourceMode != Constants.WeatherSource.DEVICE
+                && prefs.weatherSourceMode != Constants.WeatherSource.GOOGLE
                 && prefs.prayerSourceMode != Constants.PrayerSource.DEVICE
+                && prefs.prayerSourceMode != Constants.PrayerSource.GOOGLE
         binding.locationInputRow?.visibility = if (showInput) View.VISIBLE else View.GONE
         if (showInput) {
             val prefill = prefs.weatherLocationLabel.ifBlank { prefs.prayerLocationLabel }
@@ -1624,12 +1795,18 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun showPrayerSettingsSheet() {
+        if (!prefs.showPrayerOnHome) return
         PrayerSettingsSheet.newInstance().also { sheet ->
             sheet.setListener(object : PrayerSettingsSheet.Listener {
                 override fun onPrayerSettingsChanged() {
                     populatePrayerSettings()
                     populateWeatherSettings()
                     viewModel.refreshHome(false)
+                }
+
+                override fun onPrayerLocationNeeded() {
+                    openLocationEditor()
+                    selectLocationManual()
                 }
             })
             sheet.show(childFragmentManager, PrayerSettingsSheet.TAG)
@@ -1638,13 +1815,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateStatusBar() {
         val activity = activity ?: return
-        if (prefs.showStatusBar) {
-            applyLauncherStatusBarVisibility(activity, show = true)
-            binding.statusBar.text = getString(R.string.on)
-        } else {
-            applyLauncherStatusBarVisibility(activity, show = false)
-            binding.statusBar.text = getString(R.string.off)
-        }
+        applyLauncherStatusBarVisibility(activity, show = prefs.showStatusBar)
+        binding.statusBar.setOnOff(prefs.showStatusBar)
     }
 
     private fun toggleDateTime(selected: Int) {
@@ -1662,65 +1834,66 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             }
         )
         binding.dateTimeOptionsLayout.isVisible = prefs.dateTimeVisibility != Constants.DateTime.OFF
+        val clockStyle = PremiumAccess.effectiveClockStyle(prefs)
         binding.clockStyle.text = getString(
-            if (prefs.clockStyle == Constants.ClockStyle.DAY_RING) R.string.clock_style_day_ring
+            if (clockStyle == Constants.ClockStyle.DAY_RING) R.string.clock_style_day_ring
             else R.string.clock_style_standard
         )
+        binding.timeFormat?.text = getString(
+            if (prefs.timeFormat24h) R.string.reminder_time_format_24h
+            else R.string.reminder_time_format_12h
+        )
+        binding.timeFormatSelectLayout?.visibility = View.GONE
         binding.dayStartHour.text = formatHourLabel(prefs.dayStartHour)
         binding.dayEndHour.text = formatHourLabel(prefs.dayEndHour)
         val showDayRingHours = prefs.dateTimeVisibility == Constants.DateTime.ON
-                && prefs.clockStyle == Constants.ClockStyle.DAY_RING
-        binding.dayStartHourRow.isVisible = showDayRingHours
-        binding.dayEndHourRow.isVisible = showDayRingHours
+                && clockStyle == Constants.ClockStyle.DAY_RING
+        binding.dayHoursRow?.isVisible = showDayRingHours
     }
 
     private fun selectClockStyle(selectedStyle: String) {
         binding.clockStyleSelectLayout?.visibility = View.GONE
+        if (selectedStyle == Constants.ClockStyle.DAY_RING && !canUsePremiumFeature()) return
         if (prefs.clockStyle == selectedStyle) return
         prefs.clockStyle = selectedStyle
         populateDateTime()
         viewModel.toggleDateTime()
     }
 
-    private fun showDayHourEditor(isStartHour: Boolean) {
-        val currentValue = if (isStartHour) prefs.dayStartHour else prefs.dayEndHour
-        val input = EditText(requireContext()).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.clock_hour_hint)
-            setText(currentValue.toString())
-            setSelection(text?.length ?: 0)
-        }
+    private fun selectTimeFormat(use24h: Boolean) {
+        binding.timeFormatSelectLayout?.visibility = View.GONE
+        if (prefs.timeFormat24h == use24h) return
+        prefs.timeFormat24h = use24h
+        populateDateTime()
+        populateHourlyChime()
+        populateMindfulMorning()
+        viewModel.toggleDateTime()
+        if (prefs.showPrayerOnHome) viewModel.refreshPrayerData()
+    }
+
+    private fun showDayHourPicker(isStartHour: Boolean) {
+        val current = if (isStartHour) prefs.dayStartHour else prefs.dayEndHour
+        val hours = (0..23).map { formatHourLabel(it) }.toTypedArray()
         AlertDialog.Builder(requireContext())
             .setTitle(if (isStartHour) R.string.day_start_hour_title else R.string.day_end_hour_title)
-            .setView(input)
-            .setPositiveButton(R.string.save) { _, _ ->
-                val enteredHour = input.text?.toString()?.trim()?.toIntOrNull()
-                if (!isValidDayHour(isStartHour, enteredHour)) {
-                    requireContext().showToast(
-                        if (isStartHour) R.string.day_start_hour_error else R.string.day_end_hour_error
-                    )
-                    return@setPositiveButton
+            .setSingleChoiceItems(hours, current.coerceIn(0, 23)) { dialog, which ->
+                if (isStartHour) {
+                    prefs.dayStartHour = which
+                    if (which >= prefs.dayEndHour) prefs.dayEndHour = (which + 1).coerceAtMost(23)
+                } else {
+                    prefs.dayEndHour = which
+                    if (which <= prefs.dayStartHour) prefs.dayStartHour = (which - 1).coerceAtLeast(0)
                 }
-                if (isStartHour) prefs.dayStartHour = enteredHour!!
-                else prefs.dayEndHour = enteredHour!!
                 populateDateTime()
                 viewModel.toggleDateTime()
+                dialog.dismiss()
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
-    private fun isValidDayHour(isStartHour: Boolean, value: Int?): Boolean {
-        if (value == null) return false
-        return if (isStartHour) {
-            value in 0..23 && value < prefs.dayEndHour
-        } else {
-            value in 1..24 && value > prefs.dayStartHour
-        }
-    }
-
     private fun formatHourLabel(hour: Int): String {
-        return getString(R.string.clock_hour_format, hour)
+        return formatReminderTime(hour.coerceIn(0, 23), 0, prefs.timeFormat24h)
     }
 
     private fun showHiddenApps() {
@@ -1742,17 +1915,25 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun toggleAccessibilityVisibility(show: Boolean) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            binding.notWorking.visibility = View.VISIBLE
+        if (!show) {
+            binding.accessibilityLayout.isVisible = false
+            binding.scrollView.animateAlpha(1f)
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            requireContext().showAccessibilityDisclosure()
+            return
+        }
+        binding.notWorking.visibility = View.VISIBLE
         if (isAccessServiceEnabled(requireContext()))
             binding.actionAccessibility.text = getString(R.string.disable)
-        binding.accessibilityLayout.isVisible = show
-        binding.scrollView.animateAlpha(if (show) 0.5f else 1f)
+        binding.accessibilityLayout.isVisible = true
+        binding.scrollView.animateAlpha(0.5f)
     }
 
     private fun openAccessibilityService() {
         toggleAccessibilityVisibility(false)
-        populateDoubleTapAction()
+        // populateDoubleTapAction()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
     }
@@ -1763,6 +1944,25 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             requireContext().showToast(toastMessage)
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun populateDefaultLauncher(isDefault: Boolean) {
+        binding.setLauncher.setOnOff(isDefault)
+        binding.turnOffSukun.alpha = if (isDefault) 1f else 0.4f
+        binding.turnOffSukun.isEnabled = isDefault
+    }
+
+    private fun onDefaultLauncherChecked() {
+        val wantDefault = binding.setLauncher.isChecked
+        val isDefault = viewModel.isSukunDefault.value == true
+        if (wantDefault && !isDefault) {
+            viewModel.resetLauncherLiveData.call()
+        } else if (!wantDefault && isDefault) {
+            binding.setLauncher.isChecked = true
+            confirmTurnOffSukunLauncher()
+        } else {
+            populateDefaultLauncher(isDefault)
         }
     }
 
@@ -1792,7 +1992,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun toggleDailyWallpaperUpdate() {
-        if (!prefs.dailyWallpaper && !canUsePremiumFeature()) return
+        if (!prefs.dailyWallpaper && !canUsePremiumFeature()) {
+            populateWallpaperText()
+            return
+        }
         prefs.dailyWallpaper = !prefs.dailyWallpaper
         populateWallpaperText()
         if (prefs.dailyWallpaper) {
@@ -1802,10 +2005,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun showWallpaperToasts() {
-        if (!isSukunDefault(requireContext())) {
-            requireContext().showToast(getString(R.string.sukun_is_not_default_launcher), Toast.LENGTH_LONG)
-            return
-        }
         showWallpaperStatusToast()
     }
 
@@ -1975,7 +2174,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private fun migrateScreenTimePrefIfNeeded() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
         if (prefs.hasShowScreenTimeOnHomePref()) return
-        prefs.showScreenTimeOnHome = requireContext().appUsagePermissionGranted()
+        prefs.showScreenTimeOnHome = true
     }
 
     private fun toggleScreenTime() {
@@ -1998,16 +2197,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateScreenTimeOnOff() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            binding.screenTimeOnOff.text = getString(
-                if (prefs.showScreenTimeOnHome) R.string.on else R.string.off
-            )
+            binding.screenTimeOnOff.setOnOff(prefs.showScreenTimeOnHome)
         } else binding.screenTimeLayout.visibility = View.GONE
     }
 
 
     private fun populateWallpaperText() {
-        if (prefs.dailyWallpaper) binding.dailyWallpaper.text = getString(R.string.on)
-        else binding.dailyWallpaper.text = getString(R.string.off)
+        binding.dailyWallpaper.setOnOff(prefs.dailyWallpaper)
     }
 
     private fun updateHomeBottomAlignment() {
@@ -2038,45 +2234,54 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
     }
 
-    private fun populateDoubleTapAction() {
-        binding.doubleTapAction.text = when (prefs.doubleTapAction) {
-            Constants.DoubleTapAction.OFF -> getString(R.string.off)
-            Constants.DoubleTapAction.FOCUS -> getString(R.string.focus)
-            else -> getString(R.string.lock)
-        }
-    }
-
-    private fun selectDoubleTapMode(mode: String) {
-        if (prefs.doubleTapAction == mode) return
-        when (mode) {
-            Constants.DoubleTapAction.LOCK -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    if (!isAccessServiceEnabled(requireContext())) {
-                        toggleAccessibilityVisibility(true)
-                        return
-                    }
-                    prefs.lockModeOn = true
-                } else {
-                    val isAdmin = deviceManager.isAdminActive(componentName)
-                    if (!isAdmin) {
-                        val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
-                        intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
-                        intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, getString(R.string.admin_permission_message))
-                        requireActivity().startActivityForResult(intent, Constants.REQUEST_CODE_ENABLE_ADMIN)
-                        return
-                    }
-                    prefs.lockModeOn = true
-                }
-                prefs.doubleTapAction = Constants.DoubleTapAction.LOCK
-            }
-            else -> {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) removeActiveAdmin()
-                prefs.lockModeOn = false
-                prefs.doubleTapAction = mode
-            }
-        }
-        populateDoubleTapAction()
-    }
+    // private fun populateDoubleTapAction() {
+    //     binding.doubleTapAction.text = when (prefs.doubleTapAction) {
+    //         Constants.DoubleTapAction.OFF -> getString(R.string.off)
+    //         Constants.DoubleTapAction.FOCUS -> getString(R.string.focus)
+    //         else -> getString(R.string.lock)
+    //     }
+    // }
+    //
+    // private fun selectDoubleTapMode(mode: String) {
+    //     if (prefs.doubleTapAction == mode) return
+    //     when (mode) {
+    //         Constants.DoubleTapAction.LOCK -> {
+    //             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    //                 if (!isAccessServiceEnabled(requireContext())) {
+    //                     pendingDoubleTapLock = true
+    //                     toggleAccessibilityVisibility(true)
+    //                     return
+    //                 }
+    //                 applyDoubleTapLock()
+    //                 return
+    //             } else {
+    //                 val isAdmin = deviceManager.isAdminActive(componentName)
+    //                 if (!isAdmin) {
+    //                     val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+    //                     intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
+    //                     intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, getString(R.string.admin_permission_message))
+    //                     requireActivity().startActivityForResult(intent, Constants.REQUEST_CODE_ENABLE_ADMIN)
+    //                     return
+    //                 }
+    //                 applyDoubleTapLock()
+    //                 return
+    //             }
+    //         }
+    //         else -> {
+    //             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) removeActiveAdmin()
+    //             prefs.lockModeOn = false
+    //             prefs.doubleTapAction = mode
+    //         }
+    //     }
+    //     populateDoubleTapAction()
+    // }
+    //
+    // private fun applyDoubleTapLock() {
+    //     prefs.lockModeOn = true
+    //     prefs.doubleTapAction = Constants.DoubleTapAction.LOCK
+    //     populateDoubleTapAction()
+    //     requireContext().showToast(R.string.double_tap_lock_hint, Toast.LENGTH_LONG)
+    // }
 
     private fun updateSwipeDownAction(swipeDownFor: Int) {
         if (prefs.swipeDownAction == swipeDownFor) return
@@ -2121,6 +2326,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     override fun onDestroyView() {
         clearOnboardingHighlight()
+        sectionsController = null
         super.onDestroyView()
         _binding = null
     }
@@ -2147,6 +2353,19 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
         populateScreenTimeOnOff()
         populateFocusMode()
+        populateHourlyChime()
+        pendingFocusModeDuration?.let { duration ->
+            if (isAccessServiceEnabled(requireContext())) {
+                pendingFocusModeDuration = null
+                toggleAccessibilityVisibility(false)
+                completeFocusModeStart(duration)
+            }
+        }
+        // if (pendingDoubleTapLock && isAccessServiceEnabled(requireContext())) {
+        //     pendingDoubleTapLock = false
+        //     toggleAccessibilityVisibility(false)
+        //     applyDoubleTapLock()
+        // }
         populateWeatherSettings()
         refreshWeatherIfConfigured()
         applyPremiumVisuals()
@@ -2163,23 +2382,18 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateHourlyChime() {
         val enabled = prefs.hourlyChimeEnabled
-        val isSound = prefs.hourlyChimeStyle == Constants.ChimeStyle.SOUND
-        binding.hourlyChimeOnOff?.text = getString(if (enabled) R.string.on else R.string.off)
+        val storedStyle = prefs.hourlyChimeStyle
+        val usesSound = storedStyle == Constants.ChimeStyle.SOUND ||
+            storedStyle == Constants.ChimeStyle.AUTO
+        binding.hourlyChimeOnOff?.setOnOff(enabled)
         binding.hourlyChimeTimeLayout?.isVisible = enabled
         binding.hourlyChimeStyleLayout?.isVisible = enabled
         binding.chimeStyleSelectLayout?.visibility = View.GONE
-        binding.hourlyChimeSoundLayout?.isVisible = enabled && isSound
+        binding.hourlyChimeSoundLayout?.isVisible = enabled && usesSound
         binding.chimeSoundSelectLayout?.visibility = View.GONE
         binding.hourlyChimeStartHour?.text = formatHourLabel(prefs.hourlyChimeStartHour)
         binding.hourlyChimeEndHour?.text = formatHourLabel(prefs.hourlyChimeEndHour)
-        binding.hourlyChimeStyle?.text = getString(
-            when (prefs.hourlyChimeStyle) {
-                Constants.ChimeStyle.VIBRATE -> R.string.chime_style_vibrate
-                Constants.ChimeStyle.SILENT_NOTIFICATION -> R.string.chime_style_silent
-                Constants.ChimeStyle.FLASH -> R.string.chime_style_flash
-                else -> R.string.chime_style_sound
-            }
-        )
+        binding.hourlyChimeStyle?.text = chimeStyleLabel(storedStyle)
         binding.hourlyChimeSound?.text = getString(
             when (prefs.hourlyChimeSound) {
                 Constants.ChimeSound.DEFAULT -> R.string.chime_sound_default
@@ -2189,9 +2403,26 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         )
     }
 
+    private fun chimeStyleLabel(style: String): String {
+        val resolved = HourlyChimeEffects.resolveStyle(requireContext(), style)
+        val resolvedLabel = getString(
+            when (resolved) {
+                Constants.ChimeStyle.VIBRATE -> R.string.chime_style_vibrate
+                Constants.ChimeStyle.SILENT_NOTIFICATION -> R.string.chime_style_silent
+                Constants.ChimeStyle.FLASH -> R.string.chime_style_flash
+                else -> R.string.chime_style_sound
+            }
+        )
+        return if (style == Constants.ChimeStyle.AUTO) {
+            getString(R.string.chime_style_auto_current, resolvedLabel)
+        } else {
+            resolvedLabel
+        }
+    }
+
     private fun populateMindfulMorning() {
         val enabled = prefs.mindfulMorningEnabled
-        binding.mindfulMorningOnOff?.text = getString(if (enabled) R.string.on else R.string.off)
+        binding.mindfulMorningOnOff?.setOnOff(enabled)
         binding.mindfulMorningOptionsLayout?.isVisible = enabled
         binding.mindfulMorningDurationSelectLayout?.visibility = View.GONE
         binding.mindfulMorningSeveritySelectLayout?.visibility = View.GONE
@@ -2209,11 +2440,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun formatMindfulMorningWakeTime(): String {
-        val calendar = java.util.Calendar.getInstance().apply {
-            set(java.util.Calendar.HOUR_OF_DAY, prefs.mindfulMorningWakeHour)
-            set(java.util.Calendar.MINUTE, prefs.mindfulMorningWakeMinute)
-        }
-        return android.text.format.DateFormat.getTimeFormat(requireContext()).format(calendar.time)
+        return formatReminderTime(
+            prefs.mindfulMorningWakeHour,
+            prefs.mindfulMorningWakeMinute,
+            prefs.timeFormat24h,
+        )
     }
 
     private fun toggleMindfulMorning() {
@@ -2242,7 +2473,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             },
             prefs.mindfulMorningWakeHour,
             prefs.mindfulMorningWakeMinute,
-            android.text.format.DateFormat.is24HourFormat(requireContext()),
+            prefs.timeFormat24h,
         ).show()
     }
 
@@ -2259,6 +2490,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                         )
                     )
                 }
+                populateHourlyChime()
                 return
             }
         }
@@ -2274,15 +2506,12 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun updateChimeStyle(style: String) {
-        if (style == Constants.ChimeStyle.FLASH) {
-            val granted = ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!granted) {
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                return
-            }
+        if (style == Constants.ChimeStyle.FLASH && !requireContext().hasCameraPermission()) {
+            val needed = requireContext().missingSukunSetupPermissions()
+            cameraPermissionLauncher.launch(
+                needed.ifEmpty { arrayOf(Manifest.permission.CAMERA) }
+            )
+            return
         }
         prefs.hourlyChimeStyle = style
         binding.chimeStyleSelectLayout?.visibility = View.GONE
@@ -2299,7 +2528,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun previewChimeStyle(style: String) {
         if (!isAdded) return
-        val tipRes = when (style) {
+        val resolved = HourlyChimeEffects.resolveStyle(requireContext(), style)
+        val tipRes = when (resolved) {
             Constants.ChimeStyle.VIBRATE -> R.string.chime_preview_vibrate
             Constants.ChimeStyle.SILENT_NOTIFICATION -> R.string.chime_preview_silent
             Constants.ChimeStyle.FLASH -> R.string.chime_preview_flash
@@ -2321,14 +2551,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             .setMessage(R.string.hourly_chime_info_message)
             .setPositiveButton(R.string.okay, null)
         if (offerTryCurrent && prefs.hourlyChimeEnabled) {
-            val styleLabel = getString(
-                when (prefs.hourlyChimeStyle) {
-                    Constants.ChimeStyle.VIBRATE -> R.string.chime_style_vibrate
-                    Constants.ChimeStyle.SILENT_NOTIFICATION -> R.string.chime_style_silent
-                    Constants.ChimeStyle.FLASH -> R.string.chime_style_flash
-                    else -> R.string.chime_style_sound
-                }
-            )
+            val styleLabel = chimeStyleLabel(prefs.hourlyChimeStyle)
             builder.setNeutralButton(getString(R.string.chime_preview_try, styleLabel)) { _, _ ->
                 previewChimeStyle(prefs.hourlyChimeStyle)
             }
@@ -2355,6 +2578,10 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun CompoundButton.setOnOff(checked: Boolean) {
+        if (isChecked != checked) isChecked = checked
     }
 
     override fun onDestroy() {

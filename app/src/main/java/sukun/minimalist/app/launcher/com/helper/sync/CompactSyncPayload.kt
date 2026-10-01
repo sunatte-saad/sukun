@@ -62,7 +62,8 @@ data class CompactSyncPayload(
                 trialStart = prefs.accountTrialStart,
                 settings = SyncSettingsCodec.encode(prefs),
                 prayer = prayer,
-                screenTime = if (prefs.showScreenTimeOnHome) screenTime else null,
+                // Always include screen-time rollup when present (parity with prayer analytics).
+                screenTime = screenTime,
             )
         }
     }

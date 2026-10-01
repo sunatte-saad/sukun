@@ -20,8 +20,6 @@ class WallpaperWorker(appContext: Context, workerParams: WorkerParameters) : Cor
 
     override suspend fun doWork(): Result = coroutineScope {
         if (prefs.dailyWallpaper.not()) return@coroutineScope Result.success()
-        if (prefs.isEffectivelyDarkTheme() && !isSukunDefault(applicationContext))
-            return@coroutineScope Result.retry()
 
         val forceRefresh = inputData.getBoolean(KEY_FORCE_REFRESH, false)
         if (!forceRefresh && prefs.lastWallpaperUpdateTime > 0L &&

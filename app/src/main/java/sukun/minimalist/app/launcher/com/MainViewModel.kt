@@ -576,15 +576,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setWallpaperWorker(runImmediately: Boolean = true) {
-        val uploadWorkRequest = PeriodicWorkRequestBuilder<WallpaperWorker>(24, TimeUnit.HOURS)
+        val requestBuilder = PeriodicWorkRequestBuilder<WallpaperWorker>(24, TimeUnit.HOURS)
             .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.HOURS)
-            .build()
+        if (!runImmediately) {
+            requestBuilder.setInitialDelay(24, TimeUnit.HOURS)
+        }
         WorkManager
             .getInstance(appContext)
             .enqueueUniquePeriodicWork(
                 Constants.WALLPAPER_WORKER_NAME,
-                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
-                uploadWorkRequest
+                if (runImmediately) {
+                    ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE
+                } else {
+                    ExistingPeriodicWorkPolicy.KEEP
+                },
+                requestBuilder.build()
             )
         if (runImmediately) {
             enqueueWallpaperRefresh(force = false)
@@ -696,12 +702,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadPrayerState(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            prayerData.value = getCachedPrayerState(prefs)
             if (!prefs.showPrayerOnHome) {
                 prayerData.value = null
                 PrayerReminderScheduler.cancelReminder(appContext)
                 return@launch
             }
+            if (prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE) {
+                prayerData.value = null
+                PrayerReminderScheduler.cancelReminder(appContext)
+                return@launch
+            }
+            prayerData.value = getCachedPrayerState(prefs)
 
             val cachedPrayer = prayerData.value
             val shouldRefresh = forceRefresh ||
@@ -719,6 +730,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshPrayerData(forceLocationRefresh: Boolean = false) {
         viewModelScope.launch {
+            if (prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE) {
+                prayerData.value = null
+                PrayerReminderScheduler.cancelReminder(appContext)
+                return@launch
+            }
             val refreshedPrayer = refreshPrayerState(appContext, prefs, forceLocationRefresh)
             prayerData.value = refreshedPrayer ?: getCachedPrayerState(prefs)
             if (prefs.showPrayerOnHome && prayerData.value != null) {

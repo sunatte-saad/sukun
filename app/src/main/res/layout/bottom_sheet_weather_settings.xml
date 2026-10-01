@@ -4,28 +4,41 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_weather_sheet"
-    android:fillViewport="false">
+    android:clipToPadding="false"
+    android:fillViewport="false"
+    android:overScrollMode="never">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:animateLayoutChanges="true"
         android:orientation="vertical"
-        android:paddingBottom="28dp">
+        android:paddingHorizontal="12dp"
+        android:paddingBottom="32dp">
 
         <View
-            android:layout_width="40dp"
+            android:layout_width="36dp"
             android:layout_height="4dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="4dp"
-            android:background="@drawable/bg_chip_unselected" />
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_sheet_handle" />
+
+        <TextView
+            style="@style/TextSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:paddingVertical="4dp"
+            android:text="@string/weather_options"
+            android:textColor="?attr/primaryColorTrans80" />
 
         <FrameLayout
-            android:id="@+id/weatherToggleRow"
+            android:id="@+id/weatherSourceRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp">
+            android:layout_marginTop="8dp"
+            android:animateLayoutChanges="true">
 
             <TextView
                 style="@style/TextSmall"
@@ -33,123 +46,167 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:paddingVertical="8dp"
-                android:text="@string/weather"
+                android:text="@string/weather_source"
                 android:textColor="?attr/primaryColor" />
 
             <TextView
-                android:id="@+id/weatherToggle"
+                android:id="@+id/weatherSourceValue"
                 style="@style/TextSmallBold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end|center_vertical"
                 android:layout_marginEnd="4dp"
                 android:padding="8dp"
-                android:text="@string/off" />
-        </FrameLayout>
+                tools:text="@string/device_location" />
 
-        <LinearLayout
-            android:id="@+id/weatherSubSettings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <FrameLayout
-                android:id="@+id/weatherSourceRow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <TextView
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:paddingVertical="8dp"
-                    android:text="@string/weather_source"
-                    android:textColor="?attr/primaryColor" />
-
-                <TextView
-                    android:id="@+id/weatherSourceValue"
-                    style="@style/TextSmallBold"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end|center_vertical"
-                    android:layout_marginEnd="4dp"
-                    android:padding="8dp"
-                    tools:text="@string/device_location" />
-            </FrameLayout>
-
-            <LinearLayout
+            <HorizontalScrollView
                 android:id="@+id/weatherSourceChips"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
-                android:layout_marginTop="4dp"
-                android:orientation="horizontal"
+                android:animateLayoutChanges="true"
+                android:background="@drawable/rounded_primary_gradient"
+                android:elevation="8dp"
+                android:fadingEdgeLength="8dp"
+                android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="2dp"
+                android:requiresFadingEdge="horizontal"
+                android:scrollbars="none"
                 android:visibility="gone"
-                tools:visibility="visible">
+                tools:ignore="UnusedAttribute">
 
-                <TextView
-                    android:id="@+id/chipWeatherDevice"
-                    style="@style/TextSmallBold"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingVertical="10dp"
-                    android:text="@string/device_location" />
+                    android:layout_gravity="end"
+                    android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/chipWeatherManual"
-                    style="@style/TextSmallBold"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingVertical="10dp"
-                    android:text="@string/manual_location" />
+                    <TextView
+                        android:id="@+id/chipWeatherDevice"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:paddingVertical="6dp"
+                        android:text="@string/device_location" />
 
-                <TextView
-                    android:id="@+id/chipWeatherGoogle"
-                    style="@style/TextSmallBold"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingVertical="10dp"
-                    android:text="@string/google_weather_short" />
-            </LinearLayout>
+                    <TextView
+                        android:id="@+id/chipWeatherManual"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:paddingVertical="6dp"
+                        android:text="@string/manual_location" />
 
-            <FrameLayout
-                android:id="@+id/weatherUnitsRow"
+                    <TextView
+                        android:id="@+id/chipWeatherGoogle"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:paddingVertical="6dp"
+                        android:text="@string/google_weather_short" />
+                </LinearLayout>
+            </HorizontalScrollView>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/weatherLocationRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp">
+
+            <TextView
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:paddingVertical="8dp"
+                android:text="@string/location"
+                android:textColor="?attr/primaryColor" />
+
+            <TextView
+                android:id="@+id/weatherLocationValue"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="4dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:padding="8dp"
+                tools:text="Lahore" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/weatherUnitsRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:animateLayoutChanges="true">
+
+            <TextView
+                style="@style/TextSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:paddingVertical="8dp"
+                android:text="@string/weather_units"
+                android:textColor="?attr/primaryColor" />
+
+            <TextView
+                android:id="@+id/weatherUnitsValue"
+                style="@style/TextSmallBold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="4dp"
+                android:padding="8dp"
+                tools:text="°C" />
+
+            <LinearLayout
+                android:id="@+id/weatherUnitsSelectLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
+                android:animateLayoutChanges="true"
+                android:background="@drawable/rounded_primary_gradient"
+                android:elevation="8dp"
+                android:orientation="horizontal"
+                android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+                android:outlineSpotShadowColor="@color/colorPrimaryDark"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="2dp"
+                android:visibility="gone"
+                tools:ignore="UnusedAttribute">
 
-                <TextView
-                    style="@style/TextSmall"
-                    android:layout_width="wrap_content"
+                <Space
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:paddingVertical="8dp"
-                    android:text="@string/weather_units"
-                    android:textColor="?attr/primaryColor" />
+                    android:layout_weight="1" />
 
                 <TextView
-                    android:id="@+id/weatherUnitsValue"
+                    android:id="@+id/chipWeatherCelsius"
                     style="@style/TextSmallBold"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="end|center_vertical"
-                    android:layout_marginEnd="4dp"
-                    android:padding="8dp"
-                    tools:text="°C" />
-            </FrameLayout>
+                    android:layout_marginEnd="24dp"
+                    android:gravity="center"
+                    android:paddingVertical="6dp"
+                    android:text="@string/celsius_short" />
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/chipWeatherFahrenheit"
+                    style="@style/TextSmallBold"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="6dp"
+                    android:text="@string/fahrenheit_short" />
+            </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
 </ScrollView>

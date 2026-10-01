@@ -69,6 +69,7 @@
     <string name="focus_mode_custom_prompt_subtitle">Enter a duration in minutes.</string>
     <string name="start_focus_mode">Start focus mode</string>
     <string name="cancel">Cancel</string>
+    <string name="focus_mode_show_on_home">Show on home</string>
     <string name="focus_mode_lock_notifications">Lock notifications</string>
     <string name="focus_mode_hide_status_bar">Hide status bar</string>
     <string name="focus_custom_duration_error">Enter a focus duration between %1$d and %2$d minutes</string>
@@ -79,8 +80,10 @@
     <string name="manual_location">Manual</string>
     <string name="device_location">Device</string>
     <string name="google_weather">Google Weather</string>
-    <string name="google_weather_card">Google Weather
-Tap to open forecast</string>
+    <string name="google_weather_card">Google Weather · Tap for forecast</string>
+    <string name="google_prayer_times">Google prayer times</string>
+    <string name="google_prayer_card">Google prayer times · Tap for times</string>
+    <string name="prayer_open_failed">Could not open prayer times. Install a browser or try again.</string>
     <string name="current_location">Current location</string>
     <string name="type_city_name">Type city name</string>
     <string name="save">Save</string>
@@ -109,7 +112,9 @@ Tap to open forecast</string>
     <string name="upgrade_to_premium">Upgrade</string>
     <string name="premium_enabled">Sukun Premium activated</string>
     <string name="premium_already_active">Sukun Premium is already active</string>
-    <string name="prayer_overlay_text">%1$s  %2$s  %3$s</string>
+    <string name="premium_info_title">Premium</string>
+    <string name="premium_info_content_description">Premium help</string>
+    <string name="prayer_overlay_text">%1$s · %2$s · %3$s</string>
     <string name="prayer_reminder">Prayer reminder</string>
     <string name="prayer_reminder_channel_name">Prayer reminders</string>
     <string name="prayer_reminder_channel_description">Azan playback and prayer-time reminders</string>
@@ -204,7 +209,8 @@ Tap to open forecast</string>
     <string name="pro_message" />
     <string name="wallpaper_message">Sukun offers beautiful new wallpapers daily. Give your homescreen a fresh new look every day, for free!
         \n\nWant to try it?</string>
-    <string name="accessibility_service_description">The accessibility permission is required to enable double tap to lock and home button to show recent apps. Any data acquired by Sukun via this service will not leave your device.</string>
+    <string name="accessibility_service_description">Sukun uses the accessibility service only to lock the screen on double tap, open Recents from the Home button, and keep Focus mode from opening blocked apps. This stays on your device. Sukun does not collect or share any data through it.</string>
+    <string name="accessibility_disclosure_title">Why Sukun needs accessibility</string>
     <string name="support_sukun_for_free">Support Sukun for free by using our Amazon affiliate link.</string>
     <string name="support_sukun_message">Every time you buy something using our link, we get a small commission. Please save the link and use it whenever you shop online.\nThank you!</string>
     <string name="open">Open link</string>
@@ -243,14 +249,13 @@ Tap to open forecast</string>
     <string name="search">Search</string>
     <string name="search_apps_hint">Search apps</string>
     <string name="notifications">Notifications</string>
-    <string name="accessibility_disclosure">Please turn on Sukun\'s accessibility service in your device\'s settings to enable Double tap to lock or Home button for recent apps gestures.
-    \n\nPlease note that this service is only used for these gestures. Our accessibility service does not collect or share any data.</string>
+    <string name="accessibility_disclosure">Sukun cannot lock your phone, show Recents, or block apps in Focus mode without Android\'s accessibility service.\n\nTurn on Sukun in Accessibility settings so these gestures work:\n\n• Double tap to lock — turns the screen off immediately\n• Home button for recent apps\n• Focus mode — keeps distracting apps from staying open\n\nThis service runs only on your device. Sukun does not collect or share any data through it.</string>
     <string name="accept">Accept</string>
     <string name="permission">Permission</string>
     <string name="double_tap_lock">Double tap to lock</string>
     <string name="enable">Enable</string>
     <string name="disable">Disable</string>
-    <string name="not_working" />
+    <string name="not_working"><u>Need help?</u></string>
     <string name="info">Info</string>
     <string name="delete">Uninstall</string>
     <string name="text_size">Text size</string>
@@ -286,7 +291,7 @@ Tap to open forecast</string>
     <string name="learn_more">Learn more</string>
     <string name="did_you_know">Did you know?</string>
     <string name="leave_a_review">Leave a review</string>
-    <string name="review_message">Sukun is free and always will be. It has no ads, collects no data, and reduces your screen time, resulting in a healthier life.
+    <string name="review_message">Sukun has no ads, collects no data, and reduces your screen time, resulting in a healthier life.
         \n\nWe hope you enjoy it. Tell us what you think.</string>
     <string name="alignment_changed">Alignment changed ✅</string>
     <string name="home_screen">Home screen</string>

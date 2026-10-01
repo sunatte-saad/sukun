@@ -17,6 +17,47 @@ object AccountSyncManager {
 
     private const val TAG = "SukunSync"
     private const val MIN_UPLOAD_INTERVAL_MS = 15 * 60 * 1000L
+    /** At most one restore confirmation dialog per 30 days. */
+    private const val RESTORE_PROMPT_INTERVAL_MS = 30L * 24 * 60 * 60 * 1000
+
+    fun shouldOfferRestorePrompt(context: Context): Boolean {
+        val prefs = Prefs(context.applicationContext)
+        if (!prefs.isSignedIn) return false
+        if (prefs.syncRestorePromptLastAt == 0L) return true
+        return System.currentTimeMillis() - prefs.syncRestorePromptLastAt >= RESTORE_PROMPT_INTERVAL_MS
+    }
+
+    fun recordRestorePromptShown(context: Context) {
+        Prefs(context.applicationContext).syncRestorePromptLastAt = System.currentTimeMillis()
+    }
+
+    /** Silent background sync — push local changes; pull only when local data is empty. */
+    suspend fun runScheduledSync(context: Context) {
+        val appContext = context.applicationContext
+        if (!Prefs(appContext).isSignedIn) return
+        AnalyticsRollupManager.ensureCurrent(appContext)
+        when (evaluateDrivePull(appContext, activity = null, autoApplyIfEmpty = true)) {
+            is DrivePullOutcome.Applied -> Log.i(TAG, "scheduled sync applied remote backup")
+            else -> Unit
+        }
+        pushToDriveIfLocalNewer(appContext, force = false, activity = null)
+    }
+
+    private suspend fun alignLocalTimestampsAfterUpload(
+        appContext: Context,
+        token: String,
+        localVersion: Long,
+    ) {
+        val prefs = Prefs(appContext)
+        prefs.syncLastUploadAt = localVersion
+        val remote = GoogleDriveBackupHelper.download(appContext, token)
+        if (remote != null) {
+            prefs.syncPayloadUpdatedAt = remote.updatedAt
+            prefs.syncLastUploadAt = remote.updatedAt
+        } else {
+            prefs.syncPayloadUpdatedAt = localVersion
+        }
+    }
 
     fun markLocalDirty(context: Context) {
         val prefs = Prefs(context.applicationContext)
@@ -38,13 +79,14 @@ object AccountSyncManager {
         if (prefs.todoItemsJson.isNotBlank()) return true
         if (prefs.dailyNotesList.isNotBlank()) return true
         if (prefs.prayerRollupJson.isNotBlank()) return true
+        if (prefs.screenTimeRollupJson.isNotBlank()) return true
         if (prefs.hiddenApps.isNotEmpty()) return true
         return false
     }
 
     fun applyRemoteBackup(context: Context, remote: GoogleDriveBackupHelper.RemoteBackup): Boolean {
         val appContext = context.applicationContext
-        return if (remote.isFullFormat) {
+        val ok = if (remote.isFullFormat) {
             BackupHelper.applyBackupRootWithoutSyncDirty(
                 appContext,
                 JSONObject(remote.payloadJson),
@@ -54,6 +96,8 @@ object AccountSyncManager {
         } else {
             applyLegacyCompact(appContext, remote)
         }
+        if (ok) AnalyticsRollupManager.ensureCurrent(appContext)
+        return ok
     }
 
     private fun applyLegacyCompact(context: Context, remote: GoogleDriveBackupHelper.RemoteBackup): Boolean {
@@ -81,6 +125,7 @@ object AccountSyncManager {
             prefs.syncLastUploadAt = updatedAt
         }
         BackupHelper.enforceMonotonicTrial(context, beforeTrial)
+        AnalyticsRollupManager.reconcileAfterRestore(context)
     }
 
     private suspend fun driveToken(context: Context, activity: Activity? = null): String? {
@@ -186,7 +231,7 @@ object AccountSyncManager {
         Log.i(TAG, "pushToDrive local=$localVersion remote=${remote?.updatedAt}")
         val ok = GoogleDriveBackupHelper.upload(token, root, localVersion)
         if (ok) {
-            prefs.syncLastUploadAt = localVersion
+            alignLocalTimestampsAfterUpload(appContext, token, localVersion)
         }
         return ok
     }

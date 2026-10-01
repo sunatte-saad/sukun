@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.data.Reminder
+import sukun.minimalist.app.launcher.com.data.formatReminderTime
 import sukun.minimalist.app.launcher.com.data.scheduleDescription
 import sukun.minimalist.app.launcher.com.data.toJsonString
 import sukun.minimalist.app.launcher.com.data.toReminderList
@@ -89,7 +90,8 @@ class RemindersFragment : Fragment() {
                     layoutInflater, binding.remindersList, true
                 )
                 itemBinding.tvReminderTitle.text = reminder.title
-                itemBinding.tvReminderSchedule.text = reminder.scheduleDescription()
+                itemBinding.tvReminderSchedule.text =
+                    reminder.scheduleDescription(prefs.timeFormat24h)
                 itemBinding.tvReminderEnabled.text =
                     if (reminder.enabled) getString(R.string.on) else getString(R.string.off)
                 itemBinding.tvReminderEnabled.alpha = if (reminder.enabled) 1f else 0.4f
@@ -175,7 +177,8 @@ class RemindersFragment : Fragment() {
         }
 
         fun updateTimeUI() {
-            dialogBinding.tvSelectedTime.text = String.format("%02d:%02d", selectedHour, selectedMinute)
+            dialogBinding.tvSelectedTime.text =
+                formatReminderTime(selectedHour, selectedMinute, prefs.timeFormat24h)
         }
 
         fun updateIntervalUI() {
@@ -237,7 +240,7 @@ class RemindersFragment : Fragment() {
         dialogBinding.tvSelectedTime.setOnClickListener {
             TimePickerDialog(requireContext(), { _, h, m ->
                 selectedHour = h; selectedMinute = m; updateTimeUI()
-            }, selectedHour, selectedMinute, true).show()
+            }, selectedHour, selectedMinute, prefs.timeFormat24h).show()
         }
 
         dialogBinding.tvSelectedInterval.setOnClickListener {
