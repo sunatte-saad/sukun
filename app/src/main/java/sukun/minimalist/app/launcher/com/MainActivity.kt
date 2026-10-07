@@ -106,6 +106,7 @@ class MainActivity : AppCompatActivity() {
     private var driveRestorePromptedUpdatedAt = 0L
     private var driveRestoreChoiceMade = false
     private var firstRunSetupShowing = false
+    private var firstRunIntroJob: Job? = null
     private var trialReminderDialogShowing = false
 
     override fun attachBaseContext(context: Context) {
@@ -212,6 +213,7 @@ class MainActivity : AppCompatActivity() {
             viewModel.getAppList()
         }
         showFirstRunFlowIfNeeded()
+        maybeShowPrayerMarkedPopup()
         maybePromptUsageAccess()
         enforcePremiumExpiry()
         if (!isRecreating) maybeShowTrialReminder()
@@ -349,6 +351,7 @@ class MainActivity : AppCompatActivity() {
         if (alreadyHome && isResumed && prefs.homeButtonShowRecents)
             viewModel.showRecentApps.call()
         super.onNewIntent(intent)
+        maybeShowPrayerMarkedPopup()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -437,6 +440,11 @@ class MainActivity : AppCompatActivity() {
 
                 Constants.Dialog.DIGITAL_WELLBEING -> {
                     showUsageAccessPrompt()
+                }
+
+                Constants.Dialog.PRAYER_MARKED -> {
+                    prefs.pendingPrayerMarkedPopup = false
+                    showMessageDialog(R.string.hey, R.string.prayer_marked_prayed, R.string.okay) {}
                 }
 
             }
@@ -574,8 +582,11 @@ class MainActivity : AppCompatActivity() {
 
         // Title and Body
         binding.onboardingTitle.setText(step.titleRes)
-        binding.onboardingBody.setText(step.bodyRes)
-        binding.onboardingActionHint.setText(step.actionHintRes)
+        val bodyText = getString(step.bodyRes)
+        binding.onboardingBody.text = bodyText
+        binding.onboardingBody.visibility = if (bodyText.isBlank()) View.GONE else View.VISIBLE
+        val hintText = getString(step.actionHintRes)
+        binding.onboardingActionHint.text = hintText
         
         // Dot indicators
         updateOnboardingDots(stepIndex, total)
@@ -613,7 +624,9 @@ class MainActivity : AppCompatActivity() {
             binding.btnOnboardingPrimary.setText(R.string.onboarding_next)
         } else {
             binding.onboardingActionHint.visibility =
-                if (showPrimary && !isLauncherStep && !isSettingsStep && !isHomeAppsStep && !isDrawerStep) View.GONE else View.VISIBLE
+                if (hintText.isBlank() ||
+                    (showPrimary && !isLauncherStep && !isSettingsStep && !isHomeAppsStep && !isDrawerStep)
+                ) View.GONE else View.VISIBLE
         }
     }
 
@@ -752,6 +765,14 @@ class MainActivity : AppCompatActivity() {
         binding.messageLayout.visibility = View.VISIBLE
     }
 
+    private fun maybeShowPrayerMarkedPopup() {
+        if (!prefs.pendingPrayerMarkedPopup) return
+        if (firstRunSetupShowing || viewModel.isOnboardingActive()) return
+        if (binding.messageLayout.visibility == View.VISIBLE) return
+        prefs.pendingPrayerMarkedPopup = false
+        showMessageDialog(R.string.hey, R.string.prayer_marked_prayed, R.string.okay) {}
+    }
+
     private fun checkForMessages() {
         if (prefs.firstOpenTime == 0L)
             prefs.firstOpenTime = System.currentTimeMillis()
@@ -839,6 +860,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun showFirstRunFlowIfNeeded() {
         if (firstRunSetupShowing) return
+        if (!prefs.firstRunIntroComplete && !prefs.privacyAndSetupComplete) {
+            showFirstRunIntro()
+            return
+        }
         if (!prefs.signInPromptShown && !prefs.privacyAndSetupComplete) {
             startPrivacyAndSetup()
             return
@@ -850,6 +875,31 @@ class MainActivity : AppCompatActivity() {
         if (!viewModel.shouldOfferOnboarding()) return
         if (viewModel.isOnboardingActive()) return
         viewModel.startOnboarding()
+    }
+
+    private fun showFirstRunIntro() {
+        firstRunSetupShowing = true
+        binding.firstRunIntroLayout.visibility = View.VISIBLE
+        binding.firstRunIntroLogo.visibility = View.VISIBLE
+        binding.firstRunHoldTheme.visibility = View.GONE
+        firstRunIntroJob?.cancel()
+        firstRunIntroJob = lifecycleScope.launch {
+            delay(2000)
+            if (isFinishing || isDestroyed) return@launch
+            binding.firstRunIntroLogo.visibility = View.GONE
+            binding.firstRunHoldTheme.visibility = View.VISIBLE
+        }
+        binding.firstRunHoldContinue.setOnClickListener {
+            finishFirstRunIntro()
+        }
+    }
+
+    private fun finishFirstRunIntro() {
+        firstRunIntroJob?.cancel()
+        firstRunIntroJob = null
+        prefs.firstRunIntroComplete = true
+        binding.firstRunIntroLayout.visibility = View.GONE
+        startPrivacyAndSetup()
     }
 
     private fun startPrivacyAndSetup() {
@@ -1162,6 +1212,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        firstRunIntroJob?.cancel()
+        firstRunIntroJob = null
         premiumBillingManager?.endConnection()
         premiumBillingManager = null
         ambientThemeController?.stop()

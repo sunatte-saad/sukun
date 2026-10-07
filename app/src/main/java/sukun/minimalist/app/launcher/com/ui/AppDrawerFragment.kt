@@ -36,6 +36,7 @@ import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.FragmentAppDrawerBinding
 import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.deletePinnedShortcut
+import sukun.minimalist.app.launcher.com.helper.dpToPx
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.hideKeyboard
 import sukun.minimalist.app.launcher.com.helper.isEinkDisplay
@@ -63,8 +64,10 @@ class AppDrawerFragment : Fragment() {
     private var currentPrivateSpaceAvailable: Boolean = false
     private var combineListRunnable: Runnable? = null
     private var listBottomPadding = 0
+    private var searchExpanded = false
     private val drawerLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
         updateKeyboardOverlapPadding()
+        alignFastScrollerToAllApps()
     }
 
     private val viewModel: MainViewModel by activityViewModels()
@@ -95,8 +98,8 @@ class AppDrawerFragment : Fragment() {
 
         initViews()
         setupDrawerPositioning()
-        initSearch()
         initAdapter()
+        initSearch()
         initObservers()
         initClickListeners()
         currentAppList = viewModel.appList.value
@@ -128,6 +131,10 @@ class AppDrawerFragment : Fragment() {
             val searchTextView = binding.search.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
             if (searchTextView != null) {
                 searchTextView.gravity = Gravity.START or Gravity.CENTER_VERTICAL
+                searchTextView.setTextSize(
+                    android.util.TypedValue.COMPLEX_UNIT_PX,
+                    resources.getDimension(R.dimen.text_small),
+                )
                 searchTextView.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColor))
                 searchTextView.setHintTextColor(requireContext().getColorFromAttr(R.attr.primaryColorTrans50))
                 searchTextView.setShadowLayer(4f, 0f, 2f, requireContext().getColorFromAttr(R.attr.primaryTextShadowColor))
@@ -146,6 +153,13 @@ class AppDrawerFragment : Fragment() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(view.paddingLeft, sys.top, view.paddingRight, view.paddingBottom)
+            val fab = binding.drawerActions
+            val fabBottom = sys.bottom + 16.dpToPx()
+            val lp = fab.layoutParams as? android.view.ViewGroup.MarginLayoutParams
+            if (lp != null && lp.bottomMargin != fabBottom) {
+                lp.bottomMargin = fabBottom
+                fab.layoutParams = lp
+            }
             insets
         }
         binding.root.viewTreeObserver.addOnGlobalLayoutListener(drawerLayoutListener)
@@ -171,6 +185,7 @@ class AppDrawerFragment : Fragment() {
                 drawer.fastScroller.paddingRight,
                 overlap,
             )
+            alignFastScrollerToAllApps()
             scrollSearchResultsToTop()
         }
     }
@@ -211,6 +226,36 @@ class AppDrawerFragment : Fragment() {
                 return false
             }
         })
+        binding.searchIcon.setOnClickListener { expandSearch() }
+        binding.searchClose.setOnClickListener { collapseSearch() }
+        if (prefs.autoShowKeyboard || flag != Constants.FLAG_LAUNCH_APP) {
+            expandSearch(showKeyboard = prefs.autoShowKeyboard || flag != Constants.FLAG_LAUNCH_APP)
+        } else {
+            collapseSearch(clearQuery = false)
+        }
+    }
+
+    private fun expandSearch(showKeyboard: Boolean = true) {
+        val drawer = _binding ?: return
+        searchExpanded = true
+        drawer.searchIcon.isVisible = false
+        drawer.drawerSettings.isVisible = false
+        drawer.searchContainer.isVisible = true
+        if (showKeyboard) drawer.search.showKeyboard()
+    }
+
+    private fun collapseSearch(clearQuery: Boolean = true) {
+        val drawer = _binding ?: return
+        searchExpanded = false
+        if (clearQuery && !drawer.search.query.isNullOrBlank()) {
+            drawer.search.setQuery("", false)
+        }
+        drawer.search.hideKeyboard()
+        drawer.searchContainer.isVisible = false
+        drawer.searchIcon.isVisible = true
+        drawer.drawerSettings.isVisible = true
+        drawer.appRename.isVisible = false
+        updateFastScroller()
     }
 
     private fun initAdapter() {
@@ -366,6 +411,11 @@ class AppDrawerFragment : Fragment() {
         binding.recyclerView.layoutManager = linearLayoutManager
         binding.recyclerView.adapter = adapter
         binding.recyclerView.addOnScrollListener(getRecyclerViewOnScrollListener())
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                alignFastScrollerToAllApps()
+            }
+        })
         binding.recyclerView.itemAnimator = null
         binding.fastScroller.setOnSectionSelectedListener { section ->
             adapter.getPositionForSection(section)?.let { position ->
@@ -442,24 +492,14 @@ class AppDrawerFragment : Fragment() {
                 .distinctBy { it.appPackage } // Ensure AppModel list is unique
 
             if (recentApps.isNotEmpty()) {
-                combined.add(
-                    AppModel.SectionHeader(
-                        appLabel = getString(R.string.recently_used),
-                        sectionKey = "recently_used",
-                    )
-                )
                 combined.addAll(recentApps)
+                combined.add(AppModel.SectionHeader("", "all_apps_gap"))
             }
-            combined.add(
-                AppModel.SectionHeader(
-                    appLabel = getString(R.string.all_apps),
-                    sectionKey = "all_apps",
-                )
-            )
         }
-        combined.addAll(apps.distinctBy { 
-            if (it is AppModel.App) it.appPackage + it.user.toString() else it.appLabel 
-        })
+        val uniqueApps = apps.distinctBy {
+            if (it is AppModel.App) it.appPackage + it.user.toString() else it.appLabel
+        }
+        combined.addAll(withLetterHeaders(uniqueApps))
 
         if (flag == Constants.FLAG_LAUNCH_APP && currentPrivateSpaceAvailable) {
             combined.add(AppModel.PrivateSpaceHeader(isLocked = currentPrivateSpaceLocked))
@@ -475,6 +515,24 @@ class AppDrawerFragment : Fragment() {
         if (query.isNotEmpty()) {
             adapter.filter.filter(query)
         }
+    }
+
+    private fun withLetterHeaders(apps: List<AppModel>): List<AppModel> {
+        val out = ArrayList<AppModel>(apps.size)
+        var lastLetter: String? = null
+        apps.forEach { app ->
+            if (app is AppModel.PrivateSpaceHeader) {
+                out.add(app)
+                return@forEach
+            }
+            val letter = adapter.sectionLetter(app)
+            if (letter != null && letter != lastLetter) {
+                out.add(AppModel.SectionHeader(letter, "letter_$letter"))
+                lastLetter = letter
+            }
+            out.add(app)
+        }
+        return out
     }
 
     private fun initClickListeners() {
@@ -512,12 +570,65 @@ class AppDrawerFragment : Fragment() {
     }
 
     private fun updateFastScroller() {
+        if (!::adapter.isInitialized) return
+        val drawer = _binding ?: return
         val shouldShowScroller = flag == Constants.FLAG_LAUNCH_APP &&
                 prefs.appDrawerFastScroller &&
-                binding.search.query.isNullOrBlank()
+                drawer.search.query.isNullOrBlank()
         val sections = adapter.getSections()
-        binding.fastScroller.setSections(if (shouldShowScroller) sections else emptyList())
-        binding.fastScroller.isVisible = shouldShowScroller && sections.size > 1
+        val show = shouldShowScroller && sections.size > 1
+        drawer.fastScroller.setSections(if (show) sections else emptyList())
+        val endReserve = if (show) 24.dpToPx() else 0
+        val list = drawer.recyclerView
+        if (list.paddingEnd != endReserve) {
+            list.setPaddingRelative(
+                list.paddingStart,
+                list.paddingTop,
+                endReserve,
+                list.paddingBottom,
+            )
+        }
+        alignFastScrollerToAllApps()
+    }
+
+    private fun alignFastScrollerToAllApps() {
+        val drawer = _binding ?: return
+        if (!::adapter.isInitialized) return
+        val scroller = drawer.fastScroller
+        val shouldShow = flag == Constants.FLAG_LAUNCH_APP &&
+                prefs.appDrawerFastScroller &&
+                drawer.search.query.isNullOrBlank() &&
+                adapter.getSections().size > 1
+        if (!shouldShow) {
+            scroller.isVisible = false
+            scroller.translationY = 0f
+            return
+        }
+        if (!::linearLayoutManager.isInitialized) return
+        val recycler = drawer.recyclerView
+        if (recycler.height == 0) return
+        val headerPos = adapter.allAppsHeaderPosition()
+        val top = if (headerPos < 0) {
+            0
+        } else {
+            val headerView = linearLayoutManager.findViewByPosition(headerPos)
+            val firstVisible = linearLayoutManager.findFirstVisibleItemPosition()
+            when {
+                headerView != null -> headerView.bottom.coerceAtLeast(0)
+                headerPos < firstVisible -> 0
+                else -> recycler.height
+            }
+        }.coerceIn(0, recycler.height)
+        val height = recycler.height - top
+        val params = scroller.layoutParams
+        if (params.height != height) {
+            params.height = height
+            scroller.layoutParams = params
+        }
+        if (scroller.translationY != top.toFloat()) {
+            scroller.translationY = top.toFloat()
+        }
+        scroller.isVisible = height > 48.dpToPx()
     }
 
     private fun getRecyclerViewOnScrollListener(): RecyclerView.OnScrollListener {
@@ -539,7 +650,7 @@ class AppDrawerFragment : Fragment() {
                         if (!recyclerView.canScrollVertically(1))
                             binding.search.hideKeyboard()
                         else if (!recyclerView.canScrollVertically(-1))
-                            if (!onTop && isRemoving.not())
+                            if (!onTop && isRemoving.not() && searchExpanded)
                                 binding.search.showKeyboard(prefs.autoShowKeyboard)
                     }
                 }
@@ -686,7 +797,7 @@ class AppDrawerFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-        binding.search.showKeyboard(prefs.autoShowKeyboard)
+        if (searchExpanded) binding.search.showKeyboard(prefs.autoShowKeyboard)
     }
 
     override fun onResume() {

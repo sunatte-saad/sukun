@@ -620,7 +620,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                     prefs.logPrayer(prayerKeyToMark)
                     sukun.minimalist.app.launcher.com.helper.sync.AnalyticsRollupManager
                         .onPrayerMarked(requireContext(), prayerKeyToMark)
-                    requireContext().showToast(R.string.prayer_marked_prayed)
+                    viewModel.showDialog.postValue(Constants.Dialog.PRAYER_MARKED)
                 } else {
                     prefs.unmarkPrayer(prayerKeyToMark)
                     sukun.minimalist.app.launcher.com.helper.sync.AnalyticsRollupManager

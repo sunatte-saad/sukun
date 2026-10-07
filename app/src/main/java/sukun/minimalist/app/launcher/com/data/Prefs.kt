@@ -212,6 +212,8 @@ class Prefs(context: Context) {
     private val TRIAL_REMINDER_LAST_END = "TRIAL_REMINDER_LAST_END"
     private val FREE_TIER_DEFAULTS_APPLIED = "FREE_TIER_DEFAULTS_APPLIED"
     private val PRIVACY_AND_SETUP_COMPLETE = "PRIVACY_AND_SETUP_COMPLETE"
+    private val FIRST_RUN_INTRO_COMPLETE = "FIRST_RUN_INTRO_COMPLETE"
+    private val PENDING_PRAYER_MARKED_POPUP = "PENDING_PRAYER_MARKED_POPUP"
     private val ONBOARDING_COMPLETE = "ONBOARDING_COMPLETE"
     private val ONBOARDING_TOUR_ACTIVE = "ONBOARDING_TOUR_ACTIVE"
     private val ONBOARDING_TOUR_STEP = "ONBOARDING_TOUR_STEP"
@@ -297,6 +299,14 @@ class Prefs(context: Context) {
     var privacyAndSetupComplete: Boolean
         get() = prefs.getBoolean(PRIVACY_AND_SETUP_COMPLETE, false) || signInPromptShown
         set(value) = prefs.edit { putBoolean(PRIVACY_AND_SETUP_COMPLETE, value).apply() }
+
+    var firstRunIntroComplete: Boolean
+        get() = prefs.getBoolean(FIRST_RUN_INTRO_COMPLETE, false)
+        set(value) = prefs.edit { putBoolean(FIRST_RUN_INTRO_COMPLETE, value).apply() }
+
+    var pendingPrayerMarkedPopup: Boolean
+        get() = prefs.getBoolean(PENDING_PRAYER_MARKED_POPUP, false)
+        set(value) = prefs.edit { putBoolean(PENDING_PRAYER_MARKED_POPUP, value).apply() }
 
     var onboardingComplete: Boolean
         get() = prefs.getBoolean(ONBOARDING_COMPLETE, false)

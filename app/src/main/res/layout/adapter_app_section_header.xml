@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/sectionTitle"
-    style="@style/TextSmallBold"
+    style="@style/TextDefault"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:alpha="0.8"
-    android:paddingHorizontal="20dp"
+    android:alpha="0.45"
+    android:fontFamily="sans-serif-light"
+    android:paddingStart="20dp"
+    android:paddingEnd="36dp"
     android:paddingTop="18dp"
-    android:paddingBottom="8dp"
-    android:textColor="?attr/primaryColor" />
+    android:paddingBottom="4dp"
+    android:textColor="?attr/primaryColor"
+    android:textSize="@dimen/text_small" />

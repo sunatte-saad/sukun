@@ -140,7 +140,7 @@ class AppDrawerAdapter(
                         privateSpaceSettingsListener,
                     )
                 }
-                is SectionHeaderViewHolder -> holder.bind(appModel.appLabel, appLabelGravity)
+                is SectionHeaderViewHolder -> holder.bind(appModel as AppModel.SectionHeader, appLabelGravity)
 
                 is ViewHolder -> holder.bind(
                     flag,
@@ -247,9 +247,32 @@ class AppDrawerAdapter(
 
     fun getPositionForSection(section: String): Int? = sectionPositions[section]
 
+    fun allAppsHeaderPosition(): Int = appFilteredList.indexOfFirst {
+        it is AppModel.SectionHeader && it.sectionKey.startsWith("letter_")
+    }.let { letter ->
+        if (letter >= 0) letter else appFilteredList.indexOfFirst {
+            it is AppModel.SectionHeader && it.sectionKey == "all_apps_gap"
+        }
+    }
+
+    fun sectionLetter(item: AppModel): String? = getSectionLabel(item)
+
     private fun rebuildSectionPositions(items: List<AppModel>) {
         sectionPositions.clear()
+        val privateStart = items.indexOfFirst { it is AppModel.PrivateSpaceHeader }
+        val firstLetter = items.indexOfFirst {
+            it is AppModel.SectionHeader && it.sectionKey.startsWith("letter_")
+        }
+        if (firstLetter > 0) sectionPositions["★"] = 0
         items.forEachIndexed { index, item ->
+            if (privateStart >= 0 && index >= privateStart) return@forEachIndexed
+            if (firstLetter >= 0 && index < firstLetter) return@forEachIndexed
+            if (item is AppModel.SectionHeader && item.sectionKey.startsWith("letter_")) {
+                if (sectionPositions.containsKey(item.appLabel).not()) {
+                    sectionPositions[item.appLabel] = index + 1
+                }
+                return@forEachIndexed
+            }
             val section = getSectionLabel(item) ?: return@forEachIndexed
             if (sectionPositions.containsKey(section).not()) {
                 sectionPositions[section] = index
@@ -267,9 +290,24 @@ class AppDrawerAdapter(
 
     class SectionHeaderViewHolder(private val binding: AdapterAppSectionHeaderBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        fun bind(title: String, appLabelGravity: Int) = with(binding) {
-            sectionTitle.text = title
-            sectionTitle.gravity = appLabelGravity
+        fun bind(header: AppModel.SectionHeader, appLabelGravity: Int) = with(binding) {
+            val isLetter = header.sectionKey.startsWith("letter_")
+            val isGap = header.sectionKey == "all_apps_gap"
+            sectionTitle.text = if (isGap) "" else header.appLabel
+            sectionTitle.gravity = if (isLetter) android.view.Gravity.START else appLabelGravity
+            val resources = sectionTitle.resources
+            val top = when {
+                isGap -> resources.getDimensionPixelSize(R.dimen.drawer_all_apps_padding_top)
+                isLetter -> 16.dpToPx()
+                else -> resources.getDimensionPixelSize(R.dimen.drawer_section_padding_top)
+            }
+            val bottom = if (isLetter) 2.dpToPx() else resources.getDimensionPixelSize(R.dimen.drawer_section_padding_top) / 2
+            sectionTitle.setPaddingRelative(
+                sectionTitle.paddingStart,
+                top,
+                sectionTitle.paddingEnd,
+                bottom,
+            )
         }
     }
 
@@ -315,6 +353,7 @@ class AppDrawerAdapter(
             appCooldownLimit.alpha = lockedAlpha
             appHideLayout.visibility = View.GONE
             renameLayout.visibility = View.GONE
+            appRow.visibility = View.VISIBLE
             appTitle.visibility = View.VISIBLE
 
             // Show indicators in title based on app type and state
@@ -347,6 +386,7 @@ class AppDrawerAdapter(
             appTitle.setOnClickListener { clickListener(appModel) }
             appCooldownLimit.setOnClickListener {
                 appHideLayout.visibility = View.GONE
+                appRow.visibility = View.VISIBLE
                 appTitle.visibility = View.VISIBLE
                 cooldownLimitListener(appModel)
             }
@@ -363,6 +403,7 @@ class AppDrawerAdapter(
                         root.context.getString(R.string.adapter_show)
                     else
                         root.context.getString(R.string.adapter_hide)
+                    appRow.visibility = View.INVISIBLE
                     appTitle.visibility = View.INVISIBLE
                     appHide.alpha = when (appModel is AppModel.PinnedShortcut) {
                         true -> 0.5f
@@ -388,6 +429,7 @@ class AppDrawerAdapter(
                 }
             }
             etAppRename.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+                appRow.visibility = if (hasFocus) View.INVISIBLE else View.VISIBLE
                 appTitle.visibility = if (hasFocus) View.INVISIBLE else View.VISIBLE
             }
             etAppRename.addTextChangedListener(object : TextWatcher {
@@ -436,23 +478,26 @@ class AppDrawerAdapter(
             appDelete.setOnClickListener { appDeleteListener(appModel) }
             appMenuClose.setOnClickListener {
                 appHideLayout.visibility = View.GONE
+                appRow.visibility = View.VISIBLE
                 appTitle.visibility = View.VISIBLE
             }
             appRenameClose.setOnClickListener {
                 renameLayout.visibility = View.GONE
+                appRow.visibility = View.VISIBLE
                 appTitle.visibility = View.VISIBLE
             }
             appHide.setOnClickListener { appHideListener(appModel, bindingAdapterPosition) }
         }
 
         private fun setAppIcon(showAppIcons: Boolean, appModel: AppModel, isMasked: Boolean) {
-            val appTitle = binding.appTitle
+            val iconView = binding.appIcon
+            binding.appTitle.setCompoundDrawablesRelative(null, null, null, null)
+            binding.appTitle.compoundDrawablePadding = 0
             if (!showAppIcons || appModel.appPackage.isBlank()) {
-                appTitle.setCompoundDrawablesRelative(null, null, null, null)
-                appTitle.compoundDrawablePadding = 0
+                iconView.isVisible = false
                 return
             }
-            val launcherApps = appTitle.context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
+            val launcherApps = iconView.context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
             val drawable = try {
                 when (appModel) {
                     is AppModel.PinnedShortcut -> {
@@ -463,7 +508,7 @@ class AppDrawerAdapter(
                             }
                             launcherApps.getShortcuts(query, appModel.user)
                                 ?.firstOrNull { it.id == appModel.shortcutId }
-                                ?.let { launcherApps.getShortcutIconDrawable(it, appTitle.resources.displayMetrics.densityDpi) }
+                                ?.let { launcherApps.getShortcutIconDrawable(it, iconView.resources.displayMetrics.densityDpi) }
                         } else {
                             null
                         }
@@ -471,10 +516,10 @@ class AppDrawerAdapter(
 
                     is AppModel.App -> launcherApps.getActivityList(appModel.appPackage, appModel.user)
                         .firstOrNull { it.componentName.className == appModel.activityClassName }
-                        ?.getBadgedIcon(appTitle.resources.displayMetrics.densityDpi)
+                        ?.getBadgedIcon(iconView.resources.displayMetrics.densityDpi)
                         ?: launcherApps.getActivityList(appModel.appPackage, appModel.user)
                             .firstOrNull()
-                            ?.getBadgedIcon(appTitle.resources.displayMetrics.densityDpi)
+                            ?.getBadgedIcon(iconView.resources.displayMetrics.densityDpi)
 
                     else -> null
                 }
@@ -482,15 +527,11 @@ class AppDrawerAdapter(
                 null
             }
             if (drawable == null) {
-                appTitle.setCompoundDrawablesRelative(null, null, null, null)
-                appTitle.compoundDrawablePadding = 0
+                iconView.isVisible = false
                 return
             }
-            val iconSize = 24.dpToPx()
-            val icon = if (isMasked) drawable.asGreyscale() else drawable
-            icon.setBounds(0, 0, iconSize, iconSize)
-            appTitle.setCompoundDrawablesRelative(icon, null, null, null)
-            appTitle.compoundDrawablePadding = 12.dpToPx()
+            iconView.setImageDrawable(if (isMasked) drawable.asGreyscale() else drawable)
+            iconView.isVisible = true
         }
 
         private fun getAppName(context: Context, appPackage: String, user: UserHandle): String {

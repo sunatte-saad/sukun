@@ -4,6 +4,9 @@
     <dimen name="text_small">14sp</dimen>
     <dimen name="app_padding_vertical">10dp</dimen>
     <dimen name="home_app_padding_vertical">8dp</dimen>
+    <dimen name="drawer_app_padding_vertical">16dp</dimen>
+    <dimen name="drawer_section_padding_top">12dp</dimen>
+    <dimen name="drawer_all_apps_padding_top">32dp</dimen>
 
     <dimen name="time_size">50sp</dimen>
     <dimen name="date_size">14sp</dimen>

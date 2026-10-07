@@ -2545,10 +2545,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun updateChimeStyle(style: String) {
         if (style == Constants.ChimeStyle.FLASH && !requireContext().hasCameraPermission()) {
-            val needed = requireContext().missingSukunSetupPermissions()
-            cameraPermissionLauncher.launch(
-                needed.ifEmpty { arrayOf(Manifest.permission.CAMERA) }
-            )
+            AlertDialog.Builder(requireContext())
+                .setMessage(R.string.chime_flash_camera_rationale)
+                .setPositiveButton(R.string.okay) { _, _ ->
+                    cameraPermissionLauncher.launch(arrayOf(Manifest.permission.CAMERA))
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
             return
         }
         prefs.hourlyChimeStyle = style

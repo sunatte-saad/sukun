@@ -673,12 +673,11 @@ fun Context.hasCameraPermission(): Boolean =
         android.Manifest.permission.CAMERA
     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
-/** Location, camera, and notifications — requested together so setup is one system prompt. */
+/** Location and notifications — requested at first run. Camera is only asked for flashlight chime. */
 fun Context.missingSukunSetupPermissions(): Array<String> {
     val requested = mutableListOf(
         android.Manifest.permission.ACCESS_FINE_LOCATION,
         android.Manifest.permission.ACCESS_COARSE_LOCATION,
-        android.Manifest.permission.CAMERA,
     )
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         requested += android.Manifest.permission.POST_NOTIFICATIONS
