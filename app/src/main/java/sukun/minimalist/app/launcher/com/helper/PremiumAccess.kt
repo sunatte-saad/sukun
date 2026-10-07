@@ -29,6 +29,19 @@ object PremiumAccess {
             .coerceAtLeast(0)
     }
 
+    fun trialEndMillis(prefs: Prefs): Long {
+        val start = prefs.firstOpenTime
+        if (start == 0L) return 0L
+        return start + Constants.PREMIUM_TRIAL_DURATION_MS
+    }
+
+    fun trialRemainingMs(prefs: Prefs, now: Long = System.currentTimeMillis()): Long {
+        if (prefs.isProUser) return 0L
+        val end = trialEndMillis(prefs)
+        if (end == 0L) return Constants.PREMIUM_TRIAL_DURATION_MS
+        return (end - now).coerceAtLeast(0L)
+    }
+
     fun lockedAlpha(prefs: Prefs): Float = if (hasPremiumAccess(prefs)) 1f else LOCKED_ALPHA
 
     fun effectiveClockStyle(prefs: Prefs): String {

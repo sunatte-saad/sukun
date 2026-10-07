@@ -84,7 +84,7 @@ import java.util.Locale
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-private data class WeatherLocationResult(
+internal data class WeatherLocationResult(
     val label: String,
     val latitude: String,
     val longitude: String,
@@ -645,21 +645,14 @@ suspend fun getCurrentDeviceLocationLabel(context: Context): String? {
 
 fun getBackupWallpaper(wallType: String): String = getDefaultWallpaperUrl()
 
-/** Device GPS needs permission. Without it, weather and prayer fall back to Google. */
+/**
+ * Device GPS needs permission. Without it, reuse a stored city as MANUAL for weather
+ * and prayer. Do not switch to Google — that cancels in-app prayer times and azan.
+ */
 fun Context.applyDeviceLocationDeniedFallbacks(prefs: Prefs): Boolean {
     if (hasWeatherLocationPermission()) return false
-    var changed = false
-    if (prefs.weatherSourceMode == Constants.WeatherSource.DEVICE) {
-        prefs.weatherSourceMode = Constants.WeatherSource.GOOGLE
-        prefs.clearWeatherCache()
-        changed = true
-    }
-    if (prefs.prayerSourceMode == Constants.PrayerSource.DEVICE) {
-        prefs.prayerSourceMode = Constants.PrayerSource.GOOGLE
-        prefs.clearPrayerCache()
-        changed = true
-    }
-    return changed
+    if (!prefs.hasUsableStoredLocation()) return false
+    return prefs.promoteStoredLocationToManual()
 }
 
 fun Context.hasWeatherLocationPermission(): Boolean {
@@ -917,7 +910,7 @@ private fun storedWeatherLocation(label: String, prefs: Prefs): WeatherLocationR
     )
 }
 
-private suspend fun geocodeWeatherLocation(query: String): WeatherLocationResult? = withContext(Dispatchers.IO) {
+internal suspend fun geocodeWeatherLocation(query: String): WeatherLocationResult? = withContext(Dispatchers.IO) {
     if (query.isBlank()) return@withContext null
     val geocodeUrl = Uri.parse(Constants.URL_WEATHER_GEOCODING).buildUpon()
         .appendQueryParameter("name", query)
@@ -1122,13 +1115,16 @@ private suspend fun reverseGeocodeWeatherLocation(
     }
 }
 
-private suspend fun getJsonObject(urlString: String): JSONObject? = withContext(Dispatchers.IO) {
+internal suspend fun getJsonObject(
+    urlString: String,
+    timeoutMs: Int = NETWORK_TIMEOUT_MS,
+): JSONObject? = withContext(Dispatchers.IO) {
     var connection: HttpURLConnection? = null
     try {
         val url = URL(urlString)
         connection = url.openConnection() as HttpURLConnection
-        connection.connectTimeout = NETWORK_TIMEOUT_MS
-        connection.readTimeout = NETWORK_TIMEOUT_MS
+        connection.connectTimeout = timeoutMs
+        connection.readTimeout = timeoutMs
         connection.instanceFollowRedirects = true
         connection.doInput = true
         connection.connect()

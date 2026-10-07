@@ -62,6 +62,8 @@
     <string name="setup_weather_message">Turn this on to see the weather on your home screen. Location is used only for weather and prayer times, and it stays on this device.</string>
     <string name="location_permission_title">Location</string>
     <string name="location_permission_message">Location is required for weather and prayer times. Sukun does not send it to our servers.</string>
+    <string name="location_city_confirm_message">Are you spending your life in the beautiful city of %1$s</string>
+    <string name="location_city_confirm_action">Confirm</string>
     <string name="share">Share</string>
     <string name="share_now">Share now</string>
     <string name="rate">Rate</string>
@@ -100,8 +102,11 @@
     <string name="focus_2h">2h</string>
     <string name="custom">Custom</string>
     <string name="minutes">Minutes</string>
-    <string name="focus_mode_duration_prompt">Set focus mode duration</string>
-    <string name="focus_mode_duration_prompt_subtitle">Choose how long you want focus mode to stay active.</string>
+    <string name="focus_mode_duration_prompt">How long?</string>
+    <string name="focus_mode_duration_prompt_subtitle"> </string>
+    <string name="focus_intro_body">Other apps send you home.\nNeeds Accessibility — stays on this phone.\nEnds when time is up, or tap the icon.</string>
+    <string name="focus_intro_continue">Continue</string>
+    <string name="focus_mode_ended">Focus ended</string>
     <string name="focus_mode_custom_prompt">Custom focus duration</string>
     <string name="focus_mode_custom_prompt_subtitle">Enter a duration in minutes.</string>
     <string name="start_focus_mode">Start focus mode</string>
@@ -206,6 +211,12 @@
     <string name="premium_nudge_message">You have been using Sukun for 15 days. Upgrade to Premium to keep Premium features after the trial.</string>
     <string name="premium_nudge_sign_in_message">Sign in with Google so your setup is saved to your account.</string>
     <string name="premium_nudge_both_message">You have been using Sukun for 15 days. Upgrade to Premium to keep Premium features after the trial, and sign in with Google to save your setup.</string>
+    <string name="premium_trial_reminder_title">Premium trial reminder</string>
+    <string name="premium_trial_reminder_days">Your Premium trial ends in %1$d days. Upgrade to keep Premium features.</string>
+    <string name="premium_trial_reminder_today">Your Premium trial ends today. Upgrade to keep Premium features.</string>
+    <string name="premium_trial_reminder_hours">Your Premium trial ends in about %1$d hours. Upgrade to keep Premium features.</string>
+    <string name="premium_trial_reminder_soon">Your Premium trial ends soon. Upgrade to keep Premium features.</string>
+    <string name="maybe_later">Maybe later</string>
     <string name="premium_mindful_morning_hard_feature">Includes Mindful Morning hard mode</string>
     <string name="prayer_overlay_text">%1$s · %2$s · %3$s</string>
     <string name="prayer_reminder">Prayer reminder</string>

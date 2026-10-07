@@ -83,6 +83,8 @@
 Tap to open forecast</string>
     <string name="current_location">Current location</string>
     <string name="type_city_name">Type city name</string>
+    <string name="location_city_confirm_message">Apakah kamu menghabiskan hidupmu di kota indah %1$s</string>
+    <string name="location_city_confirm_action">Konfirmasi</string>
     <string name="save">Simpan</string>
     <string name="not_set">Not set</string>
     <string name="celsius_short">C</string>
@@ -109,6 +111,11 @@ Tap to open forecast</string>
     <string name="upgrade_to_premium">Upgrade</string>
     <string name="premium_enabled">Sukun Premium diaktifkan</string>
     <string name="premium_already_active">Sukun Premium sudah aktif</string>
+    <string name="premium_trial_reminder_title">Pengingat uji coba Premium</string>
+    <string name="premium_trial_reminder_days">Uji coba Premium Anda berakhir dalam %1$d hari. Upgrade untuk tetap memakai fitur Premium.</string>
+    <string name="premium_trial_reminder_today">Uji coba Premium Anda berakhir hari ini. Upgrade untuk tetap memakai fitur Premium.</string>
+    <string name="premium_trial_reminder_hours">Uji coba Premium Anda berakhir dalam sekitar %1$d jam. Upgrade untuk tetap memakai fitur Premium.</string>
+    <string name="premium_trial_reminder_soon">Uji coba Premium Anda segera berakhir. Upgrade untuk tetap memakai fitur Premium.</string>
     <string name="prayer_overlay_text">%1$s  %2$s  %3$s</string>
     <string name="prayer_reminder">Prayer reminder</string>
     <string name="prayer_reminder_channel_name">Prayer reminders</string>
@@ -210,6 +217,7 @@ Tap to open forecast</string>
     <string name="stop">Stop</string>
     <string name="change">Change</string>
     <string name="not_now">Not now</string>
+    <string name="maybe_later">Nanti saja</string>
     <string name="public_roadmap">Sukun public roadmap</string>
     <string name="instagram">Instagram</string>
     <string name="twitter">Developer</string>

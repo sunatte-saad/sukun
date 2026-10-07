@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_rect_dialog"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/locationCityConfirmMessage"
+            style="@style/TextMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="2dp"
+            android:text=""
+            android:textColor="?attr/primaryColor" />
+
+        <EditText
+            android:id="@+id/locationCityConfirmInput"
+            style="@style/TextMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/focus_mode_dialog_button"
+            android:gravity="center_vertical"
+            android:hint="@string/type_city_name"
+            android:imeOptions="actionDone"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords"
+            android:maxLines="1"
+            android:paddingHorizontal="18dp"
+            android:paddingVertical="16dp"
+            android:textColor="?attr/primaryColor"
+            android:textColorHint="?attr/primaryColorTrans50" />
+
+        <TextView
+            android:id="@+id/locationCityConfirmButton"
+            style="@style/TextSmallBold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/focus_mode_dialog_button"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="14dp"
+            android:text="@string/location_city_confirm_action"
+            android:textColor="?attr/primaryColor" />
+    </LinearLayout>
+
+</FrameLayout>

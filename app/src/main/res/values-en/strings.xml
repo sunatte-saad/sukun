@@ -63,8 +63,11 @@
     <string name="focus_2h">2h</string>
     <string name="custom">Custom</string>
     <string name="minutes">Minutes</string>
-    <string name="focus_mode_duration_prompt">Set focus mode duration</string>
-    <string name="focus_mode_duration_prompt_subtitle">Choose how long you want focus mode to stay active.</string>
+    <string name="focus_mode_duration_prompt">How long?</string>
+    <string name="focus_mode_duration_prompt_subtitle"> </string>
+    <string name="focus_intro_body">Other apps send you home.\nNeeds Accessibility — stays on this phone.\nEnds when time is up, or tap the icon.</string>
+    <string name="focus_intro_continue">Continue</string>
+    <string name="focus_mode_ended">Focus ended</string>
     <string name="focus_mode_custom_prompt">Custom focus duration</string>
     <string name="focus_mode_custom_prompt_subtitle">Enter a duration in minutes.</string>
     <string name="start_focus_mode">Start focus mode</string>
@@ -86,6 +89,8 @@
     <string name="prayer_open_failed">Could not open prayer times. Install a browser or try again.</string>
     <string name="current_location">Current location</string>
     <string name="type_city_name">Type city name</string>
+    <string name="location_city_confirm_message">Are you spending your life in the beautiful city of %1$s</string>
+    <string name="location_city_confirm_action">Confirm</string>
     <string name="save">Save</string>
     <string name="not_set">Not set</string>
     <string name="celsius_short">C</string>
@@ -112,6 +117,11 @@
     <string name="upgrade_to_premium">Upgrade</string>
     <string name="premium_enabled">Sukun Premium activated</string>
     <string name="premium_already_active">Sukun Premium is already active</string>
+    <string name="premium_trial_reminder_title">Premium trial reminder</string>
+    <string name="premium_trial_reminder_days">Your Premium trial ends in %1$d days. Upgrade to keep Premium features.</string>
+    <string name="premium_trial_reminder_today">Your Premium trial ends today. Upgrade to keep Premium features.</string>
+    <string name="premium_trial_reminder_hours">Your Premium trial ends in about %1$d hours. Upgrade to keep Premium features.</string>
+    <string name="premium_trial_reminder_soon">Your Premium trial ends soon. Upgrade to keep Premium features.</string>
     <string name="premium_info_title">Premium</string>
     <string name="premium_info_content_description">Premium help</string>
     <string name="prayer_overlay_text">%1$s · %2$s · %3$s</string>
@@ -219,6 +229,7 @@
     <string name="stop">Stop</string>
     <string name="change">Change</string>
     <string name="not_now">Not now</string>
+    <string name="maybe_later">Maybe later</string>
     <string name="public_roadmap">Sukun public roadmap</string>
     <string name="instagram">Instagram</string>
     <string name="twitter">Developer</string>

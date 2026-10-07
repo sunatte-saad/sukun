@@ -29,7 +29,8 @@
             android:paddingHorizontal="24dp"
             android:paddingBottom="8dp"
             android:text="@string/focus_mode_duration_prompt_subtitle"
-            android:textColor="?attr/primaryColorTrans80" />
+            android:textColor="?attr/primaryColorTrans80"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/focusDuration15m"

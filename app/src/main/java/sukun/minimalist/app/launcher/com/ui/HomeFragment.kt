@@ -75,6 +75,7 @@ import sukun.minimalist.app.launcher.com.helper.showAccessibilityDisclosure
 import sukun.minimalist.app.launcher.com.helper.MyAccessibilityService
 import sukun.minimalist.app.launcher.com.helper.isPackageInstalled
 import sukun.minimalist.app.launcher.com.helper.applyDeviceLocationDeniedFallbacks
+import sukun.minimalist.app.launcher.com.helper.promptForManualCityIfNeeded
 import sukun.minimalist.app.launcher.com.helper.openAlarmApp
 import sukun.minimalist.app.launcher.com.helper.openCalendar
 import sukun.minimalist.app.launcher.com.helper.openCameraApp
@@ -155,19 +156,26 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         updateTodoIconCount()
         populateHomeScreen(false)
         registerSystemTimeReceiver()
-        applyLocationDeniedFallbacksIfNeeded()
-        viewModel.loadWeather()
-        viewModel.loadPrayerState()
+        val awaitingCity = applyLocationDeniedFallbacksIfNeeded()
+        if (!awaitingCity) {
+            viewModel.loadWeather()
+            viewModel.loadPrayerState()
+        }
         populateWeather(viewModel.weatherData.value)
         populatePrayer(viewModel.prayerData.value)
         viewModel.isSukunDefault()
     }
 
-    private fun applyLocationDeniedFallbacksIfNeeded() {
-        if (!prefs.privacyAndSetupComplete) return
-        if (!requireContext().applyDeviceLocationDeniedFallbacks(prefs)) return
-        viewModel.cancelWeatherWorker(clearCachedWeather = true)
-        viewModel.cancelPrayerReminder(clearCachedPrayer = true)
+    private fun applyLocationDeniedFallbacksIfNeeded(): Boolean {
+        if (!prefs.privacyAndSetupComplete) return false
+        val context = requireContext()
+        if (context.promptForManualCityIfNeeded(prefs, viewModel, viewLifecycleOwner.lifecycleScope)) {
+            return true
+        }
+        if (!context.applyDeviceLocationDeniedFallbacks(prefs)) return false
+        viewModel.loadWeather(forceRefresh = true)
+        viewModel.loadPrayerState(forceRefresh = true)
+        return false
     }
 
     override fun onPause() {
@@ -1888,10 +1896,31 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
         if (prefs.isFocusModeActive()) {
-            requireContext().showToast(R.string.focus_mode_blocked)
+            prefs.clearFocusMode()
+            syncFocusModeState()
+            viewModel.refreshHome(false)
+            requireContext().showToast(R.string.focus_mode_ended)
+            return
+        }
+        if (!prefs.focusIntroShown) {
+            showFocusIntro()
             return
         }
         showFocusModeDurationPrompt()
+    }
+
+    private fun showFocusIntro() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_focus_intro, null)
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialogView.findViewById<TextView>(R.id.focusIntroContinue).setOnClickListener {
+            prefs.focusIntroShown = true
+            dialog.dismiss()
+            showFocusModeDurationPrompt()
+        }
+        dialog.show()
     }
 
     private fun showFocusModeDurationPrompt() {

@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import sukun.minimalist.app.launcher.com.MainViewModel
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Constants
@@ -22,6 +23,7 @@ import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.BottomSheetWeatherSettingsBinding
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.applyDeviceLocationDeniedFallbacks
+import sukun.minimalist.app.launcher.com.helper.promptForManualCityIfNeeded
 import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
 import sukun.minimalist.app.launcher.com.helper.isLocationServicesEnabled
 import sukun.minimalist.app.launcher.com.helper.missingSukunSetupPermissions
@@ -50,8 +52,19 @@ class WeatherSettingsSheet : DialogFragment() {
             if (granted && source != null) {
                 applyWeatherSource(source)
             } else if (!granted) {
-                requireContext().applyDeviceLocationDeniedFallbacks(prefs)
-                applyWeatherSource(prefs.weatherSourceMode)
+                val prompted = requireContext().promptForManualCityIfNeeded(
+                    prefs,
+                    viewModel,
+                    viewLifecycleOwner.lifecycleScope,
+                ) {
+                    if (!isAdded || _binding == null) return@promptForManualCityIfNeeded
+                    applyWeatherSource(prefs.weatherSourceMode)
+                    listener?.onWeatherSettingsChanged()
+                }
+                if (!prompted) {
+                    requireContext().applyDeviceLocationDeniedFallbacks(prefs)
+                    applyWeatherSource(prefs.weatherSourceMode)
+                }
             }
         }
 

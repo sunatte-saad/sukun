@@ -52,6 +52,7 @@ import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.hasCameraPermission
 import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
 import sukun.minimalist.app.launcher.com.helper.applyDeviceLocationDeniedFallbacks
+import sukun.minimalist.app.launcher.com.helper.promptForManualCityIfNeeded
 import sukun.minimalist.app.launcher.com.helper.isLocationServicesEnabled
 import sukun.minimalist.app.launcher.com.helper.missingSukunSetupPermissions
 import sukun.minimalist.app.launcher.com.helper.showLocationServicesDisabledDialog
@@ -161,15 +162,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             if (granted) {
                 action?.invoke() ?: setAppLocationDevice()
             } else {
-                requireContext().applyDeviceLocationDeniedFallbacks(prefs)
-                populateWeatherSettings()
-                populatePrayerSettings()
-                populateLocationSettings()
-                viewModel.cancelWeatherWorker(clearCachedWeather = true)
-                viewModel.loadWeather()
-                viewModel.cancelPrayerReminder(clearCachedPrayer = true)
-                viewModel.loadPrayerState()
-                viewModel.refreshHome(false)
+                onLocationPermissionDenied()
             }
         }
 
@@ -1434,11 +1427,22 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         }
         val needsLocation = prefs.weatherSourceMode == Constants.WeatherSource.DEVICE
         if (needsLocation && !requireContext().hasWeatherLocationPermission()) {
-            prefs.weatherSourceMode = Constants.WeatherSource.GOOGLE
-            prefs.clearWeatherCache()
             prefs.showWeatherOnHome = true
             populateWeatherSettings()
-            refreshWeatherIfConfigured()
+            if (!requireContext().promptForManualCityIfNeeded(
+                    prefs,
+                    viewModel,
+                    viewLifecycleOwner.lifecycleScope,
+                ) {
+                    if (_binding == null || !isAdded) return@promptForManualCityIfNeeded
+                    populateWeatherSettings()
+                    populateLocationSettings()
+                }
+            ) {
+                requireContext().applyDeviceLocationDeniedFallbacks(prefs)
+                populateWeatherSettings()
+                refreshWeatherIfConfigured()
+            }
             viewModel.refreshHome(false)
             return
         }
@@ -1479,6 +1483,27 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateWeatherSettings()
         populateLocationSettings()
         refreshWeatherIfConfigured()
+        viewModel.refreshHome(false)
+    }
+
+    private fun onLocationPermissionDenied() {
+        val prompted = requireContext().promptForManualCityIfNeeded(
+            prefs,
+            viewModel,
+            viewLifecycleOwner.lifecycleScope,
+        ) {
+            if (_binding == null || !isAdded) return@promptForManualCityIfNeeded
+            populateWeatherSettings()
+            populatePrayerSettings()
+            populateLocationSettings()
+        }
+        if (prompted) return
+        requireContext().applyDeviceLocationDeniedFallbacks(prefs)
+        populateWeatherSettings()
+        populatePrayerSettings()
+        populateLocationSettings()
+        refreshWeatherIfConfigured()
+        if (prefs.showPrayerOnHome) viewModel.refreshPrayerData()
         viewModel.refreshHome(false)
     }
 
@@ -1611,13 +1636,23 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         if (prefs.prayerSourceMode == Constants.PrayerSource.DEVICE &&
             !requireContext().hasWeatherLocationPermission()
         ) {
-            prefs.prayerSourceMode = Constants.PrayerSource.GOOGLE
-            prefs.clearPrayerCache()
             prefs.showPrayerOnHome = true
             requestNotificationPermissionIfNeeded()
             populatePrayerSettings()
-            viewModel.cancelPrayerReminder(clearCachedPrayer = true)
-            viewModel.loadPrayerState()
+            if (!requireContext().promptForManualCityIfNeeded(
+                    prefs,
+                    viewModel,
+                    viewLifecycleOwner.lifecycleScope,
+                ) {
+                    if (_binding == null || !isAdded) return@promptForManualCityIfNeeded
+                    populatePrayerSettings()
+                    populateLocationSettings()
+                }
+            ) {
+                requireContext().applyDeviceLocationDeniedFallbacks(prefs)
+                populatePrayerSettings()
+                viewModel.refreshPrayerData()
+            }
             viewModel.refreshHome(false)
             return
         }
@@ -2354,6 +2389,9 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateScreenTimeOnOff()
         populateFocusMode()
         populateHourlyChime()
+        if (prefs.hourlyChimeEnabled) {
+            HourlyChimeScheduler.scheduleNext(requireContext())
+        }
         pendingFocusModeDuration?.let { duration ->
             if (isAccessServiceEnabled(requireContext())) {
                 pendingFocusModeDuration = null

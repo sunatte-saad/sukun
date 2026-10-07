@@ -53,6 +53,7 @@ import sukun.minimalist.app.launcher.com.helper.FirstRunHomeAppsSetup
 import sukun.minimalist.app.launcher.com.helper.missingSukunSetupPermissions
 import sukun.minimalist.app.launcher.com.helper.appUsagePermissionGranted
 import sukun.minimalist.app.launcher.com.helper.applyDeviceLocationDeniedFallbacks
+import sukun.minimalist.app.launcher.com.helper.promptForManualCityIfNeeded
 import sukun.minimalist.app.launcher.com.helper.isTablet
 import sukun.minimalist.app.launcher.com.helper.openUrl
 import sukun.minimalist.app.launcher.com.helper.rateApp
@@ -62,6 +63,7 @@ import sukun.minimalist.app.launcher.com.helper.shareApp
 import sukun.minimalist.app.launcher.com.helper.createHomeRoleRequestIntent
 import sukun.minimalist.app.launcher.com.helper.PremiumAccess
 import sukun.minimalist.app.launcher.com.helper.PremiumBillingManager
+import sukun.minimalist.app.launcher.com.helper.TrialReminder
 import sukun.minimalist.app.launcher.com.ui.SettingsFragment
 import sukun.minimalist.app.launcher.com.helper.showToast
 import sukun.minimalist.app.launcher.com.helper.turnOffSukunLauncher
@@ -104,7 +106,7 @@ class MainActivity : AppCompatActivity() {
     private var driveRestorePromptedUpdatedAt = 0L
     private var driveRestoreChoiceMade = false
     private var firstRunSetupShowing = false
-    private var premiumNudgeDialogShowing = false
+    private var trialReminderDialogShowing = false
 
     override fun attachBaseContext(context: Context) {
         val config = Configuration(context.resources.configuration)
@@ -212,7 +214,7 @@ class MainActivity : AppCompatActivity() {
         showFirstRunFlowIfNeeded()
         maybePromptUsageAccess()
         enforcePremiumExpiry()
-        if (!isRecreating) maybeShowPremiumNudge()
+        if (!isRecreating) maybeShowTrialReminder()
         viewModel.isSukunDefault()
         checkOnboardingLauncherStep()
         if (viewModel.isOnboardingActive()) {
@@ -754,7 +756,7 @@ class MainActivity : AppCompatActivity() {
         if (prefs.firstOpenTime == 0L)
             prefs.firstOpenTime = System.currentTimeMillis()
 
-        if (maybeShowPremiumNudge()) return
+        if (maybeShowTrialReminder()) return
 
         val calendar = Calendar.getInstance()
         val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
@@ -910,18 +912,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun completePrivacyAndSetup() {
-        applyDeviceLocationDeniedFallbacks(prefs)
         prefs.privacyAndSetupComplete = true
         firstRunSetupShowing = false
+        applyDeviceLocationDeniedFallbacks(prefs)
         viewModel.refreshHome(false)
-        if (prefs.showWeatherOnHome) viewModel.loadWeather(forceRefresh = true)
-        if (prefs.showPrayerOnHome) {
-            viewModel.refreshPrayerData(forceLocationRefresh = true)
-        }
         if (prefs.dailyWallpaper) {
             viewModel.setWallpaperWorker(runImmediately = false)
         }
         showFirstRunFlowIfNeeded()
+        val awaitingCity = promptForManualCityIfNeeded(prefs, viewModel, lifecycleScope)
+        if (!awaitingCity) {
+            if (prefs.showWeatherOnHome) viewModel.loadWeather(forceRefresh = true)
+            if (prefs.showPrayerOnHome) {
+                viewModel.refreshPrayerData(forceLocationRefresh = true)
+            }
+        }
     }
 
     private fun showSignInIfNeeded() {
@@ -1054,6 +1059,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun dismissOverlayDialogs() {
         driveRestoreDialogShowing = false
+        trialReminderDialogShowing = false
         supportFragmentManager.fragments.forEach { fragment ->
             dismissDialogFragments(fragment)
         }
@@ -1066,62 +1072,52 @@ class MainActivity : AppCompatActivity() {
         fragment.childFragmentManager.fragments.forEach { dismissDialogFragments(it) }
     }
 
-    private fun maybeShowPremiumNudge(): Boolean {
-        if (premiumNudgeDialogShowing) return true
+    private fun maybeShowTrialReminder(): Boolean {
+        if (trialReminderDialogShowing) return true
         if (isRecreating || isFinishing || isDestroyed) return false
-        if (prefs.premiumNudgeShown) return false
-        if (firstRunSetupShowing || viewModel.isOnboardingActive()) return false
+        if (driveRestoreDialogShowing || firstRunSetupShowing || viewModel.isOnboardingActive()) return false
         if (!prefs.privacyAndSetupComplete) return false
-        if (navController.currentDestination?.id == R.id.signInFragment) return false
-        if (prefs.firstOpenTime == 0L) return false
-        if (!prefs.firstOpenTime.hasBeenDays(Constants.PREMIUM_NUDGE_DAYS)) return false
-        val needsPremium = !prefs.isProUser
-        val needsSignIn = !prefs.isSignedIn
-        if (!needsPremium && !needsSignIn) {
-            prefs.premiumNudgeShown = true
-            return false
-        }
-        showPremiumNudgeDialog(needsPremium, needsSignIn)
+        if (navController.currentDestination?.id != R.id.mainFragment) return false
+        val slot = TrialReminder.dueSlot(prefs) ?: return false
+        showTrialReminderDialog(slot)
         return true
     }
 
-    private fun showPremiumNudgeDialog(needsPremium: Boolean, needsSignIn: Boolean) {
+    private fun showTrialReminderDialog(slot: TrialReminder.Slot) {
         if (isFinishing || isDestroyed) return
-        premiumNudgeDialogShowing = true
-        val title = if (needsPremium) R.string.premium_nudge_title else R.string.sign_in_with_google
-        val message = when {
-            needsPremium && needsSignIn && PremiumAccess.trialExpired(prefs) ->
-                getString(R.string.premium_trial_ended) + "\n\n" + getString(R.string.premium_nudge_sign_in_message)
-            needsPremium && needsSignIn -> getString(R.string.premium_nudge_both_message)
-            needsPremium && PremiumAccess.trialExpired(prefs) -> getString(R.string.premium_trial_ended)
-            needsPremium -> getString(R.string.premium_nudge_message)
-            else -> getString(R.string.premium_nudge_sign_in_message)
-        }
-        val builder = AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setNegativeButton(R.string.not_now, null)
-            .setOnDismissListener {
-                premiumNudgeDialogShowing = false
-                prefs.premiumNudgeShown = true
-            }
-        if (needsPremium && needsSignIn) {
-            builder.setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
+        trialReminderDialogShowing = true
+        TrialReminder.markShown(prefs, slot)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.premium_trial_reminder_title)
+            .setMessage(trialReminderMessage(slot))
+            .setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
                 premiumBillingManager?.launchPremiumPurchase()
             }
-            builder.setNeutralButton(R.string.sign_in_with_google) { _, _ ->
-                binding.root.post { openSignInScreen() }
+            .setNegativeButton(R.string.maybe_later, null)
+            .setOnDismissListener { trialReminderDialogShowing = false }
+            .show()
+    }
+
+    private fun trialReminderMessage(slot: TrialReminder.Slot): String {
+        val remainingMs = PremiumAccess.trialRemainingMs(prefs)
+        val days = TrialReminder.calendarDaysUntilEnd(
+            PremiumAccess.trialEndMillis(prefs),
+            System.currentTimeMillis(),
+        )
+        return when (slot) {
+            TrialReminder.Slot.LAST_MORNING -> getString(R.string.premium_trial_reminder_today)
+            TrialReminder.Slot.LAST_EVENING,
+            TrialReminder.Slot.LAST_END,
+            -> {
+                if (remainingMs < Constants.ONE_HOUR_IN_MILLIS) {
+                    getString(R.string.premium_trial_reminder_soon)
+                } else {
+                    val hours = (remainingMs / Constants.ONE_HOUR_IN_MILLIS).toInt().coerceAtLeast(1)
+                    getString(R.string.premium_trial_reminder_hours, hours)
+                }
             }
-        } else if (needsPremium) {
-            builder.setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
-                premiumBillingManager?.launchPremiumPurchase()
-            }
-        } else {
-            builder.setPositiveButton(R.string.sign_in_with_google) { _, _ ->
-                binding.root.post { openSignInScreen() }
-            }
+            else -> getString(R.string.premium_trial_reminder_days, days.coerceAtLeast(1))
         }
-        builder.show()
     }
 
     private fun enforcePremiumExpiry() {

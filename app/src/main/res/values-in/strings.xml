@@ -82,6 +82,8 @@
     <string name="google_weather_card">Cuaca Google — Ketuk untuk membuka prakiraan</string>
     <string name="current_location">Lokasi saat ini</string>
     <string name="type_city_name">Ketik nama kota</string>
+    <string name="location_city_confirm_message">Apakah kamu menghabiskan hidupmu di kota indah %1$s</string>
+    <string name="location_city_confirm_action">Konfirmasi</string>
     <string name="save">Simpan</string>
     <string name="not_set">Belum diatur</string>
     <string name="celsius_short">C</string>

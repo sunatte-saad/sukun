@@ -67,6 +67,7 @@ class Prefs(context: Context) {
     private val FOCUS_MODE_LOCK_NOTIFICATIONS = "FOCUS_MODE_LOCK_NOTIFICATIONS"
     private val FOCUS_MODE_HIDE_STATUS_BAR = "FOCUS_MODE_HIDE_STATUS_BAR"
     private val SHOW_FOCUS_ON_HOME = "SHOW_FOCUS_ON_HOME"
+    private val FOCUS_INTRO_SHOWN = "FOCUS_INTRO_SHOWN"
     private val DOUBLE_TAP_ACTION = "DOUBLE_TAP_ACTION"
     private val SHOW_WEATHER_ON_HOME = "SHOW_WEATHER_ON_HOME"
     private val WEATHER_UNITS = "WEATHER_UNITS"
@@ -202,6 +203,13 @@ class Prefs(context: Context) {
 
     private val SIGN_IN_PROMPT_SHOWN = "SIGN_IN_PROMPT_SHOWN"
     private val PREMIUM_NUDGE_SHOWN = "PREMIUM_NUDGE_SHOWN"
+    private val TRIAL_REMINDER_15D = "TRIAL_REMINDER_15D"
+    private val TRIAL_REMINDER_7D = "TRIAL_REMINDER_7D"
+    private val TRIAL_REMINDER_3D = "TRIAL_REMINDER_3D"
+    private val TRIAL_REMINDER_2D = "TRIAL_REMINDER_2D"
+    private val TRIAL_REMINDER_LAST_MORNING = "TRIAL_REMINDER_LAST_MORNING"
+    private val TRIAL_REMINDER_LAST_EVENING = "TRIAL_REMINDER_LAST_EVENING"
+    private val TRIAL_REMINDER_LAST_END = "TRIAL_REMINDER_LAST_END"
     private val FREE_TIER_DEFAULTS_APPLIED = "FREE_TIER_DEFAULTS_APPLIED"
     private val PRIVACY_AND_SETUP_COMPLETE = "PRIVACY_AND_SETUP_COMPLETE"
     private val ONBOARDING_COMPLETE = "ONBOARDING_COMPLETE"
@@ -253,6 +261,34 @@ class Prefs(context: Context) {
     var premiumNudgeShown: Boolean
         get() = prefs.getBoolean(PREMIUM_NUDGE_SHOWN, false)
         set(value) = prefs.edit { putBoolean(PREMIUM_NUDGE_SHOWN, value).apply() }
+
+    var trialReminder15dShown: Boolean
+        get() = prefs.getBoolean(TRIAL_REMINDER_15D, false)
+        set(value) = prefs.edit { putBoolean(TRIAL_REMINDER_15D, value).apply() }
+
+    var trialReminder7dShown: Boolean
+        get() = prefs.getBoolean(TRIAL_REMINDER_7D, false)
+        set(value) = prefs.edit { putBoolean(TRIAL_REMINDER_7D, value).apply() }
+
+    var trialReminder3dShown: Boolean
+        get() = prefs.getBoolean(TRIAL_REMINDER_3D, false)
+        set(value) = prefs.edit { putBoolean(TRIAL_REMINDER_3D, value).apply() }
+
+    var trialReminder2dShown: Boolean
+        get() = prefs.getBoolean(TRIAL_REMINDER_2D, false)
+        set(value) = prefs.edit { putBoolean(TRIAL_REMINDER_2D, value).apply() }
+
+    var trialReminderLastMorningShown: Boolean
+        get() = prefs.getBoolean(TRIAL_REMINDER_LAST_MORNING, false)
+        set(value) = prefs.edit { putBoolean(TRIAL_REMINDER_LAST_MORNING, value).apply() }
+
+    var trialReminderLastEveningShown: Boolean
+        get() = prefs.getBoolean(TRIAL_REMINDER_LAST_EVENING, false)
+        set(value) = prefs.edit { putBoolean(TRIAL_REMINDER_LAST_EVENING, value).apply() }
+
+    var trialReminderLastEndShown: Boolean
+        get() = prefs.getBoolean(TRIAL_REMINDER_LAST_END, false)
+        set(value) = prefs.edit { putBoolean(TRIAL_REMINDER_LAST_END, value).apply() }
 
     var freeTierDefaultsApplied: Boolean
         get() = prefs.getBoolean(FREE_TIER_DEFAULTS_APPLIED, false)
@@ -506,6 +542,10 @@ class Prefs(context: Context) {
     var showFocusOnHome: Boolean
         get() = prefs.getBoolean(SHOW_FOCUS_ON_HOME, true)
         set(value) = prefs.edit { putBoolean(SHOW_FOCUS_ON_HOME, value).apply() }
+
+    var focusIntroShown: Boolean
+        get() = prefs.getBoolean(FOCUS_INTRO_SHOWN, false)
+        set(value) = prefs.edit { putBoolean(FOCUS_INTRO_SHOWN, value).apply() }
 
     var doubleTapAction: String
         get() = prefs.getString(DOUBLE_TAP_ACTION, Constants.DoubleTapAction.LOCK).toString()
@@ -1150,6 +1190,108 @@ class Prefs(context: Context) {
         clearWeatherCache()
     }
 
+    fun hasUsableStoredCoordinates(): Boolean {
+        val hasWeather = weatherLatitude.isNotBlank() && weatherLongitude.isNotBlank()
+        val hasPrayer = prayerLatitude.isNotBlank() && prayerLongitude.isNotBlank()
+        return hasWeather || hasPrayer
+    }
+
+    fun hasUsableStoredLocation(): Boolean {
+        if (hasUsableStoredCoordinates()) return true
+        return weatherLocationQuery.isNotBlank() || prayerLocationQuery.isNotBlank()
+    }
+
+    fun applySharedManualLocation(
+        query: String,
+        label: String = query,
+        latitude: String = "",
+        longitude: String = "",
+    ) {
+        val resolvedQuery = query.trim()
+        val resolvedLabel = label.trim().ifBlank { resolvedQuery }
+        weatherSourceMode = Constants.WeatherSource.MANUAL
+        weatherLocationQuery = resolvedQuery
+        weatherLocationLabel = resolvedLabel
+        weatherLatitude = latitude
+        weatherLongitude = longitude
+        clearWeatherCache()
+        prayerSourceMode = Constants.PrayerSource.MANUAL
+        prayerLocationQuery = resolvedQuery
+        prayerLocationLabel = resolvedLabel
+        prayerLatitude = latitude
+        prayerLongitude = longitude
+        clearPrayerCache()
+    }
+
+    fun promoteStoredLocationToManual(): Boolean {
+        val lat = weatherLatitude.ifBlank { prayerLatitude }
+        val lng = weatherLongitude.ifBlank { prayerLongitude }
+        val query = weatherLocationQuery.ifBlank { prayerLocationQuery }
+            .ifBlank { weatherLocationLabel }
+            .ifBlank { prayerLocationLabel }
+            .ifBlank {
+                if (lat.isNotBlank() && lng.isNotBlank()) "$lat,$lng" else ""
+            }
+        val label = weatherLocationLabel.ifBlank { prayerLocationLabel }.ifBlank { query }
+        if (query.isBlank() && (lat.isBlank() || lng.isBlank())) return false
+
+        var changed = false
+        if (weatherSourceMode == Constants.WeatherSource.DEVICE) {
+            weatherSourceMode = Constants.WeatherSource.MANUAL
+            changed = true
+        }
+        if (prayerSourceMode == Constants.PrayerSource.DEVICE) {
+            prayerSourceMode = Constants.PrayerSource.MANUAL
+            changed = true
+        }
+        if (weatherSourceMode == Constants.WeatherSource.GOOGLE &&
+            prayerSourceMode == Constants.PrayerSource.GOOGLE
+        ) {
+            weatherSourceMode = Constants.WeatherSource.MANUAL
+            prayerSourceMode = Constants.PrayerSource.MANUAL
+            changed = true
+        }
+        if (query.isNotBlank()) {
+            if (weatherLocationQuery.isBlank()) {
+                weatherLocationQuery = query
+                changed = true
+            }
+            if (prayerLocationQuery.isBlank()) {
+                prayerLocationQuery = query
+                changed = true
+            }
+        }
+        if (label.isNotBlank()) {
+            if (weatherLocationLabel.isBlank()) {
+                weatherLocationLabel = label
+                changed = true
+            }
+            if (prayerLocationLabel.isBlank()) {
+                prayerLocationLabel = label
+                changed = true
+            }
+        }
+        if (lat.isNotBlank() && lng.isNotBlank()) {
+            if (weatherLatitude.isBlank()) {
+                weatherLatitude = lat
+                changed = true
+            }
+            if (weatherLongitude.isBlank()) {
+                weatherLongitude = lng
+                changed = true
+            }
+            if (prayerLatitude.isBlank()) {
+                prayerLatitude = lat
+                changed = true
+            }
+            if (prayerLongitude.isBlank()) {
+                prayerLongitude = lng
+                changed = true
+            }
+        }
+        return changed
+    }
+
     fun clearPrayerCache() {
         prayerNextKey = ""
         prayerNextAt = 0L
@@ -1440,6 +1582,13 @@ class Prefs(context: Context) {
             "WALLPAPER_PENDING_SYNC",
             "LAST_WALLPAPER_UPDATE_TIME",
             "PREMIUM_NUDGE_SHOWN",
+            "TRIAL_REMINDER_15D",
+            "TRIAL_REMINDER_7D",
+            "TRIAL_REMINDER_3D",
+            "TRIAL_REMINDER_2D",
+            "TRIAL_REMINDER_LAST_MORNING",
+            "TRIAL_REMINDER_LAST_EVENING",
+            "TRIAL_REMINDER_LAST_END",
             "FREE_TIER_DEFAULTS_APPLIED",
         )
     }

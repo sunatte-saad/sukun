@@ -17,12 +17,10 @@ object HourlyChimeScheduler {
 
         alarmManager.cancel(pendingIntent)
         if (!prefs.hourlyChimeEnabled) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
 
         val triggerAtMillis = nextChimeMillis(prefs)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-            // Fallback to inexact if permission not granted
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
         } else {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
@@ -53,42 +51,29 @@ object HourlyChimeScheduler {
     }
 
     private fun nextChimeMillis(prefs: Prefs): Long {
-        val cal = Calendar.getInstance()
-        val nowMillis = cal.timeInMillis
-
-        // Set to the top of the current hour
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-
-        // Always start by looking at the next hour
-        cal.add(Calendar.HOUR_OF_DAY, 1)
-
-        // Only skip if the next top-of-hour is essentially "now" (clock skew / early fire).
-        // A large buffer here incorrectly skipped the upcoming hour when enabling near :55.
-        if (cal.timeInMillis - nowMillis < 15_000L) {
+        val now = System.currentTimeMillis()
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        while (cal.timeInMillis <= now) {
             cal.add(Calendar.HOUR_OF_DAY, 1)
         }
 
         val startHour = prefs.hourlyChimeStartHour.coerceIn(0, 23)
         val endHour = prefs.hourlyChimeEndHour.coerceIn(0, 23)
-        
         val nextHour = cal.get(Calendar.HOUR_OF_DAY)
-        
-        // Handle the quiet hours boundary
+
         if (startHour <= endHour) {
-            // Normal range: e.g., 8:00 to 22:00
             if (nextHour < startHour) {
                 cal.set(Calendar.HOUR_OF_DAY, startHour)
             } else if (nextHour > endHour) {
                 cal.add(Calendar.DAY_OF_YEAR, 1)
                 cal.set(Calendar.HOUR_OF_DAY, startHour)
             }
-        } else {
-            // Overnight range: e.g., 22:00 to 08:00
-            if (nextHour in (endHour + 1)..<startHour) {
-                cal.set(Calendar.HOUR_OF_DAY, startHour)
-            }
+        } else if (nextHour in (endHour + 1)..<startHour) {
+            cal.set(Calendar.HOUR_OF_DAY, startHour)
         }
 
         return cal.timeInMillis

@@ -156,13 +156,25 @@ object Constants {
     const val ONE_DAY_IN_MILLIS = 86400000L
     const val PREMIUM_TRIAL_DAYS = 30
     const val PREMIUM_TRIAL_DURATION_MS = PREMIUM_TRIAL_DAYS * ONE_DAY_IN_MILLIS
-    const val PREMIUM_NUDGE_DAYS = 15
     const val ONE_HOUR_IN_MILLIS = 3600000L
     const val ONE_MINUTE_IN_MILLIS = 60000L
     const val MIN_CUSTOM_FOCUS_MINUTES = 1L
     const val MAX_CUSTOM_FOCUS_MINUTES = 1440L
     const val DEFAULT_DAY_START_HOUR = 6
     const val DEFAULT_DAY_END_HOUR = 22
+
+    /** In-app trial-ending reminder schedule. Replaces the old single 15-day nudge. */
+    object TrialReminder {
+        const val DAYS_15 = 15
+        const val DAYS_7 = 7
+        const val DAYS_3 = 3
+        const val DAYS_2 = 2
+        /** Morning last-day slot (~8:00). Day-start (6) is too early for a reminder. */
+        const val MORNING_HOUR = 8
+        const val EVENING_HOUR = 18
+        const val DAY_END_HOUR = DEFAULT_DAY_END_HOUR
+        const val LAST_END_REMAINING_MS = 3 * ONE_HOUR_IN_MILLIS
+    }
 
     const val MIN_ANIM_REFRESH_RATE = 30f
 
@@ -179,6 +191,9 @@ object Constants {
     const val URL_GOOGLE_WEATHER = "https://www.google.com/search?q=weather"
     const val URL_WEATHER_GEOCODING = "https://geocoding-api.open-meteo.com/v1/search"
     const val URL_WEATHER_FORECAST = "https://api.open-meteo.com/v1/forecast"
+    const val URL_IP_GEOLOCATION = "https://ipwho.is/"
+    const val URL_IP_GEOLOCATION_FALLBACK = "https://ipapi.co/json/"
+    const val IP_GEOLOCATION_TIMEOUT_MS = 4_000
 
     const val DIGITAL_WELLBEING_PACKAGE_NAME = "com.google.android.apps.wellbeing"
     const val DIGITAL_WELLBEING_ACTIVITY = "com.google.android.apps.wellbeing.settings.TopLevelSettingsActivity"
