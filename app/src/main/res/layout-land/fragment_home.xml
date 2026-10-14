@@ -413,6 +413,22 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
+        <TextView
+            android:id="@+id/homeAppAdd"
+            style="@style/TextLarge"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_home_app_add"
+            android:contentDescription="@string/home_app_add"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:text="+"
+            android:textColor="?attr/primaryColorTrans50"
+            android:visibility="gone"
+            tools:ignore="HardcodedText"
+            tools:visibility="visible" />
+
     </LinearLayout>
 
     <TextView

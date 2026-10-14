@@ -9,6 +9,7 @@ import android.content.pm.LauncherApps
 import android.content.res.Configuration
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.ColorDrawable
 import android.os.BatteryManager
@@ -81,7 +82,6 @@ import sukun.minimalist.app.launcher.com.helper.openCalendar
 import sukun.minimalist.app.launcher.com.helper.openCameraApp
 import sukun.minimalist.app.launcher.com.helper.openDialerApp
 import sukun.minimalist.app.launcher.com.helper.openSearch
-import sukun.minimalist.app.launcher.com.helper.setPlainWallpaperByTheme
 import sukun.minimalist.app.launcher.com.helper.showToast
 import sukun.minimalist.app.launcher.com.helper.prayerKeyToMark
 import sukun.minimalist.app.launcher.com.helper.toOverlayText
@@ -138,6 +138,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
         binding.mainLayout.layoutTransition = null
         initObservers()
+        setupHomeOnboardingSpotlight()
         setHomeAlignment(prefs.homeAlignment)
         initSwipeTouchListener()
         initClickListeners()
@@ -380,6 +381,19 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun initClickListeners() {
+        binding.homeAppAdd.setOnClickListener {
+            val nextSlot = firstEmptyHomeSlot() ?: return@setOnClickListener
+            AlertDialog.Builder(requireContext())
+                .setMessage(R.string.home_app_add_message)
+                .setPositiveButton(R.string.home_app_add_action) { _, _ ->
+                    showAppList(
+                        Constants.FLAG_SET_HOME_APP_1 + nextSlot - 1,
+                        rename = false,
+                        includeHiddenApps = true,
+                    )
+                }
+                .show()
+        }
         binding.lock.setOnClickListener(this)
         binding.recents.setOnClickListener(this)
         binding.clock.setOnClickListener(this)
@@ -1341,13 +1355,22 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             populateScreenTime()
 
         val homeAppsNum = prefs.homeAppsNum
+        binding.homeAppAdd.isVisible = firstEmptyHomeSlot() != null
         if (homeAppsNum == 0) {
+            hideHomeApps()
             adjustHomeAppsLayoutForTextScale()
             return
         }
 
-        binding.homeApp1.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp1, prefs.appName1, prefs.appPackage1, prefs.appActivityClassName1, prefs.appUser1, prefs.isShortcut1, prefs.shortcutId1)) {
+        showHomeAppSlot(
+            binding.homeApp1,
+            prefs.appName1,
+            prefs.appPackage1,
+            prefs.appActivityClassName1,
+            prefs.appUser1,
+            prefs.isShortcut1,
+            prefs.shortcutId1,
+        ) {
             prefs.appName1 = ""
             prefs.appPackage1 = ""
         }
@@ -1356,8 +1379,15 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
 
-        binding.homeApp2.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp2, prefs.appName2, prefs.appPackage2, prefs.appActivityClassName2, prefs.appUser2, prefs.isShortcut2, prefs.shortcutId2)) {
+        showHomeAppSlot(
+            binding.homeApp2,
+            prefs.appName2,
+            prefs.appPackage2,
+            prefs.appActivityClassName2,
+            prefs.appUser2,
+            prefs.isShortcut2,
+            prefs.shortcutId2,
+        ) {
             prefs.appName2 = ""
             prefs.appPackage2 = ""
         }
@@ -1366,8 +1396,15 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
 
-        binding.homeApp3.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp3, prefs.appName3, prefs.appPackage3, prefs.appActivityClassName3, prefs.appUser3, prefs.isShortcut3, prefs.shortcutId3)) {
+        showHomeAppSlot(
+            binding.homeApp3,
+            prefs.appName3,
+            prefs.appPackage3,
+            prefs.appActivityClassName3,
+            prefs.appUser3,
+            prefs.isShortcut3,
+            prefs.shortcutId3,
+        ) {
             prefs.appName3 = ""
             prefs.appPackage3 = ""
         }
@@ -1376,8 +1413,15 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
 
-        binding.homeApp4.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp4, prefs.appName4, prefs.appPackage4, prefs.appActivityClassName4, prefs.appUser4, prefs.isShortcut4, prefs.shortcutId4)) {
+        showHomeAppSlot(
+            binding.homeApp4,
+            prefs.appName4,
+            prefs.appPackage4,
+            prefs.appActivityClassName4,
+            prefs.appUser4,
+            prefs.isShortcut4,
+            prefs.shortcutId4,
+        ) {
             prefs.appName4 = ""
             prefs.appPackage4 = ""
         }
@@ -1386,8 +1430,15 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
 
-        binding.homeApp5.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp5, prefs.appName5, prefs.appPackage5, prefs.appActivityClassName5, prefs.appUser5, prefs.isShortcut5, prefs.shortcutId5)) {
+        showHomeAppSlot(
+            binding.homeApp5,
+            prefs.appName5,
+            prefs.appPackage5,
+            prefs.appActivityClassName5,
+            prefs.appUser5,
+            prefs.isShortcut5,
+            prefs.shortcutId5,
+        ) {
             prefs.appName5 = ""
             prefs.appPackage5 = ""
         }
@@ -1396,26 +1447,79 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
 
-        binding.homeApp6.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp6, prefs.appName6, prefs.appPackage6, prefs.appActivityClassName6, prefs.appUser6, prefs.isShortcut6, prefs.shortcutId6)) {
+        showHomeAppSlot(
+            binding.homeApp6,
+            prefs.appName6,
+            prefs.appPackage6,
+            prefs.appActivityClassName6,
+            prefs.appUser6,
+            prefs.isShortcut6,
+            prefs.shortcutId6,
+        ) {
             prefs.appName6 = ""
             prefs.appPackage6 = ""
         }
         if (homeAppsNum == 6) return
 
-        binding.homeApp7.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp7, prefs.appName7, prefs.appPackage7, prefs.appActivityClassName7, prefs.appUser7, prefs.isShortcut7, prefs.shortcutId7)) {
+        showHomeAppSlot(
+            binding.homeApp7,
+            prefs.appName7,
+            prefs.appPackage7,
+            prefs.appActivityClassName7,
+            prefs.appUser7,
+            prefs.isShortcut7,
+            prefs.shortcutId7,
+        ) {
             prefs.appName7 = ""
             prefs.appPackage7 = ""
         }
         if (homeAppsNum == 7) return
 
-        binding.homeApp8.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp8, prefs.appName8, prefs.appPackage8, prefs.appActivityClassName8, prefs.appUser8, prefs.isShortcut8, prefs.shortcutId8)) {
+        showHomeAppSlot(
+            binding.homeApp8,
+            prefs.appName8,
+            prefs.appPackage8,
+            prefs.appActivityClassName8,
+            prefs.appUser8,
+            prefs.isShortcut8,
+            prefs.shortcutId8,
+        ) {
             prefs.appName8 = ""
             prefs.appPackage8 = ""
         }
         adjustHomeAppsLayoutForTextScale()
+    }
+
+    /**
+     * Shows a home-screen row only when that slot holds a real app.
+     * An empty slot used to stay visible and fall back to the "Application" hint.
+     */
+    private fun showHomeAppSlot(
+        textView: TextView,
+        appName: String,
+        packageName: String,
+        activityClassName: String?,
+        userString: String,
+        isShortcut: Boolean,
+        shortcutId: String?,
+        clearSlot: () -> Unit,
+    ) {
+        textView.visibility = View.VISIBLE
+        if (setHomeAppText(textView, appName, packageName, activityClassName, userString, isShortcut, shortcutId)) {
+            return
+        }
+        if (appName.isNotEmpty() || packageName.isNotEmpty()) clearSlot()
+        textView.visibility = View.GONE
+        setHomeAppIcon(textView, null)
+    }
+
+    /** Next open slot the plus button can fill, within the text-size limit. */
+    private fun firstEmptyHomeSlot(): Int? {
+        val max = prefs.maxHomeAppsAllowed()
+        for (slot in 1..max) {
+            if (prefs.getAppPackage(slot).isBlank()) return slot
+        }
+        return null
     }
 
     private fun setHomeAppText(
@@ -1739,21 +1843,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             return
         }
 
-        val isHomeAppSlotStep = flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_HOME_APP_8 &&
-            viewModel.isOnboardingActive() &&
-            viewModel.currentOnboardingStep().requiredAction == OnboardingAction.TAP_HOME_APP_SLOT
-
-        when {
-            flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_HOME_APP_8 ->
-                viewModel.reportOnboardingAction(OnboardingAction.TAP_HOME_APP_SLOT)
-            flag == Constants.FLAG_LAUNCH_APP ->
-                viewModel.reportOnboardingAction(OnboardingAction.OPEN_APP_DRAWER)
-        }
-
-        if (isHomeAppSlotStep) {
-            // Do not open the app picker during the tour. The highlight + tap teaches the feature.
-            requireContext().showToast(getString(R.string.onboarding_home_app_slot_chosen))
-            return
+        if (flag == Constants.FLAG_LAUNCH_APP) {
+            viewModel.reportOnboardingAction(OnboardingAction.OPEN_APP_DRAWER)
         }
 
         viewModel.getAppList(includeHiddenApps)
@@ -1833,10 +1924,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         if (prefs.dailyWallpaper.not()) return
         val changedAppTheme = getChangedAppTheme(requireContext(), prefs.appTheme)
         prefs.appTheme = changedAppTheme
-        if (prefs.dailyWallpaper) {
-            setPlainWallpaperByTheme(requireContext(), changedAppTheme)
-            viewModel.setWallpaperWorker()
-        }
+        viewModel.setWallpaperWorker(forceRefresh = true)
         AppCompatDelegate.setDefaultNightMode(prefs.resolveLaunchNightMode())
     }
 
@@ -2193,7 +2281,45 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
     }
 
+    private fun setupHomeOnboardingSpotlight() {
+        viewModel.onboardingActive.observe(viewLifecycleOwner) { updateHomeOnboardingSpotlight() }
+        viewModel.onboardingStepIndex.observe(viewLifecycleOwner) { updateHomeOnboardingSpotlight() }
+    }
+
+    private fun updateHomeOnboardingSpotlight() {
+        val host = activity as? MainActivity ?: return
+        val root = _binding?.root ?: return
+        val show = viewModel.isOnboardingActive() &&
+            viewModel.currentOnboardingStep().requiredAction == OnboardingAction.OPEN_SETTINGS
+        if (!show) {
+            host.clearOnboardingSpotlightFrom(root)
+            return
+        }
+        binding.mainLayout.post {
+            if (_binding == null || !viewModel.isOnboardingActive()) return@post
+            if (viewModel.currentOnboardingStep().requiredAction != OnboardingAction.OPEN_SETTINGS) return@post
+            (activity as? MainActivity)?.showOnboardingSpotlight(binding.mainLayout, ::homeGestureBounds)
+        }
+    }
+
+    private fun homeGestureBounds(view: View): RectF {
+        val loc = IntArray(2)
+        view.getLocationOnScreen(loc)
+        val inset = 16.dpToPx().toFloat()
+        val card = (activity as? MainActivity)?.onboardingCardHeight()?.takeIf { it > 0 }
+            ?: (resources.displayMetrics.heightPixels * 0.42f).toInt()
+        val top = loc[1] + inset
+        val bottom = (resources.displayMetrics.heightPixels - card - 12.dpToPx()).toFloat()
+        return RectF(
+            loc[0] + inset,
+            top,
+            loc[0] + view.width - inset,
+            bottom.coerceAtLeast(top + 1f),
+        )
+    }
+
     override fun onDestroyView() {
+        safeBinding?.root?.let { (activity as? MainActivity)?.clearOnboardingSpotlightFrom(it) }
         topCornerStackRunnable?.let { safeBinding?.mainLayout?.removeCallbacks(it) }
         overlayLayoutRunnable?.let { safeBinding?.mainLayout?.removeCallbacks(it) }
         topCornerStackRunnable = null

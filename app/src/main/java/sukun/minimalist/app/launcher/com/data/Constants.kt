@@ -17,6 +17,11 @@ object Constants {
         const val KEYBOARD = "KEYBOARD"
         const val DIGITAL_WELLBEING = "DIGITAL_WELLBEING"
         const val PRAYER_MARKED = "PRAYER_MARKED"
+        const val FEATURE_NUDGE_FOCUS = "FEATURE_NUDGE_FOCUS"
+        const val FEATURE_NUDGE_PRAYER = "FEATURE_NUDGE_PRAYER"
+        const val FEATURE_NUDGE_WEATHER = "FEATURE_NUDGE_WEATHER"
+        const val FEATURE_NUDGE_SCREEN_TIME = "FEATURE_NUDGE_SCREEN_TIME"
+        const val FEATURE_NUDGE_SIGN_IN = "FEATURE_NUDGE_SIGN_IN"
     }
 
     object UserState {
@@ -252,6 +257,15 @@ object Constants {
     const val EXTRA_PRAYER_KEY = "extra_prayer_key"
     const val EXTRA_PRAYER_TIME_MILLIS = "extra_prayer_time_millis"
     const val EXTRA_PRAYER_LABEL = "extra_prayer_label"
+
+    const val DEFERRED_LOCATION_PROMPT_DAYS = 5
+    /** Foreground time in Sukun before each reminder, in order. */
+    const val FEATURE_NUDGE_FOCUS_MILLIS = 15 * ONE_MINUTE_IN_MILLIS
+    const val FEATURE_NUDGE_PRAYER_MILLIS = 45 * ONE_MINUTE_IN_MILLIS
+    const val FEATURE_NUDGE_WEATHER_MILLIS = 2 * ONE_HOUR_IN_MILLIS
+    const val FEATURE_NUDGE_SCREEN_TIME_MILLIS = 4 * ONE_HOUR_IN_MILLIS
+    const val FEATURE_NUDGE_SIGN_IN_MILLIS = 6 * ONE_HOUR_IN_MILLIS
+    const val FEATURE_NUDGE_GAP_DAYS = 1
 
     const val MAX_HOME_APPS_SMALL = 7
     const val MAX_HOME_APPS_MEDIUM = 6

@@ -58,13 +58,16 @@ class AppDrawerFragment : Fragment() {
     private var flag = Constants.FLAG_LAUNCH_APP
     private var canRename = false
     private var currentAppList: List<AppModel>? = null
-    private var currentRecentPackages: List<String> = emptyList()
     private var currentPrivateSpaceApps: List<AppModel>? = null
     private var currentPrivateSpaceLocked: Boolean = true
     private var currentPrivateSpaceAvailable: Boolean = false
     private var combineListRunnable: Runnable? = null
     private var listBottomPadding = 0
+    private var systemBottomInset = 0
+    private var imeBottomInset = 0
     private var searchExpanded = false
+    private var openedSearchForTour = false
+    private var hideSpotlightAttempts = 0
     private val drawerLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
         updateKeyboardOverlapPadding()
         alignFastScrollerToAllApps()
@@ -101,9 +104,9 @@ class AppDrawerFragment : Fragment() {
         initAdapter()
         initSearch()
         initObservers()
+        setupDrawerOnboardingSpotlight()
         initClickListeners()
         currentAppList = viewModel.appList.value
-        currentRecentPackages = viewModel.recentAppPackages.value ?: emptyList()
         if (currentAppList.isNullOrEmpty()) {
             viewModel.getAppList()
         } else {
@@ -152,14 +155,10 @@ class AppDrawerFragment : Fragment() {
         listBottomPadding = binding.recyclerView.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            systemBottomInset = sys.bottom
+            imeBottomInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
             view.setPadding(view.paddingLeft, sys.top, view.paddingRight, view.paddingBottom)
-            val fab = binding.drawerActions
-            val fabBottom = sys.bottom + 16.dpToPx()
-            val lp = fab.layoutParams as? android.view.ViewGroup.MarginLayoutParams
-            if (lp != null && lp.bottomMargin != fabBottom) {
-                lp.bottomMargin = fabBottom
-                fab.layoutParams = lp
-            }
+            updateKeyboardOverlapPadding()
             insets
         }
         binding.root.viewTreeObserver.addOnGlobalLayoutListener(drawerLayoutListener)
@@ -168,9 +167,7 @@ class AppDrawerFragment : Fragment() {
 
     private fun updateKeyboardOverlapPadding() {
         val drawer = _binding ?: return
-        val visible = Rect()
-        drawer.root.getWindowVisibleDisplayFrame(visible)
-        val overlap = (drawer.root.rootView.height - visible.bottom).coerceAtLeast(0)
+        val overlap = keyboardOverlapPx(drawer.root)
         val bottom = listBottomPadding + overlap
         if (drawer.recyclerView.paddingBottom != bottom) {
             drawer.recyclerView.setPadding(
@@ -188,6 +185,38 @@ class AppDrawerFragment : Fragment() {
             alignFastScrollerToAllApps()
             scrollSearchResultsToTop()
         }
+        val fabBottom = maxOf(systemBottomInset, overlap) + 16.dpToPx()
+        val lp = drawer.drawerActions.layoutParams as? android.view.ViewGroup.MarginLayoutParams
+        if (lp != null && lp.bottomMargin != fabBottom) {
+            lp.bottomMargin = fabBottom
+            drawer.drawerActions.layoutParams = lp
+        }
+    }
+
+    /**
+     * Pixels of this drawer that sit behind the keyboard.
+     * Returns 0 when the keyboard is closed, or when the window has already
+     * resized so the drawer ends above the keyboard.
+     */
+    private fun keyboardOverlapPx(root: View): Int {
+        if (root.height <= 0) return 0
+        val screenHeight = root.rootView.height
+        if (screenHeight <= 0) return 0
+
+        val location = IntArray(2)
+        root.getLocationOnScreen(location)
+        val rootBottom = location[1] + root.height
+
+        var keyboardTop = screenHeight
+        if (imeBottomInset > 0) {
+            keyboardTop = minOf(keyboardTop, screenHeight - imeBottomInset)
+        }
+        val visible = Rect()
+        root.getWindowVisibleDisplayFrame(visible)
+        if (visible.bottom in 1 until screenHeight) {
+            keyboardTop = minOf(keyboardTop, visible.bottom)
+        }
+        return (rootBottom - keyboardTop).coerceAtLeast(0)
     }
 
     private fun scrollSearchResultsToTop() {
@@ -214,7 +243,7 @@ class AppDrawerFragment : Fragment() {
                         viewModel.reportOnboardingAction(OnboardingAction.SEARCH_APPS)
                         binding.recyclerView.layoutAnimation = null
                     }
-                    adapter.filter.filter(newText)
+                    adapter.applyQuery(newText)
                     updateFastScroller()
                     binding.appRename.visibility =
                         if (canRename && newText.isNotBlank()) View.VISIBLE else View.GONE
@@ -239,7 +268,7 @@ class AppDrawerFragment : Fragment() {
         val drawer = _binding ?: return
         searchExpanded = true
         drawer.searchIcon.isVisible = false
-        drawer.drawerSettings.isVisible = false
+        drawer.drawerSettings.isVisible = true
         drawer.searchContainer.isVisible = true
         if (showKeyboard) drawer.search.showKeyboard()
     }
@@ -323,7 +352,7 @@ class AppDrawerFragment : Fragment() {
                 }
                 viewModel.getAppList()
             },
-            appHideListener = { appModel, position ->
+            appHideListener = { appModel, _ ->
                 if (!PremiumAccess.hasPremiumAccess(prefs)) {
                     (requireActivity() as? MainActivity)?.showUpgradeDialog()
                     return@AppDrawerAdapter
@@ -332,10 +361,6 @@ class AppDrawerFragment : Fragment() {
                     requireContext().showToast("Hiding pinned shortcuts is not supported")
                     return@AppDrawerAdapter
                 }
-                adapter.appFilteredList.removeAt(position)
-                adapter.notifyItemRemoved(position)
-                adapter.appsList.remove(appModel)
-
                 val newSet = mutableSetOf<String>()
                 newSet.addAll(prefs.hiddenApps)
                 if (flag == Constants.FLAG_HIDDEN_APPS) {
@@ -350,7 +375,11 @@ class AppDrawerFragment : Fragment() {
                 if (prefs.firstHide) {
                     binding.search.hideKeyboard()
                     prefs.firstHide = false
-                    viewModel.showDialog.postValue(Constants.Dialog.HIDDEN)
+                    val hideTourShowing = viewModel.isOnboardingActive() &&
+                        viewModel.currentOnboardingStep().requiredAction == OnboardingAction.OPEN_APP_DRAWER
+                    if (!hideTourShowing) {
+                        viewModel.showDialog.postValue(Constants.Dialog.HIDDEN)
+                    }
                     findNavController().navigate(R.id.action_appListFragment_to_settingsFragment2)
                 }
                 viewModel.getAppList()
@@ -443,10 +472,6 @@ class AppDrawerFragment : Fragment() {
                 currentAppList = it
                 scheduleUpdateCombinedAppList()
             }
-            viewModel.recentAppPackages.observe(viewLifecycleOwner) {
-                currentRecentPackages = it ?: emptyList()
-                scheduleUpdateCombinedAppList()
-            }
             if (flag == Constants.FLAG_LAUNCH_APP) {
                 viewModel.privateSpaceAvailable.observe(viewLifecycleOwner) {
                     currentPrivateSpaceAvailable = it
@@ -479,25 +504,14 @@ class AppDrawerFragment : Fragment() {
             ?.filter { it !is AppModel.SectionHeader }
             ?: return
         val combined = mutableListOf<AppModel>()
+        val query = binding.search.query?.toString().orEmpty().trim()
 
-        if (flag == Constants.FLAG_LAUNCH_APP) {
-            val firstByPackage = apps
-                .filterIsInstance<AppModel.App>()
-                .groupBy { it.appPackage }
-                .mapValues { (_, items) -> items.first() }
-
-            val recentApps = currentRecentPackages
-                .distinct() // Ensure package list is unique
-                .mapNotNull { pkg -> firstByPackage[pkg] }
-                .distinctBy { it.appPackage } // Ensure AppModel list is unique
-
-            if (recentApps.isNotEmpty()) {
-                combined.addAll(recentApps)
-                combined.add(AppModel.SectionHeader("", "all_apps_gap"))
-            }
-        }
         val uniqueApps = apps.distinctBy {
-            if (it is AppModel.App) it.appPackage + it.user.toString() else it.appLabel
+            when (it) {
+                is AppModel.App -> it.appPackage + "\u0000" + it.user.toString()
+                is AppModel.PinnedShortcut -> it.shortcutId + "\u0000" + it.user.toString()
+                else -> it.appLabel
+            }
         }
         combined.addAll(withLetterHeaders(uniqueApps))
 
@@ -510,11 +524,7 @@ class AppDrawerFragment : Fragment() {
 
         adapter.updateCooledOff(viewModel.cooldownManager.getCooledOffPackages())
         adapter.updateMasked(maskedPackagesFrom(combined))
-        adapter.setAppList(combined)
-        val query = binding.search.query?.toString().orEmpty().trim()
-        if (query.isNotEmpty()) {
-            adapter.filter.filter(query)
-        }
+        adapter.setAppList(combined, query)
     }
 
     private fun withLetterHeaders(apps: List<AppModel>): List<AppModel> {
@@ -822,8 +832,100 @@ class AppDrawerFragment : Fragment() {
     override fun onDestroyView() {
         combineListRunnable?.let { _binding?.root?.removeCallbacks(it) }
         combineListRunnable = null
+        _binding?.recyclerView?.removeCallbacks(hideSpotlightRunnable)
+        _binding?.root?.let { (activity as? MainActivity)?.clearOnboardingSpotlightFrom(it) }
         _binding?.root?.viewTreeObserver?.removeOnGlobalLayoutListener(drawerLayoutListener)
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun setupDrawerOnboardingSpotlight() {
+        viewModel.onboardingActive.observe(viewLifecycleOwner) { syncDrawerOnboardingSpotlight() }
+        viewModel.onboardingStepIndex.observe(viewLifecycleOwner) { syncDrawerOnboardingSpotlight() }
+    }
+
+    private fun syncDrawerOnboardingSpotlight() {
+        if (_binding == null) return
+        if (!viewModel.isOnboardingActive()) {
+            releaseDrawerTourSearch()
+            (activity as? MainActivity)?.clearOnboardingSpotlightFrom(binding.root)
+            return
+        }
+        when (viewModel.currentOnboardingStep().requiredAction) {
+            OnboardingAction.SEARCH_APPS -> showSearchSpotlight()
+            OnboardingAction.OPEN_APP_DRAWER -> {
+                releaseDrawerTourSearch()
+                showHideSpotlight()
+            }
+            else -> {
+                releaseDrawerTourSearch()
+                (activity as? MainActivity)?.clearOnboardingSpotlightFrom(binding.root)
+            }
+        }
+    }
+
+    private fun showSearchSpotlight() {
+        val drawer = _binding ?: return
+        if (!drawer.searchContainer.isVisible) {
+            expandSearch(showKeyboard = false)
+            openedSearchForTour = true
+        }
+        drawer.searchContainer.post {
+            if (_binding == null || !isDrawerTourStep(OnboardingAction.SEARCH_APPS)) return@post
+            (activity as? MainActivity)?.showOnboardingSpotlight(drawer.searchContainer)
+        }
+    }
+
+    private fun showHideSpotlight() {
+        hideSpotlightAttempts = 0
+        val drawer = _binding ?: return
+        drawer.recyclerView.removeCallbacks(hideSpotlightRunnable)
+        drawer.recyclerView.post(hideSpotlightRunnable)
+    }
+
+    private val hideSpotlightRunnable = Runnable { showHideSpotlightNow() }
+
+    private fun showHideSpotlightNow() {
+        val drawer = _binding ?: return
+        if (!isDrawerTourStep(OnboardingAction.OPEN_APP_DRAWER)) return
+        val row = firstAppRow(drawer.recyclerView)
+        if (row == null) {
+            if (hideSpotlightAttempts < 20) {
+                hideSpotlightAttempts++
+                drawer.recyclerView.postDelayed(hideSpotlightRunnable, 100)
+            }
+            return
+        }
+        hideSpotlightAttempts = 0
+        scrollDrawerRowAboveCard(row)
+        (activity as? MainActivity)?.showOnboardingSpotlight(row)
+    }
+
+    private fun firstAppRow(recycler: RecyclerView): View? {
+        for (i in 0 until recycler.childCount) {
+            val row = recycler.getChildAt(i).findViewById<View>(R.id.appRow) ?: continue
+            if (row.visibility == View.VISIBLE && row.width > 0 && row.height > 0) return row
+        }
+        return null
+    }
+
+    private fun scrollDrawerRowAboveCard(row: View) {
+        val cardHeight = (activity as? MainActivity)?.onboardingCardHeight()?.takeIf { it > 0 } ?: return
+        val loc = IntArray(2)
+        row.getLocationOnScreen(loc)
+        val bottom = loc[1] + row.height
+        val allowed = resources.displayMetrics.heightPixels - cardHeight - 12.dpToPx()
+        if (bottom > allowed) binding.recyclerView.scrollBy(0, bottom - allowed)
+    }
+
+    private fun isDrawerTourStep(action: OnboardingAction): Boolean {
+        return viewModel.isOnboardingActive() &&
+            viewModel.currentOnboardingStep().requiredAction == action
+    }
+
+    private fun releaseDrawerTourSearch() {
+        if (!openedSearchForTour) return
+        openedSearchForTour = false
+        if (_binding != null) collapseSearch()
     }
 }

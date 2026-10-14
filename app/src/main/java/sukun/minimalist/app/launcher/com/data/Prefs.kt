@@ -59,6 +59,7 @@ class Prefs(context: Context) {
     private val SCREEN_TIME_LAST_UPDATED = "SCREEN_TIME_LAST_UPDATED"
     private val SHOW_SCREEN_TIME_ON_HOME = "SHOW_SCREEN_TIME_ON_HOME"
     private val USAGE_ACCESS_PROMPT_SHOWN = "USAGE_ACCESS_PROMPT_SHOWN"
+    private val DEFERRED_LOCATION_PROMPT_PENDING = "DEFERRED_LOCATION_PROMPT_PENDING"
     private val LAUNCHER_RESTART_TIMESTAMP = "LAUNCHER_RECREATE_TIMESTAMP"
     private val SHOWN_ON_DAY_OF_YEAR = "SHOWN_ON_DAY_OF_YEAR"
     private val HOME_BUTTON_SHOW_RECENTS = "HOME_BUTTON_SHOW_RECENTS"
@@ -203,6 +204,9 @@ class Prefs(context: Context) {
 
     private val SIGN_IN_PROMPT_SHOWN = "SIGN_IN_PROMPT_SHOWN"
     private val PREMIUM_NUDGE_SHOWN = "PREMIUM_NUDGE_SHOWN"
+    private val FEATURE_NUDGE_SHOWN_IDS = "FEATURE_NUDGE_SHOWN_IDS"
+    private val FEATURE_NUDGE_LAST_SHOWN = "FEATURE_NUDGE_LAST_SHOWN"
+    private val FOREGROUND_ACTIVE_MILLIS = "FOREGROUND_ACTIVE_MILLIS"
     private val TRIAL_REMINDER_15D = "TRIAL_REMINDER_15D"
     private val TRIAL_REMINDER_7D = "TRIAL_REMINDER_7D"
     private val TRIAL_REMINDER_3D = "TRIAL_REMINDER_3D"
@@ -263,6 +267,19 @@ class Prefs(context: Context) {
     var premiumNudgeShown: Boolean
         get() = prefs.getBoolean(PREMIUM_NUDGE_SHOWN, false)
         set(value) = prefs.edit { putBoolean(PREMIUM_NUDGE_SHOWN, value).apply() }
+
+    var featureNudgeShownIds: Set<String>
+        get() = prefs.getStringSet(FEATURE_NUDGE_SHOWN_IDS, emptySet()) ?: emptySet()
+        set(value) = prefs.edit { putStringSet(FEATURE_NUDGE_SHOWN_IDS, value.toSet()).apply() }
+
+    var featureNudgeLastShown: Long
+        get() = getLongCompat(FEATURE_NUDGE_LAST_SHOWN, 0L)
+        set(value) = prefs.edit { putLong(FEATURE_NUDGE_LAST_SHOWN, value).apply() }
+
+    /** Time Sukun has been in the foreground, in milliseconds. */
+    var foregroundActiveMillis: Long
+        get() = getLongCompat(FOREGROUND_ACTIVE_MILLIS, 0L)
+        set(value) = prefs.edit { putLong(FOREGROUND_ACTIVE_MILLIS, value).apply() }
 
     var trialReminder15dShown: Boolean
         get() = prefs.getBoolean(TRIAL_REMINDER_15D, false)
@@ -397,8 +414,28 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(WALLPAPER_PENDING_SYNC, value).apply() }
 
     var homeAppsNum: Int
-        get() = prefs.getInt(HOME_APPS_NUM, 4).coerceIn(0, maxHomeAppsAllowed())
+        get() {
+            val max = maxHomeAppsAllowed()
+            val stored = if (prefs.contains(HOME_APPS_NUM)) {
+                prefs.getInt(HOME_APPS_NUM, 0)
+            } else {
+                // Older installs showed four empty slots without saving a count.
+                // Keep that count only when the person actually chose apps for those slots.
+                highestFilledHomeAppSlot()
+            }
+            return stored.coerceIn(0, max)
+        }
         set(value) = prefs.edit { putInt(HOME_APPS_NUM, value.coerceIn(0, maxHomeAppsAllowed())).apply() }
+
+    fun hasAnyHomeApp(): Boolean = highestFilledHomeAppSlot() > 0
+
+    /** Highest slot that holds a chosen app. 0 when every slot is empty. */
+    fun highestFilledHomeAppSlot(): Int {
+        for (slot in 8 downTo 1) {
+            if (getAppPackage(slot).isNotBlank() || getIsShortcut(slot)) return slot
+        }
+        return 0
+    }
 
     fun isLargeOrXLargeTextSize(): Boolean =
         textSizeScale > Constants.TEXT_SIZE_MEDIUM_MAX_SCALE
@@ -511,7 +548,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putLong(SCREEN_TIME_LAST_UPDATED, value).apply() }
 
     var showScreenTimeOnHome: Boolean
-        get() = prefs.getBoolean(SHOW_SCREEN_TIME_ON_HOME, true)
+        get() = prefs.getBoolean(SHOW_SCREEN_TIME_ON_HOME, false)
         set(value) = prefs.edit { putBoolean(SHOW_SCREEN_TIME_ON_HOME, value).apply() }
 
     fun hasShowScreenTimeOnHomePref(): Boolean = prefs.contains(SHOW_SCREEN_TIME_ON_HOME)
@@ -519,6 +556,11 @@ class Prefs(context: Context) {
     var usageAccessPromptShown: Boolean
         get() = prefs.getBoolean(USAGE_ACCESS_PROMPT_SHOWN, false)
         set(value) = prefs.edit { putBoolean(USAGE_ACCESS_PROMPT_SHOWN, value).apply() }
+
+    /** Location was denied during setup; ask once more after [Constants.DEFERRED_LOCATION_PROMPT_DAYS]. */
+    var deferredLocationPromptPending: Boolean
+        get() = prefs.getBoolean(DEFERRED_LOCATION_PROMPT_PENDING, false)
+        set(value) = prefs.edit { putBoolean(DEFERRED_LOCATION_PROMPT_PENDING, value).apply() }
 
     var launcherRestartTimestamp: Long
         get() = getLongCompat(LAUNCHER_RESTART_TIMESTAMP, 0L)
@@ -550,7 +592,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putBoolean(FOCUS_MODE_HIDE_STATUS_BAR, value).apply() }
 
     var showFocusOnHome: Boolean
-        get() = prefs.getBoolean(SHOW_FOCUS_ON_HOME, true)
+        get() = prefs.getBoolean(SHOW_FOCUS_ON_HOME, false)
         set(value) = prefs.edit { putBoolean(SHOW_FOCUS_ON_HOME, value).apply() }
 
     var focusIntroShown: Boolean
@@ -562,7 +604,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putString(DOUBLE_TAP_ACTION, value).apply() }
 
     var showWeatherOnHome: Boolean
-        get() = prefs.getBoolean(SHOW_WEATHER_ON_HOME, true)
+        get() = prefs.getBoolean(SHOW_WEATHER_ON_HOME, false)
         set(value) = prefs.edit { putBoolean(SHOW_WEATHER_ON_HOME, value).apply() }
 
     var weatherUnits: String
@@ -606,7 +648,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit { putLong(WEATHER_LAST_UPDATED, value).apply() }
 
     var showPrayerOnHome: Boolean
-        get() = prefs.getBoolean(SHOW_PRAYER_ON_HOME, true)
+        get() = prefs.getBoolean(SHOW_PRAYER_ON_HOME, false)
         set(value) = prefs.edit { putBoolean(SHOW_PRAYER_ON_HOME, value).apply() }
 
     var isProUser: Boolean
@@ -1592,6 +1634,9 @@ class Prefs(context: Context) {
             "WALLPAPER_PENDING_SYNC",
             "LAST_WALLPAPER_UPDATE_TIME",
             "PREMIUM_NUDGE_SHOWN",
+            "FEATURE_NUDGE_SHOWN_IDS",
+            "FEATURE_NUDGE_LAST_SHOWN",
+            "FOREGROUND_ACTIVE_MILLIS",
             "TRIAL_REMINDER_15D",
             "TRIAL_REMINDER_7D",
             "TRIAL_REMINDER_3D",

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Sukun Minimalistic Launcher</string>
+    <string name="app_name" translatable="false">Sukun Minimalist Launcher</string>
     <string name="github" translatable="false">Github</string>
     <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
     <string name="recents_layout_description" translatable="false">recents layout description to be used a unique id to show recent apps</string>
@@ -38,32 +38,41 @@
     <string name="turn_off">Turn off</string>
     <string name="privacy">Privacy</string>
     <string name="privacy_notice_title">Your data stays with you</string>
-    <string name="privacy_notice_message">Sukun does not store or share your personal data on our servers.\n\nEverything stays on this device. If you sign in, your backup stays in your own Google account.</string>
+    <string name="privacy_notice_message">Sukun does not collect your personal data or store it on any server.\n\nEverything stays on this device. If you sign in, your backup is saved in your own Google account.</string>
     <string name="continue_action">Continue</string>
-    <string name="first_run_hold_line">Press and hold. That\'s the key to remember.</string>
+    <string name="first_run_hold_line">Press and hold anywhere on the home screen to open settings. That\'s the one thing to remember.</string>
     <string name="setup_wake_title">When do you wake up?</string>
     <string name="setup_wake_message">Mindful Morning starts at this time. Distracting apps stay out of reach so you begin the day with focus.</string>
     <string name="setup_wake_set_time">Set time</string>
     <string name="setup_wake_use_default">Use 6:00 AM</string>
-    <string name="setup_rest_title">When do you rest?</string>
-    <string name="setup_rest_message">This is the end of your day on the clock ring. After this hour the ring is complete.</string>
-    <string name="setup_home_apps_step_title">%1$s · %2$d of %3$d</string>
-    <string name="setup_home_apps_social_title">Social</string>
-    <string name="setup_home_apps_social_message">Pick one social app for your home screen.</string>
-    <string name="setup_home_apps_finance_title">Finance</string>
-    <string name="setup_home_apps_finance_message">Pick one finance app for your home screen.</string>
-    <string name="setup_home_apps_communication_title">Communication</string>
-    <string name="setup_home_apps_communication_message">Pick one messaging or calling app for your home screen.</string>
-    <string name="setup_home_apps_games_title">Games</string>
-    <string name="setup_home_apps_games_message">Pick one game for your home screen, or skip if you would rather not pin a game.</string>
-    <string name="setup_home_apps_productivity_title">Productivity</string>
-    <string name="setup_home_apps_productivity_message">Pick one productivity app to fill that home slot instead.</string>
-    <string name="setup_home_apps_fallback">None of your apps matched this category. Pick any app for this slot.</string>
+    <string name="setup_rest_title">When does your day end?</string>
+    <string name="setup_rest_message">Your home screen clock shows a ring that fills up as the day goes on. It will be full at this time.</string>
+    <string name="setup_home_apps_title">Pick your most-used apps</string>
+    <string name="setup_home_apps_message">Choose up to %1$d apps for your home screen. They appear in the order you pick them.</string>
+    <string name="setup_home_apps_search_hint">Search apps</string>
+    <string name="setup_home_apps_continue">Continue (%1$d/%2$d)</string>
+    <string name="setup_home_apps_limit">You can add up to %1$d apps.</string>
+    <string name="home_app_add">Add an app to the home screen</string>
+    <string name="home_app_add_message">Add your most frequently used apps here.</string>
+    <string name="home_app_add_action">Add apps</string>
+    <string name="deferred_location_title">Show prayer times and weather?</string>
+    <string name="deferred_location_message">Allow location so Sukun can show prayer times and the weather for where you are. Your location stays on this device.</string>
+    <string name="deferred_location_allow">Allow location</string>
+    <string name="nudge_focus_title">Work without distraction</string>
+    <string name="nudge_focus_message">Struggling to stay focused while you work? Sukun can send you home from other apps so you can work without distraction.</string>
+    <string name="nudge_weather_title">See the weather</string>
+    <string name="nudge_weather_message">Sukun can show the current weather on your home screen. This turns on weather only.</string>
+    <string name="nudge_prayer_title">Prayer times</string>
+    <string name="nudge_prayer_message">Sukun can show the next prayer on your home screen. This turns on prayer times only.</string>
+    <string name="nudge_screen_time_title">Screen time</string>
+    <string name="nudge_screen_time_message">Sukun can show how much time you spend on your phone today. No usage data leaves this device.</string>
+    <string name="nudge_sign_in_title">Back up your settings</string>
+    <string name="nudge_sign_in_message">Sign in with Google to back up your settings to your own Drive.</string>
     <string name="setup_weather_title">Show weather on Home?</string>
     <string name="setup_weather_message">Turn this on to see the weather on your home screen. Location is used only for weather and prayer times, and it stays on this device.</string>
     <string name="location_permission_title">Location</string>
     <string name="location_permission_message">Location is required for weather and prayer times. Sukun does not send it to our servers.</string>
-    <string name="location_city_confirm_message">Are you spending your life in the beautiful city of %1$s</string>
+    <string name="location_city_confirm_message">Is %1$s your city? Sukun uses it for prayer times and weather.</string>
     <string name="location_city_confirm_action">Confirm</string>
     <string name="share">Share</string>
     <string name="share_now">Share now</string>
@@ -115,7 +124,7 @@
     <string name="account">Account</string>
     <string name="skip">Skip</string>
     <string name="sign_in_with_google">Sign in with Google</string>
-    <string name="sign_in_subtitle">Sign in with your Google account to personalize your experience.</string>
+    <string name="sign_in_subtitle">Sign in with Google to back up your settings to your own Google Drive. You can skip this and sign in later.</string>
     <string name="sign_out">Sign out</string>
     <string name="sign_out_confirmation">Are you sure you want to sign out?</string>
     <string name="delete_account">Delete account &amp; data</string>
@@ -127,15 +136,15 @@
     <string name="signed_in_as">Signed in as %1$s</string>
     <string name="signed_in_settings_restored">Welcome back! Settings restored for %1$s</string>
     <string name="signed_out">Signed out</string>
-    <string name="sign_in_failed">Sign in failed. Please try again.</string>
+    <string name="sign_in_failed">Sign-in failed. Please try again.</string>
     <string name="sign_in_reauth_needed">Google sign-in did not finish. Complete 2-step verification if Google asks — you do not need to turn 2-step off — then tap Sign in again.</string>
     <string name="sign_in_no_accounts">Could not open Google Sign-In. Make sure a Gmail account is added in Android Settings → Google, then try again. Xiaomi accounts cannot be used to sign in.</string>
-    <string name="sign_in_not_configured">Sign in is not configured yet.</string>
+    <string name="sign_in_not_configured">Sign-in is not set up yet.</string>
     <string name="sign_in_developer_error">Google Sign-In is not set up for this install.\n\nPackage: sukun.minimalist.app.launcher.com\nSHA-1: %1$s\n\nAdd that SHA-1 in Firebase Console → Project settings → Your apps → SHA certificate fingerprints. Android Studio debug, the upload keystore, and Play App Signing each have a different fingerprint.</string>
     <string name="sign_in_play_services">Google Play services is unavailable or outdated. Update it from the Play Store and try again.</string>
     <string name="sign_in_opening">Opening Google sign-in…</string>
     <string name="signed_in_backup_saved">Signed in as %1$s. Your backup is saved to Google Drive.</string>
-    <string name="signed_in_sync_failed">Signed in as %1$s, but Google Drive backup failed. Try Export while signed in.</string>
+    <string name="signed_in_sync_failed">Signed in as %1$s, but the Google Drive backup failed. You can back up later from Settings → Export.</string>
     <string name="account_sync_pending">Settings not backed up yet — stay signed in</string>
     <string name="account_sync_last">Backed up %1$s</string>
     <string name="account_sync_just_now">just now</string>
@@ -146,7 +155,7 @@
     <string name="backup_info_title">Backup &amp; sync</string>
     <string name="backup_info_message">Save your Sukun settings, home apps, reminders, and analytics.\n\n• Upload arrow — export a backup file (and sync to Google Drive if signed in)\n• Download arrow — restore from a backup file\n• Sign in with Google — automatically sync the latest backup across your devices\n\nPremium purchase stays on each device and is not included in backups.</string>
     <string name="backup_info_content_description">Backup help</string>
-    <string name="sign_in_cancelled">Sign in cancelled.</string>
+    <string name="sign_in_cancelled">Sign-in cancelled.</string>
     <string name="sign_in_timed_out">Google sign-in timed out. Check your connection and try again.</string>
     <string name="focus_mode_show_on_home">Show on home</string>
     <string name="focus_mode_lock_notifications">Lock notifications</string>
@@ -208,6 +217,7 @@
     <string name="premium_info_title">Premium</string>
     <string name="premium_info_content_description">Premium help</string>
     <string name="premium_trial_welcome">Try all Premium features free for 30 days.</string>
+    <string name="premium_trial_started">Your 30-day free Premium trial has started.</string>
     <string name="premium_nudge_title">Keep Sukun Premium?</string>
     <string name="premium_nudge_message">You have been using Sukun for 15 days. Upgrade to Premium to keep Premium features after the trial.</string>
     <string name="premium_nudge_sign_in_message">Sign in with Google so your setup is saved to your account.</string>
@@ -345,13 +355,18 @@
     <string name="keyboard_message">Hi, keyboard is the fastest way to find and launch apps in Sukun. Can we request you to keep this On for a few more days and then decide?
         \n\nThe choice is always yours.</string>
     <string name="digital_wellbeing_message">If you want to set time limits for certain apps, Digital Wellbeing feature of Android can help you do it.           Please search for Digital Wellbeing in your phone settings and enable it.</string>
-    <string name="app_usage_message">To show/hide your screen time on the home screen, please allow or disallow the app usage permission.
-        \n\nNote: No app usage data is collected. Everything is processed on your device.</string>
+    <string name="app_usage_message">To show your screen time on the home screen, allow Usage access for Sukun.\n\nNo usage data is collected. Everything stays on your device.</string>
+    <string name="allow_usage_access">Allow</string>
     <string name="pro_message"></string>
     <string name="wallpaper_message">Sukun offers beautiful new wallpapers daily. Give your homescreen a fresh new look every day, for free!
         \n\nWant to try it?</string>
-    <string name="accessibility_service_description">Sukun uses the accessibility service only to lock the screen on double tap, open Recents from the Home button, and keep Focus mode from opening blocked apps. This stays on your device. Sukun does not collect or share any data through it.</string>
+    <string name="accessibility_service_description">Sukun uses the accessibility service only to open Recents from the Home button and keep Focus mode from opening blocked apps. This stays on your device. Sukun does not collect or share any data through it.</string>
     <string name="accessibility_disclosure_title">Why Sukun needs accessibility</string>
+    <string name="accessibility_consent_intro">Sukun uses Android\'s accessibility service only for these features:</string>
+    <string name="accessibility_consent_recents">• Home button — opens recent apps</string>
+    <string name="accessibility_consent_focus">• Focus mode — leaves a blocked app and returns home</string>
+    <string name="accessibility_consent_data">This stays on your device. Sukun does not collect or share any personal or sensitive data through this service.</string>
+    <string name="accessibility_consent_agree">Agree and enable</string>
     <string name="support_sukun_for_free">Support Sukun for free by using our Amazon affiliate link.</string>
     <string name="support_sukun_message">Every time you buy something using our link, we get a small commission. Please save the link and use it whenever you shop online.\nThank you!</string>
     <string name="open">Open link</string>
@@ -393,7 +408,7 @@
     <string name="search">Search</string>
     <string name="search_apps_hint">Search apps</string>
     <string name="notifications">Notifications</string>
-    <string name="accessibility_disclosure">Sukun cannot lock your phone, show Recents, or block apps in Focus mode without Android\'s accessibility service.\n\nTurn on Sukun in Accessibility settings so these gestures work:\n\n• Double tap to lock — turns the screen off immediately\n• Home button for recent apps\n• Focus mode — keeps distracting apps from staying open\n\nThis service runs only on your device. Sukun does not collect or share any data through it.</string>
+    <string name="accessibility_disclosure">Sukun cannot show Recents or block apps in Focus mode without Android\'s accessibility service.\n\nTurn on Sukun in Accessibility settings so these work:\n\n• Home button — opens recent apps\n• Focus mode — leaves a blocked app and returns home\n\nThis stays on your device. Sukun does not collect or share any personal or sensitive data through this service.</string>
     <string name="accept">Accept</string>
     <string name="permission">Permission</string>
     <string name="double_tap_lock">Double tap to lock</string>
@@ -486,7 +501,7 @@
     <string name="backup_drive_restore_title">Restore from Google Drive?</string>
     <string name="backup_drive_restore_message">A newer backup is available on your Google Drive. Restoring will replace settings, home apps, reminders, and analytics on this device. Premium purchase stays on this device.</string>
     <string name="backup_drive_restore_confirm">Restore</string>
-    <string name="backup_drive_restore_keep">Keep this device</string>
+    <string name="backup_drive_restore_keep">Keep current settings</string>
     <string name="backup_drive_restored">Drive backup restored — restarting</string>
 
     <string name="reminder_repeat_every">Repeat every</string>
@@ -553,10 +568,10 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get started</string>
     <string name="onboarding_skip_tour">Skip tour</string>
+    <string name="onboarding_skip">Skip</string>
     <string name="onboarding_step_counter">%1$d of %2$d</string>
     <string name="onboarding_back">Back</string>
     <string name="onboarding_action_start"></string>
-    <string name="onboarding_action_home_apps"></string>
     <string name="onboarding_action_launcher"></string>
     <string name="onboarding_action_settings"></string>
     <string name="onboarding_action_prayer"></string>
@@ -564,6 +579,7 @@
     <string name="onboarding_action_screen_time"></string>
     <string name="onboarding_action_language"></string>
     <string name="onboarding_action_appearance"></string>
+    <string name="onboarding_action_text_size"></string>
     <string name="onboarding_action_mindful_morning"></string>
     <string name="onboarding_action_hide_apps"></string>
     <string name="onboarding_action_search_apps"></string>
@@ -585,32 +601,31 @@
     <string name="onboarding_start_tour">Start tour</string>
     <string name="onboarding_finish">Finish</string>
     <string name="onboarding_welcome_title">Welcome to Sukun</string>
-    <string name="onboarding_welcome_body"></string>
-    <string name="onboarding_home_apps_title">Tap a slot to add an app</string>
-    <string name="onboarding_home_apps_body"></string>
+    <string name="onboarding_welcome_body">A calm home screen that helps you use your phone with intention.</string>
     <string name="onboarding_launcher_title">Set Sukun as default</string>
-    <string name="onboarding_launcher_body"></string>
+    <string name="onboarding_launcher_body">Make Sukun your home screen so the Home button always brings you back here.</string>
     <string name="onboarding_launcher_set">Set Sukun as default</string>
     <string name="onboarding_launcher_done">Sukun is your home app.</string>
-    <string name="onboarding_settings_title">Long-press the screen</string>
-    <string name="onboarding_settings_body"></string>
-    <string name="onboarding_prayer_title">Prayer times on home</string>
-    <string name="onboarding_prayer_body"></string>
-    <string name="onboarding_focus_title">Sends you home from other apps</string>
-    <string name="onboarding_focus_body"></string>
-    <string name="onboarding_screen_time_title">Screen time on home</string>
-    <string name="onboarding_screen_time_body"></string>
+    <string name="onboarding_settings_title">Long-press to open settings</string>
+    <string name="onboarding_settings_body">Press and hold any empty space on the home screen to open settings.</string>
+    <string name="onboarding_prayer_title">Prayer times on your home screen</string>
+    <string name="onboarding_prayer_body">See the next prayer at a glance. Turn it on or off here.</string>
+    <string name="onboarding_focus_title">Focus mode</string>
+    <string name="onboarding_focus_body">When Focus mode is on, opening a blocked app sends you back to the home screen.</string>
+    <string name="onboarding_screen_time_title">Screen time on your home screen</string>
+    <string name="onboarding_screen_time_body">See how much time you spend on your phone today.</string>
     <string name="onboarding_language_title">Choose your language</string>
-    <string name="onboarding_language_body"></string>
+    <string name="onboarding_language_body">Change the language Sukun uses.</string>
     <string name="onboarding_hide_apps_title">Long-press an app to hide</string>
-    <string name="onboarding_hide_apps_body"></string>
-    <string name="onboarding_search_apps_title">Swipe up, then type</string>
-    <string name="onboarding_search_apps_body"></string>
+    <string name="onboarding_hide_apps_body">Hidden apps disappear from your app list. You can find them again by tapping Sukun at the top of Settings.</string>
+    <string name="onboarding_search_apps_title">Search your apps</string>
+    <string name="onboarding_search_apps_body">Swipe up from the home screen and start typing an app\'s name.</string>
     <string name="onboarding_appearance_title">Light or dark theme</string>
-    <string name="onboarding_appearance_body"></string>
+    <string name="onboarding_appearance_body">Pick the look that suits your eyes.</string>
+    <string name="onboarding_text_size_title">Text size</string>
+    <string name="onboarding_text_size_body">Pick a size that is easy to read. You can change it again later in Settings.</string>
     <string name="onboarding_mindful_morning_title">Hide social apps after waking</string>
-    <string name="onboarding_mindful_morning_body"></string>
+    <string name="onboarding_mindful_morning_body">Mindful Morning keeps social apps hidden for a while after you wake up.</string>
     <string name="onboarding_done_title">You\'re set</string>
     <string name="onboarding_done_body"></string>
-    <string name="onboarding_home_app_slot_chosen">App added.</string>
 </resources>

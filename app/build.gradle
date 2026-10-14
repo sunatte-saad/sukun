@@ -13,8 +13,8 @@ android {
         applicationId "sukun.minimalist.app.launcher.com"
         minSdkVersion 24
         targetSdkVersion 36
-        versionCode 113
-        versionName "v2.0.7"
+        versionCode 115
+        versionName "v2.0.9"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

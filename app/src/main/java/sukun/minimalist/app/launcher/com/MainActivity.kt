@@ -14,6 +14,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.graphics.RectF
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -39,6 +40,7 @@ import sukun.minimalist.app.launcher.com.helper.applyLauncherBrightnessForTheme
 import sukun.minimalist.app.launcher.com.helper.clearLauncherBrightnessOverride
 import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
 import sukun.minimalist.app.launcher.com.helper.hasBeenDays
+import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
 import sukun.minimalist.app.launcher.com.helper.hasBeenHours
 import sukun.minimalist.app.launcher.com.helper.hasBeenMinutes
 import sukun.minimalist.app.launcher.com.helper.isDarkThemeOn
@@ -46,13 +48,16 @@ import sukun.minimalist.app.launcher.com.helper.isDaySince
 import sukun.minimalist.app.launcher.com.helper.isDefaultLauncher
 import sukun.minimalist.app.launcher.com.helper.isEinkDisplay
 import sukun.minimalist.app.launcher.com.helper.isNetworkAvailable
+import sukun.minimalist.app.launcher.com.helper.isAccessServiceEnabled
 import sukun.minimalist.app.launcher.com.helper.isSukunDefault
+import sukun.minimalist.app.launcher.com.helper.showAccessibilityDisclosure
 import sukun.minimalist.app.launcher.com.helper.LocaleHelper
 import sukun.minimalist.app.launcher.com.helper.FirstRunSetup
 import sukun.minimalist.app.launcher.com.helper.FirstRunHomeAppsSetup
-import sukun.minimalist.app.launcher.com.helper.missingSukunSetupPermissions
+import sukun.minimalist.app.launcher.com.data.FeatureNudge
+import sukun.minimalist.app.launcher.com.helper.HourlyChimeScheduler
+import sukun.minimalist.app.launcher.com.helper.missingNotificationPermission
 import sukun.minimalist.app.launcher.com.helper.appUsagePermissionGranted
-import sukun.minimalist.app.launcher.com.helper.applyDeviceLocationDeniedFallbacks
 import sukun.minimalist.app.launcher.com.helper.promptForManualCityIfNeeded
 import sukun.minimalist.app.launcher.com.helper.isTablet
 import sukun.minimalist.app.launcher.com.helper.openUrl
@@ -89,8 +94,33 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { _ ->
         applyFirstRunHomeFeatures()
-        applyDeviceLocationDeniedFallbacks(prefs)
-        promptFirstRunUsageAccessThenComplete()
+        completePrivacyAndSetup()
+    }
+
+    private var pendingLocationNudge: FeatureNudge.Kind? = null
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { _ ->
+        val kind = pendingLocationNudge
+        pendingLocationNudge = null
+        if (!hasWeatherLocationPermission()) {
+            promptForManualCityIfNeeded(prefs, viewModel, lifecycleScope)
+            viewModel.refreshHome(false)
+            return@registerForActivityResult
+        }
+        when (kind) {
+            FeatureNudge.Kind.WEATHER -> {
+                prefs.showWeatherOnHome = true
+                viewModel.setWeatherWorker()
+                viewModel.loadWeather(forceRefresh = true)
+            }
+            FeatureNudge.Kind.PRAYER -> {
+                prefs.showPrayerOnHome = true
+                viewModel.refreshPrayerData(forceLocationRefresh = true)
+            }
+            else -> Unit
+        }
+        viewModel.refreshHome(false)
     }
 
     private lateinit var prefs: Prefs
@@ -108,6 +138,8 @@ class MainActivity : AppCompatActivity() {
     private var firstRunSetupShowing = false
     private var firstRunIntroJob: Job? = null
     private var trialReminderDialogShowing = false
+    private var featureNudgeDialogShowing = false
+    private var foregroundSessionStartedAt = 0L
 
     override fun attachBaseContext(context: Context) {
         val config = Configuration(context.resources.configuration)
@@ -143,7 +175,7 @@ class MainActivity : AppCompatActivity() {
             viewModel.firstOpen(true)
             prefs.firstOpen = false
             prefs.firstOpenTime = System.currentTimeMillis()
-            showToast(R.string.premium_trial_welcome)
+            showToast(R.string.premium_trial_started)
             viewModel.setDefaultClockApp()
         }
         enforcePremiumExpiry()
@@ -205,6 +237,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         isResumed = true
+        startForegroundSession()
         ambientThemeController?.start()
         applyLauncherBrightnessForTheme()
         viewModel.isPrivateSpaceToggling = false
@@ -242,6 +275,10 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+        binding.root.post {
+            if (!isResumed || isFinishing || isDestroyed) return@post
+            maybeShowFeatureNudge()
         }
     }
 
@@ -301,6 +338,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        flushForegroundSession()
         ambientThemeController?.stop()
         clearLauncherBrightnessOverride()
         super.onPause()
@@ -447,12 +485,25 @@ class MainActivity : AppCompatActivity() {
                     showMessageDialog(R.string.hey, R.string.prayer_marked_prayed, R.string.okay) {}
                 }
 
+                Constants.Dialog.FEATURE_NUDGE_FOCUS ->
+                    showFeatureNudge(FeatureNudge.Kind.FOCUS)
+                Constants.Dialog.FEATURE_NUDGE_PRAYER ->
+                    showFeatureNudge(FeatureNudge.Kind.PRAYER)
+                Constants.Dialog.FEATURE_NUDGE_WEATHER ->
+                    showFeatureNudge(FeatureNudge.Kind.WEATHER)
+                Constants.Dialog.FEATURE_NUDGE_SCREEN_TIME ->
+                    showFeatureNudge(FeatureNudge.Kind.SCREEN_TIME)
+                Constants.Dialog.FEATURE_NUDGE_SIGN_IN ->
+                    showFeatureNudge(FeatureNudge.Kind.SIGN_IN)
+
             }
         }
         viewModel.onboardingActive.observe(this) { active ->
             binding.onboardingLayout.visibility = if (active == true) View.VISIBLE else View.GONE
             if (active == true) {
                 updateOnboardingPanel(viewModel.onboardingStepIndex.value ?: 0)
+            } else {
+                binding.onboardingSpotlight.clear()
             }
         }
         viewModel.onboardingStepIndex.observe(this) { stepIndex ->
@@ -462,13 +513,15 @@ class MainActivity : AppCompatActivity() {
             syncOnboardingNavigation(index)
             if (OnboardingManager.stepAt(index).requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER) {
                 viewModel.isSukunDefault()
-                checkOnboardingLauncherStep()
             }
         }
         viewModel.isSukunDefault.observe(this) { /* no-op */ }
     }
 
     private fun initOnboardingPanel() {
+        binding.onboardingLayout.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            binding.onboardingSpotlight.refresh()
+        }
         binding.btnOnboardingBack.setOnClickListener {
             if (viewModel.onboardingGoBack()) {
                 handleOnboardingBackNavigation(viewModel.onboardingStepIndex.value ?: 0)
@@ -484,9 +537,6 @@ class MainActivity : AppCompatActivity() {
                     viewModel.reportOnboardingAction(OnboardingAction.TAP_START)
                 OnboardingAction.SET_DEFAULT_LAUNCHER ->
                     requestDefaultLauncherForOnboarding()
-                OnboardingAction.TAP_FINISH ->
-                    viewModel.reportOnboardingAction(OnboardingAction.TAP_FINISH)
-                OnboardingAction.TAP_HOME_APP_SLOT,
                 OnboardingAction.SEARCH_APPS,
                 OnboardingAction.OPEN_APP_DRAWER ->
                     viewModel.reportOnboardingAction(step.requiredAction)
@@ -496,6 +546,7 @@ class MainActivity : AppCompatActivity() {
                 OnboardingAction.TAP_SCREEN_TIME,
                 OnboardingAction.TAP_LANGUAGE,
                 OnboardingAction.TAP_APPEARANCE,
+                OnboardingAction.TAP_TEXT_SIZE,
                 -> advanceOnboardingDiscoveryStep(step.requiredAction)
                 else -> Unit
             }
@@ -573,7 +624,8 @@ class MainActivity : AppCompatActivity() {
         binding.onboardingLayout.alpha = 0f
         binding.onboardingLayout.animate().alpha(1f).setDuration(250).start()
 
-        // Icon
+        // Real launcher icon on every step. A theme tint turns the opaque icon into a blank square.
+        binding.onboardingIcon.imageTintList = null
         step.iconRes?.let { binding.onboardingIcon.setImageResource(it) }
 
         // Progress + counter
@@ -593,39 +645,36 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnOnboardingBack.isEnabled = stepIndex > 0
         binding.btnOnboardingBack.alpha = if (stepIndex > 0) 1f else 0.35f
-        binding.btnOnboardingSkip.visibility = when {
-            step.isDone -> View.GONE
-            step.requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER -> View.GONE
-            else -> View.VISIBLE
-        }
-        
         val isLauncherStep = step.requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER
         val isSettingsStep = isSettingsTargetStep(step.requiredAction)
-        val isHomeAppsStep = step.requiredAction == OnboardingAction.TAP_HOME_APP_SLOT
         val isDrawerStep = step.requiredAction == OnboardingAction.SEARCH_APPS || step.requiredAction == OnboardingAction.OPEN_APP_DRAWER
-        
+        val isAlreadyDefault = isLauncherStep && isSukunDefault(this)
+
+        binding.btnOnboardingSkip.visibility = if (isAlreadyDefault) View.GONE else View.VISIBLE
+        binding.btnOnboardingSkip.setText(
+            if (isLauncherStep) R.string.onboarding_skip else R.string.onboarding_skip_tour,
+        )
+
         binding.onboardingBody.visibility = View.VISIBLE
-        val showPrimary = step.isWelcome || step.isDone || isLauncherStep || isSettingsStep || isHomeAppsStep || isDrawerStep
+        val showPrimary = step.isWelcome || isLauncherStep || isSettingsStep || isDrawerStep
         binding.btnOnboardingPrimary.visibility = if (showPrimary) View.VISIBLE else View.GONE
         binding.btnOnboardingPrimary.setText(
             when {
                 step.isWelcome -> R.string.onboarding_start_tour
-                step.isDone -> R.string.onboarding_finish
                 isLauncherStep -> R.string.onboarding_launcher_set
                 else -> R.string.onboarding_next
             },
         )
-        
-        if (isLauncherStep && isSukunDefault(this)) {
+
+        if (isAlreadyDefault) {
             binding.onboardingBody.setText(R.string.onboarding_launcher_done)
             binding.onboardingActionHint.visibility = View.GONE
-            // Allow manual "Next" if auto-advance is slow
             binding.btnOnboardingPrimary.visibility = View.VISIBLE
-            binding.btnOnboardingPrimary.setText(R.string.onboarding_next)
+            binding.btnOnboardingPrimary.setText(R.string.onboarding_finish)
         } else {
             binding.onboardingActionHint.visibility =
                 if (hintText.isBlank() ||
-                    (showPrimary && !isLauncherStep && !isSettingsStep && !isHomeAppsStep && !isDrawerStep)
+                    (showPrimary && !isLauncherStep && !isSettingsStep && !isDrawerStep)
                 ) View.GONE else View.VISIBLE
         }
     }
@@ -649,6 +698,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun showOnboardingSpotlight(target: View, boundsOnScreen: ((View) -> RectF)? = null) {
+        if (!viewModel.isOnboardingActive()) return
+        binding.onboardingSpotlight.track(target, boundsOnScreen)
+    }
+
+    fun clearOnboardingSpotlight() {
+        binding.onboardingSpotlight.clear()
+    }
+
+    fun clearOnboardingSpotlightFrom(root: View) {
+        binding.onboardingSpotlight.clearIfInside(root)
+    }
+
+    fun onboardingCardHeight(): Int {
+        val card = binding.onboardingLayout
+        if (card.visibility != View.VISIBLE || card.height <= 0) return 0
+        return card.height
+    }
+
     private fun isSettingsTargetStep(action: OnboardingAction) = when (action) {
         OnboardingAction.TAP_PRAYER_SETTINGS,
         OnboardingAction.TAP_FOCUS_MODE,
@@ -656,6 +724,7 @@ class MainActivity : AppCompatActivity() {
         OnboardingAction.TAP_SCREEN_TIME,
         OnboardingAction.TAP_LANGUAGE,
         OnboardingAction.TAP_APPEARANCE,
+        OnboardingAction.TAP_TEXT_SIZE,
         -> true
         else -> false
     }
@@ -688,13 +757,12 @@ class MainActivity : AppCompatActivity() {
                     OnboardingAction.TAP_SCREEN_TIME,
                     OnboardingAction.TAP_LANGUAGE,
                     OnboardingAction.TAP_APPEARANCE,
+                    OnboardingAction.TAP_TEXT_SIZE,
                     -> openSettingsForOnboarding()
                     OnboardingAction.SEARCH_APPS,
                     OnboardingAction.OPEN_APP_DRAWER -> openAppDrawerForOnboarding()
-                    OnboardingAction.TAP_HOME_APP_SLOT,
                     OnboardingAction.SET_DEFAULT_LAUNCHER,
-                    OnboardingAction.OPEN_SETTINGS,
-                    OnboardingAction.TAP_FINISH -> navController.popBackStack(R.id.mainFragment, false)
+                    OnboardingAction.OPEN_SETTINGS -> navController.popBackStack(R.id.mainFragment, false)
                     else -> Unit
                 }
             } catch (e: Exception) {
@@ -707,10 +775,8 @@ class MainActivity : AppCompatActivity() {
         val action = OnboardingManager.stepAt(stepIndex).requiredAction
         when (action) {
             OnboardingAction.TAP_START,
-            OnboardingAction.TAP_HOME_APP_SLOT,
             OnboardingAction.SET_DEFAULT_LAUNCHER,
-            OnboardingAction.OPEN_SETTINGS,
-            OnboardingAction.TAP_FINISH -> navController.popBackStack(R.id.mainFragment, false)
+            OnboardingAction.OPEN_SETTINGS -> navController.popBackStack(R.id.mainFragment, false)
             OnboardingAction.SEARCH_APPS,
             OnboardingAction.OPEN_APP_DRAWER -> openAppDrawerForOnboarding()
             OnboardingAction.TAP_PRAYER_SETTINGS,
@@ -718,7 +784,8 @@ class MainActivity : AppCompatActivity() {
             OnboardingAction.TAP_MINDFUL_MORNING,
             OnboardingAction.TAP_SCREEN_TIME,
             OnboardingAction.TAP_LANGUAGE,
-            OnboardingAction.TAP_APPEARANCE -> openSettingsForOnboarding()
+            OnboardingAction.TAP_APPEARANCE,
+            OnboardingAction.TAP_TEXT_SIZE -> openSettingsForOnboarding()
         }
     }
 
@@ -778,6 +845,7 @@ class MainActivity : AppCompatActivity() {
             prefs.firstOpenTime = System.currentTimeMillis()
 
         if (maybeShowTrialReminder()) return
+        if (maybeShowFeatureNudge()) return
 
         val calendar = Calendar.getInstance()
         val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
@@ -884,7 +952,7 @@ class MainActivity : AppCompatActivity() {
         binding.firstRunHoldTheme.visibility = View.GONE
         firstRunIntroJob?.cancel()
         firstRunIntroJob = lifecycleScope.launch {
-            delay(2000)
+            delay(4000)
             if (isFinishing || isDestroyed) return@launch
             binding.firstRunIntroLogo.visibility = View.GONE
             binding.firstRunHoldTheme.visibility = View.VISIBLE
@@ -917,35 +985,177 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyFirstRunHomeFeatures() {
         prefs.clockStyle = Constants.ClockStyle.DAY_RING
-        prefs.showWeatherOnHome = true
-        prefs.showPrayerOnHome = true
+        prefs.appTheme = AppCompatDelegate.MODE_NIGHT_YES
+        prefs.showStatusBar = false
         prefs.dailyWallpaper = true
         prefs.wallpaperMsgShown = true
         prefs.showHomeAppIcons = true
         prefs.showRemindersOnHome = true
         prefs.showTodoOnHome = true
-        prefs.showScreenTimeOnHome = true
-        prefs.showFocusOnHome = true
+        prefs.hourlyChimeEnabled = true
+        prefs.hourlyChimeStyle = Constants.ChimeStyle.SOUND
+        prefs.hourlyChimeStartHour = prefs.dayStartHour
+        prefs.hourlyChimeEndHour = prefs.dayEndHour
+        prefs.showWeatherOnHome = false
+        prefs.showPrayerOnHome = false
+        prefs.showScreenTimeOnHome = false
+        prefs.showFocusOnHome = false
+    }
+
+    private fun deferLocationFeaturesIfDenied() {
+        if (hasWeatherLocationPermission() || prefs.hasUsableStoredLocation()) return
+        prefs.showWeatherOnHome = false
+        prefs.showPrayerOnHome = false
+        prefs.deferredLocationPromptPending = true
+    }
+
+    private fun maybeShowDeferredLocationPrompt() {
+        if (!prefs.deferredLocationPromptPending) return
+        if (isRecreating || isFinishing || isDestroyed) return
+        if (!prefs.privacyAndSetupComplete || firstRunSetupShowing) return
+        if (viewModel.isOnboardingActive()) return
+        if (trialReminderDialogShowing || driveRestoreDialogShowing) return
+        if (binding.messageLayout.visibility == View.VISIBLE) return
+        if (navController.currentDestination?.id != R.id.mainFragment) return
+        if (prefs.firstOpenTime == 0L ||
+            !prefs.firstOpenTime.hasBeenDays(Constants.DEFERRED_LOCATION_PROMPT_DAYS)
+        ) return
+        prefs.deferredLocationPromptPending = false
+        // The user may have set this up themselves in Settings since setup.
+        if (hasWeatherLocationPermission() || prefs.showWeatherOnHome || prefs.showPrayerOnHome) return
+        AlertDialog.Builder(this)
+            .setTitle(R.string.deferred_location_title)
+            .setMessage(R.string.deferred_location_message)
+            .setPositiveButton(R.string.deferred_location_allow) { _, _ ->
+                pendingLocationNudge = null
+                requestLocationPermission()
+            }
+            .setNegativeButton(R.string.not_now, null)
+            .show()
+    }
+
+    private fun startForegroundSession() {
+        if (foregroundSessionStartedAt == 0L) {
+            foregroundSessionStartedAt = System.currentTimeMillis()
+        }
+    }
+
+    private fun flushForegroundSession() {
+        val started = foregroundSessionStartedAt
+        if (started == 0L) return
+        foregroundSessionStartedAt = 0L
+        val elapsed = (System.currentTimeMillis() - started).coerceAtLeast(0L)
+        if (elapsed == 0L) return
+        prefs.foregroundActiveMillis += elapsed
+    }
+
+    private fun foregroundActiveMillisNow(): Long {
+        val started = foregroundSessionStartedAt
+        val running = if (started > 0L) {
+            (System.currentTimeMillis() - started).coerceAtLeast(0L)
+        } else {
+            0L
+        }
+        return prefs.foregroundActiveMillis + running
+    }
+
+    private fun maybeShowFeatureNudge(): Boolean {
+        if (featureNudgeDialogShowing) return false
+        if (isRecreating || isFinishing || isDestroyed) return false
+        if (!prefs.privacyAndSetupComplete || firstRunSetupShowing) return false
+        if (viewModel.isOnboardingActive() || binding.onboardingLayout.visibility == View.VISIBLE) return false
+        if (trialReminderDialogShowing || driveRestoreDialogShowing) return false
+        if (binding.messageLayout.visibility == View.VISIBLE) return false
+        val kind = FeatureNudge.dueKind(prefs, foregroundActiveMillisNow()) ?: return false
+        featureNudgeDialogShowing = true
+        viewModel.showDialog.postValue(
+            when (kind) {
+                FeatureNudge.Kind.FOCUS -> Constants.Dialog.FEATURE_NUDGE_FOCUS
+                FeatureNudge.Kind.PRAYER -> Constants.Dialog.FEATURE_NUDGE_PRAYER
+                FeatureNudge.Kind.WEATHER -> Constants.Dialog.FEATURE_NUDGE_WEATHER
+                FeatureNudge.Kind.SCREEN_TIME -> Constants.Dialog.FEATURE_NUDGE_SCREEN_TIME
+                FeatureNudge.Kind.SIGN_IN -> Constants.Dialog.FEATURE_NUDGE_SIGN_IN
+            },
+        )
+        return true
+    }
+
+    private fun showFeatureNudge(kind: FeatureNudge.Kind) {
+        if (isFinishing || isDestroyed) {
+            featureNudgeDialogShowing = false
+            return
+        }
+        FeatureNudge.markShown(prefs, kind)
+        AlertDialog.Builder(this)
+            .setTitle(kind.titleRes)
+            .setMessage(kind.messageRes)
+            .setPositiveButton(kind.actionRes) { _, _ -> applyFeatureNudge(kind) }
+            .setNegativeButton(kind.dismissRes, null)
+            .setOnDismissListener { featureNudgeDialogShowing = false }
+            .show()
+    }
+
+    private fun applyFeatureNudge(kind: FeatureNudge.Kind) {
+        when (kind) {
+            FeatureNudge.Kind.FOCUS -> {
+                prefs.showFocusOnHome = true
+                viewModel.refreshHome(false)
+                if (!isAccessServiceEnabled(this)) {
+                    showAccessibilityDisclosure()
+                }
+            }
+            FeatureNudge.Kind.PRAYER -> {
+                prefs.showPrayerOnHome = true
+                if (hasWeatherLocationPermission() || prefs.hasUsableStoredLocation()) {
+                    viewModel.refreshPrayerData(forceLocationRefresh = true)
+                    viewModel.refreshHome(false)
+                } else {
+                    pendingLocationNudge = kind
+                    requestLocationPermission()
+                }
+            }
+            FeatureNudge.Kind.WEATHER -> {
+                prefs.showWeatherOnHome = true
+                if (hasWeatherLocationPermission() || prefs.hasUsableStoredLocation()) {
+                    viewModel.setWeatherWorker()
+                    viewModel.loadWeather(forceRefresh = true)
+                    viewModel.refreshHome(false)
+                } else {
+                    pendingLocationNudge = kind
+                    requestLocationPermission()
+                }
+            }
+            FeatureNudge.Kind.SCREEN_TIME -> {
+                prefs.showScreenTimeOnHome = true
+                viewModel.refreshHome(false)
+                maybePromptUsageAccess()
+            }
+            FeatureNudge.Kind.SIGN_IN -> openSignInScreen()
+        }
+    }
+
+    private fun requestLocationPermission() {
+        locationPermissionLauncher.launch(
+            arrayOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            ),
+        )
     }
 
     private fun promptFirstRunPermissions() {
         applyFirstRunHomeFeatures()
-        val needed = missingSukunSetupPermissions()
+        val needed = missingNotificationPermission()
         if (needed.isEmpty()) {
-            promptFirstRunUsageAccessThenComplete()
+            completePrivacyAndSetup()
             return
         }
         firstRunPermissionsLauncher.launch(needed)
     }
 
-    private fun promptFirstRunUsageAccessThenComplete() {
-        maybePromptUsageAccess(forceDuringSetup = true)
-        completePrivacyAndSetup()
-    }
-
     private fun showUsageAccessPrompt() {
         prefs.usageAccessPromptShown = true
-        showMessageDialog(R.string.screen_time, R.string.app_usage_message, R.string.permission) {
+        showMessageDialog(R.string.screen_time, R.string.app_usage_message, R.string.allow_usage_access) {
             startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
         }
     }
@@ -963,20 +1173,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun completePrivacyAndSetup() {
         prefs.privacyAndSetupComplete = true
+        prefs.signInPromptShown = true
         firstRunSetupShowing = false
-        applyDeviceLocationDeniedFallbacks(prefs)
         viewModel.refreshHome(false)
         if (prefs.dailyWallpaper) {
             viewModel.setWallpaperWorker(runImmediately = false)
         }
+        HourlyChimeScheduler.scheduleNext(this, prefs)
         showFirstRunFlowIfNeeded()
-        val awaitingCity = promptForManualCityIfNeeded(prefs, viewModel, lifecycleScope)
-        if (!awaitingCity) {
-            if (prefs.showWeatherOnHome) viewModel.loadWeather(forceRefresh = true)
-            if (prefs.showPrayerOnHome) {
-                viewModel.refreshPrayerData(forceLocationRefresh = true)
-            }
-        }
     }
 
     private fun showSignInIfNeeded() {
@@ -1032,7 +1236,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 // Check if attributes are correctly applied
                 val primaryColor = try { getColorFromAttr(R.attr.primaryColor) } catch (_: Exception) { 0 }
-                val expected = if (isDark) getColor(R.color.white) else getColor(R.color.black)
+                val expected = if (isDark) getColor(R.color.cream) else getColor(R.color.ink)
                 
                 if (primaryColor != 0 && primaryColor != expected) {
                     isRecreating = true
@@ -1110,6 +1314,7 @@ class MainActivity : AppCompatActivity() {
     private fun dismissOverlayDialogs() {
         driveRestoreDialogShowing = false
         trialReminderDialogShowing = false
+        featureNudgeDialogShowing = false
         supportFragmentManager.fragments.forEach { fragment ->
             dismissDialogFragments(fragment)
         }

@@ -13,6 +13,7 @@
         <item name="android:fitsSystemWindows">false</item>
         <item name="android:windowShowWallpaper">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="s">@color/ic_launcher_background</item>
         <item name="android:windowFullscreen">false</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
@@ -27,15 +28,16 @@
         <!--        <item name="android:windowTranslucentStatus">false</item>-->
         <!--        <item name="android:windowTranslucentNavigation">true</item>-->
 
-        <item name="colorPrimary">@color/white</item>
+        <item name="colorPrimary">@color/cream</item>
         <item name="colorPrimaryDark">@android:color/darker_gray</item>
-        <item name="colorAccent">@color/white</item>
+        <item name="colorAccent">@color/cream</item>
 
-        <item name="primaryColor">@color/white</item>
+        <item name="primaryColor">@color/cream</item>
         <item name="primaryInverseColor">@color/whiteInverse</item>
         <item name="primaryTextShadowColor">@color/whiteInverseTrans50</item>
-        <item name="primaryColorTrans50">@color/whiteTrans50</item>
-        <item name="primaryColorTrans80">@color/whiteTrans80</item>
+        <!-- Quiet step is 70% cream. The attr name is historical. -->
+        <item name="primaryColorTrans50">@color/creamTrans70</item>
+        <item name="primaryColorTrans80">@color/creamTrans80</item>
         <item name="primaryColorInverseTrans50">@color/whiteInverseTrans50</item>
         <item name="primaryColorInverseTrans80">@color/whiteInverseTrans80</item>
         <item name="primaryColorInverseTrans90">@color/whiteInverseTrans90</item>

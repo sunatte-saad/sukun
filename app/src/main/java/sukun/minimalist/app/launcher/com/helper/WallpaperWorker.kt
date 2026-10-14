@@ -66,7 +66,9 @@ class WallpaperWorker(appContext: Context, workerParams: WorkerParameters) : Cor
     }
 
     private fun applyOfflineFallback() {
-        setPlainWallpaperByTheme(applicationContext, prefs.appTheme)
+        if (prefs.dailyWallpaperUrl.isBlank()) {
+            setPlainWallpaperByTheme(applicationContext, prefs.appTheme)
+        }
         prefs.wallpaperPendingSync = true
         scheduleSyncWhenOnline(applicationContext)
     }

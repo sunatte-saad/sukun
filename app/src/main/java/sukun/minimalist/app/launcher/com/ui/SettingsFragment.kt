@@ -97,8 +97,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     private var pendingScreenTimePermissionRequest = false
     private var pendingFocusModeDuration: Long? = null
     // private var pendingDoubleTapLock = false
-    private var onboardingHighlightView: View? = null
-    private var onboardingHighlightOriginalBackground: android.graphics.drawable.Drawable? = null
     private var scrollLayoutBaseBottomPadding = 0
     private var sectionsController: SettingsSectionsController? = null
 
@@ -829,6 +827,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         OnboardingAction.TAP_SCREEN_TIME -> binding.screenTimeOnOff
         OnboardingAction.TAP_LANGUAGE -> binding.appLanguageText
         OnboardingAction.TAP_APPEARANCE -> binding.appThemeText
+        OnboardingAction.TAP_TEXT_SIZE -> binding.textSizeValue
         else -> null
     }
 
@@ -837,17 +836,49 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun prepareOnboardingSettingsStep(action: OnboardingAction) {
-        val target = onboardingTargetView(action)
-        if (target == null) {
+        binding.textSizesLayout.visibility =
+            if (action == OnboardingAction.TAP_TEXT_SIZE) View.VISIBLE else View.GONE
+        val leaf = onboardingTargetView(action)
+        if (leaf == null) {
             clearOnboardingHighlight()
             return
         }
-        sectionsController?.expandContaining(target)
         updateOnboardingScrollPadding(true)
         binding.scrollView.post {
-            scrollToShowOnboardingTarget(target)
-            highlightOnboardingTarget(target)
+            if (!isAdded || _binding == null) return@post
+            placeOnboardingRow(leaf)
+            binding.scrollView.post {
+                if (!isAdded || _binding == null) return@post
+                placeOnboardingRow(leaf)
+            }
         }
+    }
+
+    private fun placeOnboardingRow(leaf: View) {
+        val row = fullSettingsRow(leaf)
+        scrollRowAboveTourCard(row)
+        (activity as? MainActivity)?.showOnboardingSpotlight(row)
+    }
+
+    /** The whole settings row that contains [leaf], not the label or switch inside it. */
+    private fun fullSettingsRow(leaf: View): View {
+        var current = leaf
+        var parent = current.parent as? View
+        while (parent != null) {
+            if (parent.id == R.id.settingsSectionBody || isSettingsSection(parent)) return current
+            current = parent
+            parent = parent.parent as? View
+        }
+        return leaf.parent as? View ?: leaf
+    }
+
+    private fun isSettingsSection(view: View): Boolean {
+        return view.id == R.id.sectionFocus ||
+            view.id == R.id.sectionAppearance ||
+            view.id == R.id.sectionHomeScreen ||
+            view.id == R.id.sectionAccount ||
+            view.id == R.id.sectionGestures ||
+            view.id == R.id.sectionSukun
     }
 
     private fun performOnboardingSettingsAction(action: OnboardingAction) {
@@ -898,7 +929,13 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         if (scrollLayoutBaseBottomPadding == 0) {
             scrollLayoutBaseBottomPadding = binding.scrollLayout.paddingBottom
         }
-        val extra = if (active) (resources.displayMetrics.heightPixels * 0.38f).toInt() else 0
+        val card = (activity as? MainActivity)?.onboardingCardHeight() ?: 0
+        val screen = resources.displayMetrics.heightPixels
+        val extra = if (active) {
+            maxOf(card + 32.dpToPx(), (screen * 0.46f).toInt())
+        } else {
+            0
+        }
         binding.scrollLayout.setPadding(
             binding.scrollLayout.paddingLeft,
             binding.scrollLayout.paddingTop,
@@ -907,35 +944,27 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         )
     }
 
-    private fun scrollToShowOnboardingTarget(target: View) {
-        val scrollView = binding.scrollView
-        val scrollContent = binding.scrollLayout
-        var offsetTop = 0
-        var view: View? = target
-        while (view != null && view !== scrollContent) {
-            offsetTop += view.top
-            view = view.parent as? View
-        }
-        val reserveAbovePanel = (resources.displayMetrics.heightPixels * 0.40f).toInt()
-        val targetScrollY = (offsetTop - reserveAbovePanel / 2).coerceAtLeast(0)
-        scrollView.smoothScrollTo(0, targetScrollY)
-    }
-
-    private fun highlightOnboardingTarget(view: View) {
-        clearOnboardingHighlight()
-        onboardingHighlightView = view
-        onboardingHighlightOriginalBackground = view.background
-        view.setBackgroundResource(R.drawable.bg_onboarding_target_highlight)
-        view.elevation = resources.getDimension(R.dimen.onboarding_target_elevation)
+    private fun scrollRowAboveTourCard(row: View) {
+        if (row.height == 0) return
+        val cardHeight = (activity as? MainActivity)?.onboardingCardHeight()?.takeIf { it > 0 }
+            ?: (resources.displayMetrics.heightPixels * 0.46f).toInt()
+        val gap = 12.dpToPx()
+        val topSafe = 8.dpToPx()
+        val allowedBottom = resources.displayMetrics.heightPixels - cardHeight - gap
+        val loc = IntArray(2)
+        row.getLocationOnScreen(loc)
+        val top = loc[1]
+        var dy = 0
+        val bottom = top + row.height
+        if (bottom > allowedBottom) dy += bottom - allowedBottom
+        if (top - dy < topSafe) dy = top - topSafe
+        if (dy != 0) binding.scrollView.scrollBy(0, dy)
     }
 
     private fun clearOnboardingHighlight() {
-        onboardingHighlightView?.let { view ->
-            view.background = onboardingHighlightOriginalBackground
-            view.elevation = 0f
+        _binding?.root?.let { root ->
+            (activity as? MainActivity)?.clearOnboardingSpotlightFrom(root)
         }
-        onboardingHighlightView = null
-        onboardingHighlightOriginalBackground = null
     }
 
     private fun toggleSwipeLeft() {
@@ -2122,52 +2151,21 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
                 return
             }
             if (!canUsePremiumFeature()) return
+            prefs.ambientThemeDark = requireContext().isDarkThemeOn()
         }
         prefs.appTheme = appTheme
         populateAppThemeText(appTheme)
         if (prefs.dailyWallpaper) {
-            setPlainWallpaper(appTheme)
-            viewModel.setWallpaperWorker()
+            viewModel.setWallpaperWorker(forceRefresh = true)
         }
         val nightMode = when (appTheme) {
-            Constants.THEME_MODE_AMBIENT_LIGHT -> {
-                val dark = requireContext().isDarkThemeOn()
-                prefs.ambientThemeDark = dark
-                AmbientThemeController.nightModeForDark(dark)
-            }
+            Constants.THEME_MODE_AMBIENT_LIGHT ->
+                AmbientThemeController.nightModeForDark(prefs.ambientThemeDark)
             else -> appTheme
         }
         AppCompatDelegate.setDefaultNightMode(nightMode)
         if (isAdded) {
             (requireActivity() as? MainActivity)?.safeRecreate()
-        }
-    }
-
-    private fun setAppTheme(theme: Int) {
-        // This method is now redundant as logic moved to updateTheme
-        AppCompatDelegate.setDefaultNightMode(theme)
-    }
-
-    private fun setPlainWallpaper(appTheme: Int) {
-        when (appTheme) {
-            AppCompatDelegate.MODE_NIGHT_YES -> setPlainWallpaper(requireContext(), android.R.color.black)
-            AppCompatDelegate.MODE_NIGHT_NO -> setPlainWallpaper(requireContext(), android.R.color.white)
-            Constants.THEME_MODE_AMBIENT_LIGHT -> {
-                val color = if (prefs.ambientThemeDark) {
-                    android.R.color.black
-                } else {
-                    android.R.color.white
-                }
-                setPlainWallpaper(requireContext(), color)
-            }
-            else -> {
-                val color = if (requireContext().isDarkThemeOn()) {
-                    android.R.color.black
-                } else {
-                    android.R.color.white
-                }
-                setPlainWallpaper(requireContext(), color)
-            }
         }
     }
 

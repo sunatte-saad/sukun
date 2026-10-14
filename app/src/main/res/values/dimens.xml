@@ -5,7 +5,6 @@
     <dimen name="alphabet_recycler_margin_start">320dp</dimen>
     <dimen name="onboarding_dot_size">7dp</dimen>
     <dimen name="onboarding_dot_margin">6dp</dimen>
-    <dimen name="onboarding_target_elevation">4dp</dimen>
     <dimen name="drawer_app_padding_vertical">16dp</dimen>
     <dimen name="drawer_section_padding_top">12dp</dimen>
     <dimen name="drawer_all_apps_padding_top">36dp</dimen>

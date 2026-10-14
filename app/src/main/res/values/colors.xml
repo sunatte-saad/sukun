@@ -28,6 +28,16 @@
     <color name="blackInverseTrans80">#CCFFFFFF</color>
     <color name="blackInverseTrans90">#E6FFFFFF</color>
 
+    <!-- Dark-theme type and icons. Same cream as the first-run hold screen. -->
+    <color name="cream">#F3EBE0</color>
+    <color name="creamTrans80">#CCF3EBE0</color>
+    <color name="creamTrans70">#B3F3EBE0</color>
+
+    <!-- Light-theme type and icons. Warm ink, not pure black. -->
+    <color name="ink">#1C1916</color>
+    <color name="inkTrans80">#CC1C1916</color>
+    <color name="inkTrans70">#B31C1916</color>
+
     <!-- Full-screen overlays for app drawer, settings, etc. -->
     <color name="scrim_dark">#B3000000</color>
     <color name="scrim_light">#EBFFFFFF</color>

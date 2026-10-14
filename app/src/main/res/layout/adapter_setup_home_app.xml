@@ -24,4 +24,15 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:textColor="?attr/primaryColor" />
+
+    <TextView
+        android:id="@+id/setupHomeAppOrder"
+        style="@style/TextSmallBold"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="12dp"
+        android:background="@drawable/bg_setup_home_app_order"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:textColor="?attr/primaryColor" />
 </LinearLayout>

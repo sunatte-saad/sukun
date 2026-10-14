@@ -107,6 +107,7 @@ object FirstRunSetup {
         prefs.mindfulMorningWakeMinute = minute
         prefs.mindfulMorningEnabled = true
         prefs.dayStartHour = hour.coerceIn(0, 23)
+        prefs.hourlyChimeStartHour = hour.coerceIn(0, 23)
         prefs.clockStyle = Constants.ClockStyle.DAY_RING
     }
 
@@ -117,5 +118,8 @@ object FirstRunSetup {
             endHour = (prefs.dayStartHour + 1).coerceAtMost(23)
         }
         prefs.dayEndHour = endHour
+        prefs.hourlyChimeEndHour = endHour
+        prefs.hourlyChimeEnabled = true
+        prefs.hourlyChimeStyle = Constants.ChimeStyle.SOUND
     }
 }

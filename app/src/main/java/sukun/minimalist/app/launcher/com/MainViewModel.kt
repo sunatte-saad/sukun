@@ -150,6 +150,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             OnboardingAction.TAP_SCREEN_TIME,
             OnboardingAction.TAP_LANGUAGE,
             OnboardingAction.TAP_APPEARANCE,
+            OnboardingAction.TAP_TEXT_SIZE,
             -> onboardingPerformSettingsAction.value = currentOnboardingStep().requiredAction
             else -> Unit
         }
@@ -178,7 +179,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun skipOnboarding() {
-        if (currentOnboardingStep().requiredAction == OnboardingAction.SET_DEFAULT_LAUNCHER) return
         completeOnboarding()
     }
 
@@ -214,14 +214,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            Constants.FLAG_SET_HOME_APP_1 -> saveHomeApp(appModel, 1)
-            Constants.FLAG_SET_HOME_APP_2 -> saveHomeApp(appModel, 2)
-            Constants.FLAG_SET_HOME_APP_3 -> saveHomeApp(appModel, 3)
-            Constants.FLAG_SET_HOME_APP_4 -> saveHomeApp(appModel, 4)
-            Constants.FLAG_SET_HOME_APP_5 -> saveHomeApp(appModel, 5)
-            Constants.FLAG_SET_HOME_APP_6 -> saveHomeApp(appModel, 6)
-            Constants.FLAG_SET_HOME_APP_7 -> saveHomeApp(appModel, 7)
-            Constants.FLAG_SET_HOME_APP_8 -> saveHomeApp(appModel, 8)
+            in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_HOME_APP_8 -> {
+                if (appModel !is AppModel.App && appModel !is AppModel.PinnedShortcut) return
+                saveHomeApp(appModel, flag)
+                if (flag > prefs.homeAppsNum) prefs.homeAppsNum = flag
+            }
 
             Constants.FLAG_SET_SWIPE_LEFT_APP -> saveSwipeApp(appModel, isLeft = true)
             Constants.FLAG_SET_SWIPE_RIGHT_APP -> saveSwipeApp(appModel, isLeft = false)
@@ -575,7 +572,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         isSukunDefault.value = isSukunDefault(appContext)
     }
 
-    fun setWallpaperWorker(runImmediately: Boolean = true) {
+    fun setWallpaperWorker(runImmediately: Boolean = true, forceRefresh: Boolean = false) {
         val requestBuilder = PeriodicWorkRequestBuilder<WallpaperWorker>(24, TimeUnit.HOURS)
             .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.HOURS)
         if (!runImmediately) {
@@ -593,7 +590,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 requestBuilder.build()
             )
         if (runImmediately) {
-            enqueueWallpaperRefresh(force = false)
+            enqueueWallpaperRefresh(force = forceRefresh)
         }
         if (prefs.wallpaperPendingSync) {
             WallpaperWorker.scheduleSyncWhenOnline(appContext)

@@ -14,6 +14,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -131,31 +132,32 @@ suspend fun getAppsList(
 
             for (profile in userManager.userProfiles) {
                 if (isPrivateSpaceProfile(context, profile)) continue
-                for (app in launcherApps.getActivityList(null, profile)) {
-                    val appLabelShown = prefs.getAppRenameLabel(app.applicationInfo.packageName)
+                val activitiesByPackage = LinkedHashMap<String, MutableList<LauncherActivityInfo>>()
+                for (activity in launcherApps.getActivityList(null, profile)) {
+                    val packageName = activity.applicationInfo.packageName
+                    if (packageName == BuildConfig.APPLICATION_ID) continue
+                    activitiesByPackage.getOrPut(packageName) { mutableListOf() }.add(activity)
+                }
+                for ((packageName, activities) in activitiesByPackage) {
+                    val app = selectLauncherActivity(context, packageName, activities)
+                    val appLabelShown = prefs.getAppRenameLabel(packageName)
                         .ifBlank { app.label.toString() }
                     val appModel = AppModel.App(
                         appLabel = appLabelShown,
                         key = collator.getCollationKey(app.label.toString()),
-                        appPackage = app.applicationInfo.packageName,
+                        appPackage = packageName,
                         activityClassName = app.componentName.className,
                         isNew = (System.currentTimeMillis() - app.firstInstallTime) < Constants.ONE_HOUR_IN_MILLIS,
                         user = profile
                     )
 
-                    // if the current app is not OLauncher
-                    if (app.applicationInfo.packageName != BuildConfig.APPLICATION_ID) {
-                        // is this a hidden app?
-                        if (hiddenApps.contains(app.applicationInfo.packageName + "|" + profile.toString())) {
-                            if (includeHiddenApps) {
-                                appList.add(appModel)
-                            }
-                        } else {
-                            // this is a regular app
-                            if (includeRegularApps) {
-                                appList.add(appModel)
-                            }
+                    // is this a hidden app?
+                    if (hiddenApps.contains(packageName + "|" + profile.toString())) {
+                        if (includeHiddenApps) {
+                            appList.add(appModel)
                         }
+                    } else if (includeRegularApps) {
+                        appList.add(appModel)
                     }
                 }
             }
@@ -176,6 +178,27 @@ suspend fun getAppsList(
         }
         appList
     }
+}
+
+/**
+ * One launcher row per package. Keeps the activity [PackageManager.getLaunchIntentForPackage]
+ * resolves (ACTION_MAIN + CATEGORY_LAUNCHER). Extra alias activities are dropped.
+ */
+private fun selectLauncherActivity(
+    context: Context,
+    packageName: String,
+    activities: List<LauncherActivityInfo>,
+): LauncherActivityInfo {
+    if (activities.size == 1) return activities.first()
+    val preferredClass = try {
+        context.packageManager.getLaunchIntentForPackage(packageName)?.component?.className
+    } catch (_: Exception) {
+        null
+    }
+    if (!preferredClass.isNullOrBlank()) {
+        activities.firstOrNull { it.componentName.className == preferredClass }?.let { return it }
+    }
+    return activities.first()
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -279,15 +302,21 @@ suspend fun getPrivateSpaceApps(
             val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
             val collator = Collator.getInstance()
 
-            for (app in launcherApps.getActivityList(null, privateSpaceHandle)) {
-                if (app.applicationInfo.packageName == BuildConfig.APPLICATION_ID) continue
-                val appLabelShown = prefs.getAppRenameLabel(app.applicationInfo.packageName)
+            val activitiesByPackage = LinkedHashMap<String, MutableList<LauncherActivityInfo>>()
+            for (activity in launcherApps.getActivityList(null, privateSpaceHandle)) {
+                val packageName = activity.applicationInfo.packageName
+                if (packageName == BuildConfig.APPLICATION_ID) continue
+                activitiesByPackage.getOrPut(packageName) { mutableListOf() }.add(activity)
+            }
+            for ((packageName, activities) in activitiesByPackage) {
+                val app = selectLauncherActivity(context, packageName, activities)
+                val appLabelShown = prefs.getAppRenameLabel(packageName)
                     .ifBlank { app.label.toString() }
                 appList.add(
                     AppModel.App(
                         appLabel = appLabelShown,
                         key = collator.getCollationKey(app.label.toString()),
-                        appPackage = app.applicationInfo.packageName,
+                        appPackage = packageName,
                         activityClassName = app.componentName.className,
                         isNew = false,
                         user = privateSpaceHandle
@@ -673,7 +702,17 @@ fun Context.hasCameraPermission(): Boolean =
         android.Manifest.permission.CAMERA
     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
-/** Location and notifications — requested at first run. Camera is only asked for flashlight chime. */
+/** Notifications only — used at first run. Location is asked later if weather or prayer is turned on. */
+fun Context.missingNotificationPermission(): Array<String> {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return emptyArray()
+    return if (ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+    ) emptyArray() else arrayOf(android.Manifest.permission.POST_NOTIFICATIONS)
+}
+
+/** Location and notifications — used when weather, prayer, or other setup needs them. Camera is only asked for flashlight chime. */
 fun Context.missingSukunSetupPermissions(): Array<String> {
     val requested = mutableListOf(
         android.Manifest.permission.ACCESS_FINE_LOCATION,

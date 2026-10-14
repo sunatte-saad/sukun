@@ -64,7 +64,9 @@ class AppDrawerAdapter(
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<AppModel>() {
             override fun areItemsTheSame(oldItem: AppModel, newItem: AppModel): Boolean = when {
                 oldItem is AppModel.App && newItem is AppModel.App ->
-                    oldItem.appPackage == newItem.appPackage && oldItem.user == newItem.user
+                    oldItem.appPackage == newItem.appPackage &&
+                        oldItem.user == newItem.user &&
+                        oldItem.listId == newItem.listId
 
                 oldItem is AppModel.PinnedShortcut && newItem is AppModel.PinnedShortcut ->
                     oldItem.shortcutId == newItem.shortcutId && oldItem.user == newItem.user
@@ -91,6 +93,9 @@ class AppDrawerAdapter(
 
     var appsList: MutableList<AppModel> = mutableListOf()
     var appFilteredList: MutableList<AppModel> = mutableListOf()
+
+    /** Bumped whenever [appsList] is replaced so an in-flight search cannot publish over it. */
+    private var listGeneration = 0
 
     override fun getItemViewType(position: Int): Int {
         return when (appFilteredList.getOrNull(position)) {
@@ -166,39 +171,22 @@ class AppDrawerAdapter(
 
     override fun getFilter(): Filter = this.appFilter
 
+    private data class FilterPayload(val generation: Int, val items: List<AppModel>)
+
     private fun createAppFilter(): Filter {
         return object : Filter() {
             override fun performFiltering(charSearch: CharSequence?): FilterResults {
-                val appFilteredList = if (charSearch.isNullOrBlank()) {
-                    appsList
-                } else {
-                    val query = charSearch.trim()
-                    appsList.filter { app ->
-                        app !is AppModel.PrivateSpaceHeader &&
-                                app !is AppModel.SectionHeader &&
-                                appLabelMatches(app.appLabel, query)
-                    }.distinctBy { app ->
-                        if (app is AppModel.App) app.appPackage to app.user else app
-                    }.sortedBy { app ->
-                        if (app.appLabel.startsWith(query, ignoreCase = true)) 0 else 1
-                    }.toMutableList()
-                }
-
+                val generation = listGeneration
+                val snapshot = appsList.toList()
                 val filterResults = FilterResults()
-                filterResults.values = appFilteredList
+                filterResults.values = FilterPayload(generation, displayedApps(snapshot, charSearch))
                 return filterResults
             }
 
-            @Suppress("UNCHECKED_CAST")
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                results?.values?.let {
-                    val items = (it as MutableList<AppModel>).toMutableList()
-                    appFilteredList = items
-                    rebuildSectionPositions(items)
-                    submitList(items.toList()) {
-                        onListChanged(appFilteredList.toList())
-                    }
-                }
+                val payload = results?.values as? FilterPayload ?: return
+                if (payload.generation != listGeneration) return
+                submitDisplayedList(payload.items)
             }
         }
     }
@@ -211,10 +199,10 @@ class AppDrawerAdapter(
                     .contains(charSearch, true))
     }
 
-    fun setAppList(appsList: MutableList<AppModel>) {
-        // Add empty app for bottom padding in recyclerview and assign to list
-        val updatedApps = appsList.toMutableList().apply {
-            add(
+    fun setAppList(appsList: MutableList<AppModel>, query: CharSequence? = null) {
+        listGeneration++
+        val updatedApps = dedupeDrawerRows(appsList).toMutableList()
+        updatedApps.add(
             AppModel.App(
                 appLabel = "",
                 key = null,
@@ -223,12 +211,60 @@ class AppDrawerAdapter(
                 isNew = false,
                 user = android.os.Process.myUserHandle()
             )
-            )
-        }
+        )
         this.appsList = updatedApps
-        this.appFilteredList = updatedApps.toMutableList()
-        rebuildSectionPositions(this.appFilteredList)
-        submitList(this.appFilteredList.toList()) {
+        submitDisplayedList(displayedApps(updatedApps, query))
+    }
+
+    /** Filters the canonical list. Does not replace [appsList]. */
+    fun applyQuery(query: CharSequence?) {
+        submitDisplayedList(displayedApps(appsList.toList(), query))
+    }
+
+    private fun dedupeDrawerRows(items: List<AppModel>): List<AppModel> {
+        val seenApps = HashSet<String>()
+        val seenShortcuts = HashSet<String>()
+        val out = ArrayList<AppModel>(items.size)
+        for (item in items) {
+            when (item) {
+                is AppModel.App -> {
+                    if (item.appPackage.isBlank()) continue
+                    val key = item.appPackage + "\u0000" + item.user.toString()
+                    if (seenApps.add(key)) out.add(item)
+                }
+                is AppModel.PinnedShortcut -> {
+                    val key = item.shortcutId + "\u0000" + item.user.toString()
+                    if (seenShortcuts.add(key)) out.add(item)
+                }
+                else -> out.add(item)
+            }
+        }
+        return out
+    }
+
+    private fun displayedApps(source: List<AppModel>, query: CharSequence?): List<AppModel> {
+        if (query.isNullOrBlank()) return source.toList()
+        val trimmed = query.trim()
+        return source.filter { app ->
+            app !is AppModel.PrivateSpaceHeader &&
+                app !is AppModel.SectionHeader &&
+                app.appPackage.isNotBlank() &&
+                appLabelMatches(app.appLabel, trimmed)
+        }.distinctBy { app ->
+            when (app) {
+                is AppModel.App -> app.appPackage to app.user
+                is AppModel.PinnedShortcut -> app.shortcutId to app.user
+                else -> app
+            }
+        }.sortedBy { app ->
+            if (app.appLabel.startsWith(trimmed, ignoreCase = true)) 0 else 1
+        }
+    }
+
+    private fun submitDisplayedList(items: List<AppModel>) {
+        appFilteredList = items.toMutableList()
+        rebuildSectionPositions(appFilteredList)
+        submitList(appFilteredList.toList()) {
             onListChanged(appFilteredList.toList())
         }
     }

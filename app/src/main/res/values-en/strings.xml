@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name" translatable="false">Sukun Minimalistic Launcher</string>
+    <string name="app_name" translatable="false">Sukun Minimalist Launcher</string>
     <string name="github" translatable="false">Github</string>
     <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
     <string name="recents_layout_description" translatable="false">recents layout description to be used a unique id to show recent apps</string>
@@ -89,7 +89,7 @@
     <string name="prayer_open_failed">Could not open prayer times. Install a browser or try again.</string>
     <string name="current_location">Current location</string>
     <string name="type_city_name">Type city name</string>
-    <string name="location_city_confirm_message">Are you spending your life in the beautiful city of %1$s</string>
+    <string name="location_city_confirm_message">Is %1$s your city? Sukun uses it for prayer times and weather.</string>
     <string name="location_city_confirm_action">Confirm</string>
     <string name="save">Save</string>
     <string name="not_set">Not set</string>
@@ -214,13 +214,18 @@
     <string name="keyboard_message">Hi, keyboard is the fastest way to find and launch apps in Sukun. Can we request you to keep this On for a few more days and then decide?
         \n\nThe choice is always yours.</string>
     <string name="digital_wellbeing_message">If you want to set time limits for certain apps, Digital Wellbeing feature of Android can help you do it.           Please search for Digital Wellbeing in your phone settings and enable it.</string>
-    <string name="app_usage_message">To show/hide your screen time on the home screen, please allow or disallow the app usage permission.
-        \n\nNote: No app usage data is collected. Everything is processed on your device.</string>
+    <string name="app_usage_message">To show your screen time on the home screen, allow Usage access for Sukun.\n\nNo usage data is collected. Everything stays on your device.</string>
+    <string name="allow_usage_access">Allow</string>
     <string name="pro_message" />
     <string name="wallpaper_message">Sukun offers beautiful new wallpapers daily. Give your homescreen a fresh new look every day, for free!
         \n\nWant to try it?</string>
-    <string name="accessibility_service_description">Sukun uses the accessibility service only to lock the screen on double tap, open Recents from the Home button, and keep Focus mode from opening blocked apps. This stays on your device. Sukun does not collect or share any data through it.</string>
+    <string name="accessibility_service_description">Sukun uses the accessibility service only to open Recents from the Home button and keep Focus mode from opening blocked apps. This stays on your device. Sukun does not collect or share any data through it.</string>
     <string name="accessibility_disclosure_title">Why Sukun needs accessibility</string>
+    <string name="accessibility_consent_intro">Sukun uses Android\'s accessibility service only for these features:</string>
+    <string name="accessibility_consent_recents">• Home button — opens recent apps</string>
+    <string name="accessibility_consent_focus">• Focus mode — leaves a blocked app and returns home</string>
+    <string name="accessibility_consent_data">This stays on your device. Sukun does not collect or share any personal or sensitive data through this service.</string>
+    <string name="accessibility_consent_agree">Agree and enable</string>
     <string name="support_sukun_for_free">Support Sukun for free by using our Amazon affiliate link.</string>
     <string name="support_sukun_message">Every time you buy something using our link, we get a small commission. Please save the link and use it whenever you shop online.\nThank you!</string>
     <string name="open">Open link</string>
@@ -260,7 +265,7 @@
     <string name="search">Search</string>
     <string name="search_apps_hint">Search apps</string>
     <string name="notifications">Notifications</string>
-    <string name="accessibility_disclosure">Sukun cannot lock your phone, show Recents, or block apps in Focus mode without Android\'s accessibility service.\n\nTurn on Sukun in Accessibility settings so these gestures work:\n\n• Double tap to lock — turns the screen off immediately\n• Home button for recent apps\n• Focus mode — keeps distracting apps from staying open\n\nThis service runs only on your device. Sukun does not collect or share any data through it.</string>
+    <string name="accessibility_disclosure">Sukun cannot show Recents or block apps in Focus mode without Android\'s accessibility service.\n\nTurn on Sukun in Accessibility settings so these work:\n\n• Home button — opens recent apps\n• Focus mode — leaves a blocked app and returns home\n\nThis stays on your device. Sukun does not collect or share any personal or sensitive data through this service.</string>
     <string name="accept">Accept</string>
     <string name="permission">Permission</string>
     <string name="double_tap_lock">Double tap to lock</string>
@@ -374,10 +379,10 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get started</string>
     <string name="onboarding_skip_tour">Skip tour</string>
+    <string name="onboarding_skip">Skip</string>
     <string name="onboarding_step_counter">%1$d of %2$d</string>
     <string name="onboarding_back">Back</string>
     <string name="onboarding_action_start"></string>
-    <string name="onboarding_action_home_apps"></string>
     <string name="onboarding_action_launcher"></string>
     <string name="onboarding_action_settings"></string>
     <string name="onboarding_action_prayer"></string>
@@ -387,6 +392,7 @@
     <string name="onboarding_action_hide_apps"></string>
     <string name="onboarding_action_search_apps"></string>
     <string name="onboarding_action_appearance"></string>
+    <string name="onboarding_action_text_size"></string>
     <string name="onboarding_open_prayer">Open Prayer times</string>
     <string name="onboarding_open_focus">Open Focus mode</string>
     <string name="onboarding_open_screen_time">Open Screen time</string>
@@ -397,30 +403,29 @@
     <string name="onboarding_start_tour">Start tour</string>
     <string name="onboarding_finish">Finish</string>
     <string name="onboarding_welcome_title">Welcome to Sukun</string>
-    <string name="onboarding_welcome_body"></string>
-    <string name="onboarding_home_apps_title">Tap a slot to add an app</string>
-    <string name="onboarding_home_apps_body"></string>
+    <string name="onboarding_welcome_body">A calm home screen that helps you use your phone with intention.</string>
     <string name="onboarding_launcher_title">Set Sukun as default</string>
-    <string name="onboarding_launcher_body"></string>
+    <string name="onboarding_launcher_body">Make Sukun your home screen so the Home button always brings you back here.</string>
     <string name="onboarding_launcher_set">Set Sukun as default</string>
     <string name="onboarding_launcher_done">Sukun is your home app.</string>
-    <string name="onboarding_settings_title">Long-press the screen</string>
-    <string name="onboarding_settings_body"></string>
-    <string name="onboarding_prayer_title">Prayer times on home</string>
-    <string name="onboarding_prayer_body"></string>
-    <string name="onboarding_focus_title">Sends you home from other apps</string>
-    <string name="onboarding_focus_body"></string>
-    <string name="onboarding_screen_time_title">Screen time on home</string>
-    <string name="onboarding_screen_time_body"></string>
+    <string name="onboarding_settings_title">Long-press to open settings</string>
+    <string name="onboarding_settings_body">Press and hold any empty space on the home screen to open settings.</string>
+    <string name="onboarding_prayer_title">Prayer times on your home screen</string>
+    <string name="onboarding_prayer_body">See the next prayer at a glance. Turn it on or off here.</string>
+    <string name="onboarding_focus_title">Focus mode</string>
+    <string name="onboarding_focus_body">When Focus mode is on, opening a blocked app sends you back to the home screen.</string>
+    <string name="onboarding_screen_time_title">Screen time on your home screen</string>
+    <string name="onboarding_screen_time_body">See how much time you spend on your phone today.</string>
     <string name="onboarding_language_title">Choose your language</string>
-    <string name="onboarding_language_body"></string>
+    <string name="onboarding_language_body">Change the language Sukun uses.</string>
     <string name="onboarding_hide_apps_title">Long-press an app to hide</string>
-    <string name="onboarding_hide_apps_body"></string>
-    <string name="onboarding_search_apps_title">Swipe up, then type</string>
-    <string name="onboarding_search_apps_body"></string>
+    <string name="onboarding_hide_apps_body">Hidden apps disappear from your app list. You can find them again by tapping Sukun at the top of Settings.</string>
+    <string name="onboarding_search_apps_title">Search your apps</string>
+    <string name="onboarding_search_apps_body">Swipe up from the home screen and start typing an app\'s name.</string>
     <string name="onboarding_appearance_title">Light or dark theme</string>
-    <string name="onboarding_appearance_body"></string>
+    <string name="onboarding_appearance_body">Pick the look that suits your eyes.</string>
+    <string name="onboarding_text_size_title">Text size</string>
+    <string name="onboarding_text_size_body">Pick a size that is easy to read. You can change it again later in Settings.</string>
     <string name="onboarding_done_title">You\'re set</string>
     <string name="onboarding_done_body"></string>
-    <string name="onboarding_home_app_slot_chosen">App added.</string>
 </resources>

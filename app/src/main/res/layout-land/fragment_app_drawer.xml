@@ -64,9 +64,7 @@
                 android:layout_marginHorizontal="56dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
-                android:fadingEdgeLength="24dp"
                 android:paddingBottom="160dp"
-                android:requiresFadingEdge="vertical"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
             <sukun.minimalist.app.launcher.com.widget.AlphabetFastScrollerView

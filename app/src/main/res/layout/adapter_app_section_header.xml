@@ -4,7 +4,7 @@
     style="@style/TextDefault"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:alpha="0.45"
+    android:alpha="0.7"
     android:fontFamily="sans-serif-light"
     android:paddingStart="20dp"
     android:paddingEnd="36dp"
