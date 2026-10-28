@@ -229,23 +229,27 @@ class AppDrawerFragment : Fragment() {
     private fun initSearch() {
         binding.search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
+                val drawer = _binding ?: return true
+                if (!isAdded) return true
                 if (query?.startsWith("!") == true)
                     requireContext().openUrl(Constants.URL_DUCK_SEARCH + query.replace(" ", "%20"))
-                else if (adapter.itemCount == 0)
+                else if (::adapter.isInitialized && adapter.itemCount == 0)
                     requireContext().openSearch(query?.trim())
-                binding.search.clearFocus()
+                drawer.search.clearFocus()
                 return true
             }
 
             override fun onQueryTextChange(newText: String): Boolean {
+                val drawer = _binding ?: return true
+                if (!::adapter.isInitialized) return true
                 try {
                     if (newText.isNotBlank()) {
                         viewModel.reportOnboardingAction(OnboardingAction.SEARCH_APPS)
-                        binding.recyclerView.layoutAnimation = null
+                        drawer.recyclerView.layoutAnimation = null
                     }
                     adapter.applyQuery(newText)
                     updateFastScroller()
-                    binding.appRename.visibility =
+                    drawer.appRename.visibility =
                         if (canRename && newText.isNotBlank()) View.VISIBLE else View.GONE
                     scrollSearchResultsToTop()
                     return true
@@ -297,6 +301,7 @@ class AppDrawerFragment : Fragment() {
                 scrollSearchResultsToTop()
             },
             appClickListener = { appModel ->
+                if (!isAdded || appModel.appPackage.isBlank()) return@AppDrawerAdapter
                 if (flag == Constants.FLAG_LAUNCH_APP && appModel.appPackage.isNotBlank() &&
                     viewModel.mindfulMorningManager.isLaunchBlocked(appModel.appPackage)
                 ) {
@@ -319,6 +324,7 @@ class AppDrawerFragment : Fragment() {
                     findNavController().popBackStack()
             },
             appInfoListener = {
+                if (!isAdded || it.appPackage.isBlank()) return@AppDrawerAdapter
                 openAppInfo(
                     requireContext(),
                     it.user,
@@ -327,6 +333,7 @@ class AppDrawerFragment : Fragment() {
                 findNavController().popBackStack(R.id.mainFragment, false)
             },
             appDeleteListener = { appModel ->
+                if (!isAdded || appModel.appPackage.isBlank()) return@AppDrawerAdapter
                 when (appModel) {
                     is AppModel.PrivateSpaceHeader -> {}
                     is AppModel.SectionHeader -> {}
@@ -353,6 +360,7 @@ class AppDrawerFragment : Fragment() {
                 viewModel.getAppList()
             },
             appHideListener = { appModel, _ ->
+                if (!isAdded || appModel.appPackage.isBlank()) return@AppDrawerAdapter
                 if (!PremiumAccess.hasPremiumAccess(prefs)) {
                     (requireActivity() as? MainActivity)?.showUpgradeDialog()
                     return@AppDrawerAdapter
@@ -373,7 +381,7 @@ class AppDrawerFragment : Fragment() {
                 if (newSet.isEmpty())
                     findNavController().popBackStack()
                 if (prefs.firstHide) {
-                    binding.search.hideKeyboard()
+                    _binding?.search?.hideKeyboard()
                     prefs.firstHide = false
                     val hideTourShowing = viewModel.isOnboardingActive() &&
                         viewModel.currentOnboardingStep().requiredAction == OnboardingAction.OPEN_APP_DRAWER
@@ -386,6 +394,10 @@ class AppDrawerFragment : Fragment() {
                 viewModel.getHiddenApps()
             },
             appRenameListener = { appModel, renameLabel ->
+                if (!isAdded) return@AppDrawerAdapter
+                if (appModel.appPackage.isBlank() && appModel !is AppModel.PinnedShortcut) {
+                    return@AppDrawerAdapter
+                }
                 if (!PremiumAccess.hasPremiumAccess(prefs)) {
                     (requireActivity() as? MainActivity)?.showUpgradeDialog()
                     return@AppDrawerAdapter
@@ -431,7 +443,8 @@ class AppDrawerFragment : Fragment() {
             ): Int {
                 val scrollRange = super.scrollVerticallyBy(dx, recycler, state)
                 val overScroll = dx - scrollRange
-                if (overScroll < -10 && binding.recyclerView.scrollState == RecyclerView.SCROLL_STATE_DRAGGING)
+                val list = _binding?.recyclerView
+                if (overScroll < -10 && list?.scrollState == RecyclerView.SCROLL_STATE_DRAGGING)
                     checkMessageAndExit()
                 return scrollRange
             }
@@ -490,21 +503,23 @@ class AppDrawerFragment : Fragment() {
     }
 
     private fun scheduleUpdateCombinedAppList() {
-        combineListRunnable?.let { binding.root.removeCallbacks(it) }
+        val root = _binding?.root ?: return
+        combineListRunnable?.let { root.removeCallbacks(it) }
         val runnable = Runnable {
             combineListRunnable = null
             updateCombinedAppList()
         }
         combineListRunnable = runnable
-        binding.root.post(runnable)
+        root.post(runnable)
     }
 
     private fun updateCombinedAppList() {
+        if (_binding == null) return
         val apps = currentAppList
             ?.filter { it !is AppModel.SectionHeader }
             ?: return
         val combined = mutableListOf<AppModel>()
-        val query = binding.search.query?.toString().orEmpty().trim()
+        val query = _binding?.search?.query?.toString().orEmpty().trim()
 
         val uniqueApps = apps.distinctBy {
             when (it) {
@@ -653,15 +668,17 @@ class AppDrawerFragment : Fragment() {
                     RecyclerView.SCROLL_STATE_DRAGGING -> {
                         onTop = !recyclerView.canScrollVertically(-1)
                         if (onTop)
-                            binding.search.hideKeyboard()
+                            _binding?.search?.hideKeyboard()
                     }
 
                     RecyclerView.SCROLL_STATE_IDLE -> {
+                        val search = _binding?.search ?: return
+                        if (!::prefs.isInitialized) return
                         if (!recyclerView.canScrollVertically(1))
-                            binding.search.hideKeyboard()
+                            search.hideKeyboard()
                         else if (!recyclerView.canScrollVertically(-1))
                             if (!onTop && isRemoving.not() && searchExpanded)
-                                binding.search.showKeyboard(prefs.autoShowKeyboard)
+                                search.showKeyboard(prefs.autoShowKeyboard)
                     }
                 }
             }
@@ -800,6 +817,7 @@ class AppDrawerFragment : Fragment() {
     }
 
     private fun checkMessageAndExit() {
+        if (!isAdded || _binding == null) return
         findNavController().popBackStack()
         if (flag == Constants.FLAG_LAUNCH_APP)
             viewModel.checkForMessages.call()
@@ -807,11 +825,13 @@ class AppDrawerFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-        if (searchExpanded) binding.search.showKeyboard(prefs.autoShowKeyboard)
+        val drawer = _binding ?: return
+        if (searchExpanded && ::prefs.isInitialized) drawer.search.showKeyboard(prefs.autoShowKeyboard)
     }
 
     override fun onResume() {
         super.onResume()
+        if (_binding == null || !::prefs.isInitialized) return
         if (::adapter.isInitialized) {
             adapter.premiumLocked = !PremiumAccess.hasPremiumAccess(prefs)
         }
@@ -825,16 +845,18 @@ class AppDrawerFragment : Fragment() {
     }
 
     override fun onStop() {
-        binding.search.hideKeyboard()
+        _binding?.search?.hideKeyboard()
         super.onStop()
     }
 
     override fun onDestroyView() {
         combineListRunnable?.let { _binding?.root?.removeCallbacks(it) }
         combineListRunnable = null
+        _binding?.search?.setOnQueryTextListener(null)
         _binding?.recyclerView?.removeCallbacks(hideSpotlightRunnable)
+        _binding?.recyclerView?.clearOnScrollListeners()
         _binding?.root?.let { (activity as? MainActivity)?.clearOnboardingSpotlightFrom(it) }
-        _binding?.root?.viewTreeObserver?.removeOnGlobalLayoutListener(drawerLayoutListener)
+        _binding?.root?.viewTreeObserver?.takeIf { it.isAlive }?.removeOnGlobalLayoutListener(drawerLayoutListener)
         super.onDestroyView()
         _binding = null
     }
@@ -915,7 +937,7 @@ class AppDrawerFragment : Fragment() {
         row.getLocationOnScreen(loc)
         val bottom = loc[1] + row.height
         val allowed = resources.displayMetrics.heightPixels - cardHeight - 12.dpToPx()
-        if (bottom > allowed) binding.recyclerView.scrollBy(0, bottom - allowed)
+        if (bottom > allowed) _binding?.recyclerView?.scrollBy(0, bottom - allowed)
     }
 
     private fun isDrawerTourStep(action: OnboardingAction): Boolean {

@@ -24,6 +24,7 @@ class UnmatchedCloseEventGuardian(private val usageStatsManager: UsageStatsManag
      */
     fun test(event: UsageEvents.Event, queryStart: Long): Boolean {
         val events = usageStatsManager.queryEvents(queryStart - SCAN_INTERVAL, queryStart)
+            ?: return false
 
         // Reusable event object for iteration
         val e = UsageEvents.Event()

@@ -73,6 +73,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import org.json.JSONArray
 import org.json.JSONObject
@@ -1050,50 +1051,57 @@ private fun getBestLastKnownLocation(locationManager: LocationManager): Location
 private suspend fun awaitCurrentLocationApi30(
     context: Context,
     locationManager: LocationManager,
-): Location? = suspendCancellableCoroutine { continuation ->
-    val signal = CancellationSignal()
-    continuation.invokeOnCancellation { signal.cancel() }
-    val providers = buildList {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            add(LocationManager.FUSED_PROVIDER)
-        }
-        add(LocationManager.GPS_PROVIDER)
-        add(LocationManager.NETWORK_PROVIDER)
-    }.filter { provider ->
-        try {
-            locationManager.isProviderEnabled(provider)
-        } catch (_: Exception) {
-            false
-        }
-    }
-    if (providers.isEmpty()) {
-        continuation.resume(null)
-        return@suspendCancellableCoroutine
-    }
+): Location? {
+    val bestLocation = AtomicReference<Location?>(null)
+    val result = withTimeoutOrNull(LOCATION_FETCH_TIMEOUT_MS) {
+        suspendCancellableCoroutine { continuation ->
+            val signal = CancellationSignal()
+            continuation.invokeOnCancellation { signal.cancel() }
+            val providers = buildList {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    add(LocationManager.FUSED_PROVIDER)
+                }
+                add(LocationManager.GPS_PROVIDER)
+                add(LocationManager.NETWORK_PROVIDER)
+            }.filter { provider ->
+                try {
+                    locationManager.isProviderEnabled(provider)
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            if (providers.isEmpty()) {
+                continuation.resume(null)
+                return@suspendCancellableCoroutine
+            }
 
-    var pending = providers.size
-    var bestLocation: Location? = null
-    fun finishProvider(location: Location?) {
-        if (location != null && (bestLocation == null || location.time > bestLocation!!.time)) {
-            bestLocation = location
-        }
-        pending--
-        if (pending == 0 && continuation.isActive) {
-            continuation.resume(bestLocation)
-        }
-    }
+            var pending = providers.size
+            fun finishProvider(location: Location?) {
+                if (location != null) {
+                    bestLocation.updateAndGet { current ->
+                        if (current == null || location.time > current.time) location else current
+                    }
+                }
+                pending--
+                if (pending == 0 && continuation.isActive) {
+                    continuation.resume(bestLocation.get())
+                }
+            }
 
-    providers.forEach { provider ->
-        try {
-            locationManager.getCurrentLocation(
-                provider,
-                signal,
-                ContextCompat.getMainExecutor(context),
-            ) { location -> finishProvider(location) }
-        } catch (_: Exception) {
-            finishProvider(null)
+            providers.forEach { provider ->
+                try {
+                    locationManager.getCurrentLocation(
+                        provider,
+                        signal,
+                        ContextCompat.getMainExecutor(context),
+                    ) { location -> finishProvider(location) }
+                } catch (_: Exception) {
+                    finishProvider(null)
+                }
+            }
         }
     }
+    return result ?: bestLocation.get()
 }
 
 @SuppressLint("MissingPermission")

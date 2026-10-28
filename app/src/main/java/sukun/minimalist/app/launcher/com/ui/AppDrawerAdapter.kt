@@ -94,11 +94,18 @@ class AppDrawerAdapter(
     var appsList: MutableList<AppModel> = mutableListOf()
     var appFilteredList: MutableList<AppModel> = mutableListOf()
 
-    /** Bumped whenever [appsList] is replaced so an in-flight search cannot publish over it. */
-    private var listGeneration = 0
+    /**
+     * Bumped on every search change and whenever [appsList] is replaced.
+     * A filter started for an older query must not publish after a clear or a new letter.
+     */
+    private var queryGeneration = 0
+    private var activeQuery: String = ""
+
+    /** One object so a background filter cannot mix a new letter with the previous list. */
+    @Volatile private var filterRequest = QuerySnapshot(0, "", emptyList())
 
     override fun getItemViewType(position: Int): Int {
-        return when (appFilteredList.getOrNull(position)) {
+        return when (currentList.getOrNull(position)) {
             is AppModel.PrivateSpaceHeader -> VIEW_TYPE_PRIVATE_HEADER
             is AppModel.SectionHeader -> VIEW_TYPE_SECTION_HEADER
             else -> VIEW_TYPE_APP
@@ -133,60 +140,71 @@ class AppDrawerAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        try {
-            if (appFilteredList.isEmpty() || position == RecyclerView.NO_POSITION) return
-            val appModel = appFilteredList[holder.bindingAdapterPosition]
-            when (holder) {
-                is PrivateSpaceHeaderViewHolder -> {
-                    holder.bind(
-                        appLabelGravity,
-                        premiumLocked,
-                        privateSpaceToggleListener,
-                        privateSpaceSettingsListener,
-                    )
-                }
-                is SectionHeaderViewHolder -> holder.bind(appModel as AppModel.SectionHeader, appLabelGravity)
-
-                is ViewHolder -> holder.bind(
-                    flag,
+        if (position == RecyclerView.NO_POSITION) return
+        val appModel = currentList.getOrNull(position) ?: return
+        when {
+            holder is PrivateSpaceHeaderViewHolder && appModel is AppModel.PrivateSpaceHeader -> {
+                holder.bind(
                     appLabelGravity,
-                    showAppIcons,
-                    myUserHandle,
-                    appModel,
-                    appModel.appPackage in cooledOffPackages,
-                    appModel.appPackage in maskedPackages,
-                    appClickListener,
-                    appDeleteListener,
-                    appInfoListener,
-                    appHideListener,
-                    appRenameListener,
-                    appCooldownLimitListener,
                     premiumLocked,
+                    privateSpaceToggleListener,
+                    privateSpaceSettingsListener,
                 )
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+            holder is SectionHeaderViewHolder && appModel is AppModel.SectionHeader ->
+                holder.bind(appModel, appLabelGravity)
+
+            holder is ViewHolder &&
+                (appModel is AppModel.App || appModel is AppModel.PinnedShortcut) -> holder.bind(
+                flag,
+                appLabelGravity,
+                showAppIcons,
+                myUserHandle,
+                appModel,
+                appModel.appPackage in cooledOffPackages,
+                appModel.appPackage in maskedPackages,
+                appClickListener,
+                appDeleteListener,
+                appInfoListener,
+                appHideListener,
+                appRenameListener,
+                appCooldownLimitListener,
+                premiumLocked,
+            )
         }
     }
 
     override fun getFilter(): Filter = this.appFilter
 
-    private data class FilterPayload(val generation: Int, val items: List<AppModel>)
+    private data class QuerySnapshot(
+        val generation: Int,
+        val query: String,
+        val apps: List<AppModel>,
+    )
+
+    private data class FilterPayload(
+        val generation: Int,
+        val query: String,
+        val items: List<AppModel>,
+    )
 
     private fun createAppFilter(): Filter {
         return object : Filter() {
             override fun performFiltering(charSearch: CharSequence?): FilterResults {
-                val generation = listGeneration
-                val snapshot = appsList.toList()
+                val request = filterRequest
                 val filterResults = FilterResults()
-                filterResults.values = FilterPayload(generation, displayedApps(snapshot, charSearch))
+                filterResults.values = FilterPayload(
+                    request.generation,
+                    request.query,
+                    displayedApps(request.apps, request.query),
+                )
                 return filterResults
             }
 
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
                 val payload = results?.values as? FilterPayload ?: return
-                if (payload.generation != listGeneration) return
-                submitDisplayedList(payload.items)
+                if (payload.generation != queryGeneration || payload.query != activeQuery) return
+                submitDisplayedList(payload.items, payload.generation)
             }
         }
     }
@@ -200,25 +218,35 @@ class AppDrawerAdapter(
     }
 
     fun setAppList(appsList: MutableList<AppModel>, query: CharSequence? = null) {
-        listGeneration++
+        val generation = ++queryGeneration
+        val text = query?.toString() ?: activeQuery
+        activeQuery = text
         val updatedApps = dedupeDrawerRows(appsList).toMutableList()
-        updatedApps.add(
-            AppModel.App(
-                appLabel = "",
-                key = null,
-                appPackage = "",
-                activityClassName = "",
-                isNew = false,
-                user = android.os.Process.myUserHandle()
-            )
-        )
         this.appsList = updatedApps
-        submitDisplayedList(displayedApps(updatedApps, query))
+        publishQuerySnapshot(generation, text, updatedApps.toList())
+        submitDisplayedList(displayedApps(updatedApps, text), generation)
     }
 
-    /** Filters the canonical list. Does not replace [appsList]. */
+    /**
+     * Shows [query] only if it is still the text in the box when the result is ready.
+     * A clear publishes the full list immediately. A following letter discards that clear
+     * and any older letter, then shows only the new letter.
+     */
     fun applyQuery(query: CharSequence?) {
-        submitDisplayedList(displayedApps(appsList.toList(), query))
+        val text = query?.toString().orEmpty()
+        val generation = ++queryGeneration
+        activeQuery = text
+        val snapshot = appsList.toList()
+        publishQuerySnapshot(generation, text, snapshot)
+        if (text.isBlank()) {
+            submitDisplayedList(displayedApps(snapshot, text), generation)
+            return
+        }
+        appFilter.filter(text)
+    }
+
+    private fun publishQuerySnapshot(generation: Int, query: String, snapshot: List<AppModel>) {
+        filterRequest = QuerySnapshot(generation, query, snapshot)
     }
 
     private fun dedupeDrawerRows(items: List<AppModel>): List<AppModel> {
@@ -261,11 +289,14 @@ class AppDrawerAdapter(
         }
     }
 
-    private fun submitDisplayedList(items: List<AppModel>) {
-        appFilteredList = items.toMutableList()
+    private fun submitDisplayedList(items: List<AppModel>, generation: Int) {
+        if (generation != queryGeneration) return
+        val shown = items.toList()
+        appFilteredList = shown.toMutableList()
         rebuildSectionPositions(appFilteredList)
-        submitList(appFilteredList.toList()) {
-            onListChanged(appFilteredList.toList())
+        submitList(shown) {
+            if (generation != queryGeneration) return@submitList
+            onListChanged(shown)
         }
     }
 
@@ -367,6 +398,8 @@ class AppDrawerAdapter(
 
     class ViewHolder(private val binding: AdapterAppDrawerBinding) :
         RecyclerView.ViewHolder(binding.root) {
+        private var renameWatcher: TextWatcher? = null
+
         fun bind(
             flag: Int,
             appLabelGravity: Int,
@@ -468,7 +501,8 @@ class AppDrawerAdapter(
                 appRow.visibility = if (hasFocus) View.INVISIBLE else View.VISIBLE
                 appTitle.visibility = if (hasFocus) View.INVISIBLE else View.VISIBLE
             }
-            etAppRename.addTextChangedListener(object : TextWatcher {
+            renameWatcher?.let { etAppRename.removeTextChangedListener(it) }
+            val watcher = object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
                     etAppRename.hint = getAppName(etAppRename.context, appModel.appPackage, appModel.user)
                 }
@@ -484,7 +518,9 @@ class AppDrawerAdapter(
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                     etAppRename.hint = ""
                 }
-            })
+            }
+            renameWatcher = watcher
+            etAppRename.addTextChangedListener(watcher)
             etAppRename.setOnEditorActionListener { _, actionCode, _ ->
                 if (actionCode == EditorInfo.IME_ACTION_DONE) {
                     val renameLabel = etAppRename.text.toString().trim()
@@ -522,7 +558,10 @@ class AppDrawerAdapter(
                 appRow.visibility = View.VISIBLE
                 appTitle.visibility = View.VISIBLE
             }
-            appHide.setOnClickListener { appHideListener(appModel, bindingAdapterPosition) }
+            appHide.setOnClickListener {
+                val row = bindingAdapterPosition
+                if (row != RecyclerView.NO_POSITION) appHideListener(appModel, row)
+            }
         }
 
         private fun setAppIcon(showAppIcons: Boolean, appModel: AppModel, isMasked: Boolean) {
@@ -533,7 +572,11 @@ class AppDrawerAdapter(
                 iconView.isVisible = false
                 return
             }
-            val launcherApps = iconView.context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
+            val launcherApps = iconView.context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+            if (launcherApps == null) {
+                iconView.isVisible = false
+                return
+            }
             val drawable = try {
                 when (appModel) {
                     is AppModel.PinnedShortcut -> {
@@ -571,7 +614,9 @@ class AppDrawerAdapter(
         }
 
         private fun getAppName(context: Context, appPackage: String, user: UserHandle): String {
-            val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
+            if (appPackage.isBlank()) return ""
+            val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+                ?: return ""
             return try {
                 val activityList = launcherApps.getActivityList(appPackage, user)
                 if (activityList.isNotEmpty()) {

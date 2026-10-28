@@ -36,9 +36,11 @@ import sukun.minimalist.app.launcher.com.data.Prefs
 import sukun.minimalist.app.launcher.com.databinding.ActivityMainBinding
 import sukun.minimalist.app.launcher.com.helper.AmbientThemeController
 import sukun.minimalist.app.launcher.com.helper.FakeHomeActivity
+import sukun.minimalist.app.launcher.com.helper.ThemeRepairAction
+import sukun.minimalist.app.launcher.com.helper.ThemeRepairState
 import sukun.minimalist.app.launcher.com.helper.applyLauncherBrightnessForTheme
 import sukun.minimalist.app.launcher.com.helper.clearLauncherBrightnessOverride
-import sukun.minimalist.app.launcher.com.helper.getColorFromAttr
+import sukun.minimalist.app.launcher.com.helper.decideThemeRepair
 import sukun.minimalist.app.launcher.com.helper.hasBeenDays
 import sukun.minimalist.app.launcher.com.helper.hasWeatherLocationPermission
 import sukun.minimalist.app.launcher.com.helper.hasBeenHours
@@ -1218,27 +1220,22 @@ class MainActivity : AppCompatActivity() {
         timerJob?.cancel()
         timerJob = lifecycleScope.launch {
             delay(500)
-            if (!isResumed) return@launch
-            
-            val isDark = isDarkThemeOn()
-            val themeMode = prefs.appTheme
-            
-            val mismatch = when (themeMode) {
-                AppCompatDelegate.MODE_NIGHT_YES -> !isDark
-                AppCompatDelegate.MODE_NIGHT_NO -> isDark
-                Constants.THEME_MODE_AMBIENT_LIGHT -> false
-                else -> false
-            }
-
-            if (mismatch) {
-                isRecreating = true
-                AppCompatDelegate.setDefaultNightMode(themeMode)
-            } else {
-                // Check if attributes are correctly applied
-                val primaryColor = try { getColorFromAttr(R.attr.primaryColor) } catch (_: Exception) { 0 }
-                val expected = if (isDark) getColor(R.color.cream) else getColor(R.color.ink)
-                
-                if (primaryColor != 0 && primaryColor != expected) {
+            if (!isResumed || isFinishing || isDestroyed || isRecreating) return@launch
+            val nightMode = prefs.resolveLaunchNightMode()
+            when (
+                decideThemeRepair(
+                    configurationIsDark = isDarkThemeOn(),
+                    savedThemeIsDark = prefs.isEffectivelyDarkTheme(),
+                    appliedNightModeMatchesSaved = AppCompatDelegate.getDefaultNightMode() == nightMode,
+                    repairAlreadyUsed = ThemeRepairState.used,
+                )
+            ) {
+                ThemeRepairAction.None -> Unit
+                ThemeRepairAction.ApplyNightMode ->
+                    AppCompatDelegate.setDefaultNightMode(nightMode)
+                ThemeRepairAction.RecreateOnce -> {
+                    ThemeRepairState.used = true
+                    AppCompatDelegate.setDefaultNightMode(nightMode)
                     isRecreating = true
                     safeRecreate()
                 }

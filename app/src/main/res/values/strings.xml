@@ -254,6 +254,8 @@
     <string name="screen_time_total_label">Total  %1$s</string>
     <string name="screen_time_avg_label">Avg    %1$s</string>
     <string name="screen_time_no_permission">Usage access permission is required to view screen time analytics. Enable it in Settings → Apps → Special app access → Usage access.</string>
+    <string name="screen_time_loading">Loading screen time…</string>
+    <string name="screen_time_load_failed">Screen time could not be loaded.</string>
     <string name="prayer_today">Today</string>
     <string name="prayer_this_month">This Month  %1$s</string>
     <string name="prayer_this_year">This Year  %1$s</string>

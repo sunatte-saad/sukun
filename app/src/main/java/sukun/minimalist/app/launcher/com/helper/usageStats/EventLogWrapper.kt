@@ -27,7 +27,11 @@ class EventLogWrapper(private val context: Context) {
      * @param end   Last point in time to include in results
      * @return A list of foreground stats for the specified period
      */
-    fun getForegroundStatsByTimestamps(start: Long, end: Long): List<ComponentForegroundStat> {
+    fun getForegroundStatsByTimestamps(
+        start: Long,
+        end: Long,
+        validateUnmatchedCloses: Boolean = true,
+    ): List<ComponentForegroundStat> {
         var queryStart = start // Can be mutated by DEVICE_STARTUP event
 
         /*
@@ -54,7 +58,7 @@ class EventLogWrapper(private val context: Context) {
         }
 
         // Assumption: events are ordered chronologically
-        val events = usageStatsManager.queryEvents(queryStart, end)
+        val events = usageStatsManager.queryEvents(queryStart, end) ?: return emptyList()
 
         /* …except that sometimes, the events that are close to each other are swapped in a way that
          * breaks the assumption that all end times which do not have a matching start time have
@@ -115,6 +119,7 @@ class EventLogWrapper(private val context: Context) {
                         moveToForegroundMap[appClass] = null
                     } ?: if (
                     // App has not been in this query yet (test for Duplicate close event)
+                        validateUnmatchedCloses &&
                         moveToForegroundMap.keys.none { it.packageName == event.packageName } &&
                         // Test if this unmatched close event is True by asking the Guardian to scan for it
                         guardian.test(event, queryStart)

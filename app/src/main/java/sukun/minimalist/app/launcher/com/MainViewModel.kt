@@ -57,8 +57,10 @@ import sukun.minimalist.app.launcher.com.helper.setPlainWallpaper
 import sukun.minimalist.app.launcher.com.helper.showToast
 import sukun.minimalist.app.launcher.com.helper.usageStats.EventLogWrapper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
@@ -75,6 +77,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var appListLoadGeneration = 0
     private var hiddenAppsLoadGeneration = 0
+    private var prayerRefreshJob: Job? = null
+    private var prayerRefreshFollowUp = false
+    private var prayerRefreshFollowUpForce = false
+    private var weatherRefreshJob: Job? = null
+    private var weatherRefreshFollowUp = false
     private val appContext by lazy { application.applicationContext }
     private val prefs = Prefs(appContext)
     val cooldownManager by lazy { AppCooldownManager(prefs) }
@@ -544,7 +551,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (generation != appListLoadGeneration) return@launch
             appList.value = apps
             if (!includeHiddenApps) {
-                recentAppPackages.value = getRecentAppPackages(apps)
+                recentAppPackages.value = withContext(Dispatchers.IO) {
+                    getRecentAppPackages(apps)
+                }
             }
         }
         getPrivateSpaceAppList()
@@ -691,9 +700,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun refreshWeatherData() {
-        viewModelScope.launch {
-            val refreshedWeather = refreshWeather(appContext, prefs)
-            weatherData.value = refreshedWeather ?: getCachedWeatherData(prefs)
+        if (weatherRefreshJob?.isActive == true) {
+            weatherRefreshFollowUp = true
+            return
+        }
+        weatherRefreshFollowUp = false
+        weatherRefreshJob = viewModelScope.launch {
+            while (true) {
+                val refreshedWeather = refreshWeather(appContext, prefs)
+                weatherData.value = refreshedWeather ?: getCachedWeatherData(prefs)
+                if (!weatherRefreshFollowUp) break
+                weatherRefreshFollowUp = false
+            }
         }
     }
 
@@ -725,19 +743,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun isPrayerRefreshRunning(): Boolean = prayerRefreshJob?.isActive == true
+
     fun refreshPrayerData(forceLocationRefresh: Boolean = false) {
-        viewModelScope.launch {
-            if (prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE) {
-                prayerData.value = null
-                PrayerReminderScheduler.cancelReminder(appContext)
-                return@launch
-            }
-            val refreshedPrayer = refreshPrayerState(appContext, prefs, forceLocationRefresh)
-            prayerData.value = refreshedPrayer ?: getCachedPrayerState(prefs)
-            if (prefs.showPrayerOnHome && prayerData.value != null) {
-                PrayerReminderScheduler.scheduleNextReminder(appContext, prefs)
-            } else {
-                PrayerReminderScheduler.cancelReminder(appContext)
+        if (prayerRefreshJob?.isActive == true) {
+            prayerRefreshFollowUp = true
+            if (forceLocationRefresh) prayerRefreshFollowUpForce = true
+            return
+        }
+        prayerRefreshFollowUp = false
+        prayerRefreshFollowUpForce = false
+        prayerRefreshJob = viewModelScope.launch {
+            var forceLocation = forceLocationRefresh
+            while (true) {
+                if (prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE) {
+                    prayerData.value = null
+                    PrayerReminderScheduler.cancelReminder(appContext)
+                    break
+                }
+                val refreshedPrayer = refreshPrayerState(appContext, prefs, forceLocation)
+                prayerData.value = refreshedPrayer ?: getCachedPrayerState(prefs)
+                if (prefs.showPrayerOnHome && prayerData.value != null) {
+                    PrayerReminderScheduler.scheduleNextReminder(appContext, prefs)
+                } else {
+                    PrayerReminderScheduler.cancelReminder(appContext)
+                }
+                if (!prayerRefreshFollowUp) break
+                forceLocation = prayerRefreshFollowUpForce
+                prayerRefreshFollowUp = false
+                prayerRefreshFollowUpForce = false
             }
         }
     }
@@ -864,7 +898,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             val end = System.currentTimeMillis()
             val start = end - TimeUnit.DAYS.toMillis(7)
-            val foregroundStats = EventLogWrapper(appContext).getForegroundStatsByTimestamps(start, end)
+            val foregroundStats = EventLogWrapper(appContext).getForegroundStatsByTimestamps(
+                start,
+                end,
+                validateUnmatchedCloses = false,
+            )
             if (foregroundStats.isEmpty()) return emptyList()
 
             foregroundStats

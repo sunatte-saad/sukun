@@ -13,6 +13,7 @@ import android.media.ToneGenerator
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import android.os.PowerManager
 import android.os.VibrationEffect
@@ -29,6 +30,8 @@ object HourlyChimeEffects {
 
     private const val CHIME_MAX_PLAYBACK_MS = 2500L
     private const val FLASH_SEQUENCE_MS = 1400L
+    private val playbackThread = HandlerThread("sukun-hourly-chime").apply { start() }
+    private val playbackHandler = Handler(playbackThread.looper)
 
     fun holdMsForStyle(style: String): Long = when (style) {
         Constants.ChimeStyle.FLASH -> FLASH_SEQUENCE_MS + 300L
@@ -66,17 +69,18 @@ object HourlyChimeEffects {
 
     fun playSound(context: Context, sound: String, customUri: String = Prefs(context).hourlyChimeCustomUri) {
         val appContext = context.applicationContext
-        val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-
-        when (sound) {
-            Constants.ChimeSound.DEFAULT -> playDefaultNotificationSound(appContext)
-            Constants.ChimeSound.CUSTOM -> {
-                val uri = customUri.takeIf { it.isNotEmpty() }
-                if (uri != null) playUriSound(appContext, Uri.parse(uri))
-                else playDefaultNotificationSound(appContext)
-            }
-            else -> {
-                if (!playBundledChime(appContext)) playFallbackTone(audioManager)
+        playbackHandler.post {
+            val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            when (sound) {
+                Constants.ChimeSound.DEFAULT -> playDefaultNotificationSound(appContext)
+                Constants.ChimeSound.CUSTOM -> {
+                    val uri = customUri.takeIf { it.isNotEmpty() }
+                    if (uri != null) playUriSound(appContext, Uri.parse(uri))
+                    else playDefaultNotificationSound(appContext)
+                }
+                else -> {
+                    if (!playBundledChime(appContext)) playFallbackTone(audioManager)
+                }
             }
         }
     }
@@ -104,7 +108,11 @@ object HourlyChimeEffects {
 
     fun doFlash(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
-        val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager ?: return false
+        val cameraManager = try {
+            context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager
+        } catch (_: Exception) {
+            null
+        } ?: return false
         val cameraId = findTorchCameraId(cameraManager) ?: return false
         val handler = Handler(Looper.getMainLooper())
         val wakeLock = acquireWakeLock(context, "sukun:hourly_chime_flash", FLASH_SEQUENCE_MS + 500L)
@@ -182,8 +190,13 @@ object HourlyChimeEffects {
     }
 
     private fun findTorchCameraId(cameraManager: CameraManager): String? {
+        val cameraIds = try {
+            cameraManager.cameraIdList
+        } catch (_: Exception) {
+            return null
+        }
         var fallbackWithFlash: String? = null
-        for (id in cameraManager.cameraIdList) {
+        for (id in cameraIds) {
             val chars = try {
                 cameraManager.getCameraCharacteristics(id)
             } catch (_: Exception) {
@@ -226,8 +239,9 @@ object HourlyChimeEffects {
     }
 
     private fun playUriSound(context: Context, uri: Uri) {
+        val player = MediaPlayer()
+        var playbackStarted = false
         try {
-            val player = MediaPlayer()
             player.setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
@@ -243,27 +257,45 @@ object HourlyChimeEffects {
                     if (player.isPlaying) player.stop()
                 } catch (_: Exception) {
                 }
-                player.release()
+                try {
+                    player.release()
+                } catch (_: Exception) {
+                }
             }
             player.setOnCompletionListener { releasePlayer() }
             player.setOnErrorListener { mediaPlayer, _, _ ->
                 if (!released) {
                     released = true
-                    mediaPlayer.release()
+                    try {
+                        mediaPlayer.release()
+                    } catch (_: Exception) {
+                    }
                 }
                 true
             }
             player.prepare()
             player.start()
+            playbackStarted = true
             Handler(Looper.getMainLooper()).postDelayed({ releasePlayer() }, CHIME_MAX_PLAYBACK_MS)
         } catch (_: Exception) {
+            if (!playbackStarted) {
+                try {
+                    player.release()
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 
     private fun playBundledChime(context: Context): Boolean {
+        val afd = try {
+            context.resources.openRawResourceFd(R.raw.hourly_chime)
+        } catch (_: Exception) {
+            null
+        } ?: return false
+        val player = MediaPlayer()
+        var playbackStarted = false
         try {
-            val afd = context.resources.openRawResourceFd(R.raw.hourly_chime) ?: return false
-            val player = MediaPlayer()
             afd.use {
                 player.setAudioAttributes(
                     AudioAttributes.Builder()
@@ -281,23 +313,36 @@ object HourlyChimeEffects {
                     if (player.isPlaying) player.stop()
                 } catch (_: Exception) {
                 }
-                player.release()
+                try {
+                    player.release()
+                } catch (_: Exception) {
+                }
             }
             player.setOnCompletionListener { releasePlayer() }
             player.setOnErrorListener { mediaPlayer, _, _ ->
                 if (!released) {
                     released = true
-                    mediaPlayer.release()
+                    try {
+                        mediaPlayer.release()
+                    } catch (_: Exception) {
+                    }
                 }
                 true
             }
             player.prepare()
             player.start()
+            playbackStarted = true
             Handler(Looper.getMainLooper()).postDelayed({
                 releasePlayer()
             }, CHIME_MAX_PLAYBACK_MS)
             return true
         } catch (_: Exception) {
+            if (!playbackStarted) {
+                try {
+                    player.release()
+                } catch (_: Exception) {
+                }
+            }
             return false
         }
     }

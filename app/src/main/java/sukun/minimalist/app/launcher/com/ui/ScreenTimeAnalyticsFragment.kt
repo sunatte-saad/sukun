@@ -1,5 +1,6 @@
 package sukun.minimalist.app.launcher.com.ui
 
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -15,6 +16,7 @@ import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.databinding.FragmentScreenTimeAnalyticsBinding
 import sukun.minimalist.app.launcher.com.helper.appUsagePermissionGranted
 import sukun.minimalist.app.launcher.com.helper.formattedTimeSpent
+import sukun.minimalist.app.launcher.com.helper.usageStats.ComponentForegroundStat
 import sukun.minimalist.app.launcher.com.helper.usageStats.EventLogWrapper
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -51,13 +53,24 @@ class ScreenTimeAnalyticsFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun populate() {
+        val ctx = context ?: return
+        binding.tvTodayStats.text = getString(R.string.screen_time_loading)
+        binding.tvWeekStats.text = ""
+        binding.tvMonthStats.text = ""
         viewLifecycleOwner.lifecycleScope.launch {
-            val stats = withContext(Dispatchers.IO) { queryStats() }
-            binding.tvTodayStats.text = stats.todayText
-            binding.tvWeekHeader.text = stats.weekHeader
-            binding.tvWeekStats.text = stats.weekText
-            binding.tvMonthHeader.text = stats.monthHeader
-            binding.tvMonthStats.text = stats.monthText
+            val stats = withContext(Dispatchers.IO) { queryStats(ctx) }
+            val views = _binding ?: return@launch
+            if (stats == null) {
+                views.tvTodayStats.text = ctx.getString(R.string.screen_time_load_failed)
+                views.tvWeekStats.text = ""
+                views.tvMonthStats.text = ""
+                return@launch
+            }
+            views.tvTodayStats.text = stats.todayText
+            views.tvWeekHeader.text = stats.weekHeader
+            views.tvWeekStats.text = stats.weekText
+            views.tvMonthHeader.text = stats.monthHeader
+            views.tvMonthStats.text = stats.monthText
         }
     }
 
@@ -69,10 +82,11 @@ class ScreenTimeAnalyticsFragment : Fragment() {
         val monthText: String,
     )
 
-    private fun queryStats(): ScreenStats {
-        val ctx = requireContext()
+    private fun queryStats(ctx: Context): ScreenStats? {
         val wrapper = EventLogWrapper(ctx)
         val cal = Calendar.getInstance()
+        val daysElapsed = cal.get(Calendar.DAY_OF_MONTH).coerceAtLeast(1)
+        val earliestDaysAgo = maxOf(6, daysElapsed - 1)
 
         fun dayBounds(daysAgo: Int): Pair<Long, Long> {
             val c = Calendar.getInstance()
@@ -85,19 +99,34 @@ class ScreenTimeAnalyticsFragment : Fragment() {
             return start to end
         }
 
+        val (rangeStart, _) = dayBounds(earliestDaysAgo)
+        val foregroundStats = try {
+            wrapper.getForegroundStatsByTimestamps(rangeStart, System.currentTimeMillis())
+        } catch (_: Exception) {
+            return null
+        }
+
         fun fetchMs(daysAgo: Int): Long {
             val (start, end) = dayBounds(daysAgo)
+            val clipped = ArrayList<ComponentForegroundStat>()
+            for (stat in foregroundStats) {
+                val begin = maxOf(stat.beginTime, start)
+                val finish = minOf(stat.endTime, end)
+                if (finish > begin) {
+                    clipped.add(ComponentForegroundStat(begin, finish, stat.packageName))
+                }
+            }
             return try {
-                wrapper.aggregateForegroundStats(
-                    wrapper.getForegroundStatsByTimestamps(start, end)
-                ).sumOf { it.timeUsed }
-            } catch (_: Exception) { 0L }
+                wrapper.aggregateForegroundStats(clipped).sumOf { it.timeUsed }
+            } catch (_: Exception) {
+                0L
+            }
         }
 
         // Today
         val todayMs = fetchMs(0)
         val todayText = buildString {
-            appendLine(getString(R.string.screen_time_total_label, ctx.formattedTimeSpent(todayMs)))
+            appendLine(ctx.getString(R.string.screen_time_total_label, ctx.formattedTimeSpent(todayMs)))
         }.trimEnd()
 
         // Last 7 days
@@ -105,7 +134,7 @@ class ScreenTimeAnalyticsFragment : Fragment() {
         val dateFormat = SimpleDateFormat("d MMM", Locale.getDefault())
         val weekLines = (6 downTo 0).map { daysAgo ->
             val c = Calendar.getInstance().also { it.add(Calendar.DAY_OF_YEAR, -daysAgo) }
-            val day = if (daysAgo == 0) getString(R.string.screen_time_today_label)
+            val day = if (daysAgo == 0) ctx.getString(R.string.screen_time_today_label)
                       else dayFormat.format(c.time)
             val date = dateFormat.format(c.time)
             val ms = fetchMs(daysAgo)
@@ -120,19 +149,18 @@ class ScreenTimeAnalyticsFragment : Fragment() {
                 appendLine("$dayPad  $datePad  ${ctx.formattedTimeSpent(ms)}")
             }
             appendLine()
-            appendLine(getString(R.string.screen_time_avg_label, ctx.formattedTimeSpent(avgMs)))
+            appendLine(ctx.getString(R.string.screen_time_avg_label, ctx.formattedTimeSpent(avgMs)))
         }.trimEnd()
-        val weekHeader = getString(R.string.screen_time_last_7_days)
+        val weekHeader = ctx.getString(R.string.screen_time_last_7_days)
 
         // This month
         val monthName = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date())
-        val daysElapsed = cal.get(Calendar.DAY_OF_MONTH)
         var monthTotalMs = 0L
         for (d in 0 until daysElapsed) monthTotalMs += fetchMs(d)
         val monthAvgMs = if (daysElapsed > 0) monthTotalMs / daysElapsed else 0L
         val monthText = buildString {
-            appendLine(getString(R.string.screen_time_total_label, ctx.formattedTimeSpent(monthTotalMs)))
-            appendLine(getString(R.string.screen_time_avg_label, ctx.formattedTimeSpent(monthAvgMs)))
+            appendLine(ctx.getString(R.string.screen_time_total_label, ctx.formattedTimeSpent(monthTotalMs)))
+            appendLine(ctx.getString(R.string.screen_time_avg_label, ctx.formattedTimeSpent(monthAvgMs)))
         }.trimEnd()
 
         return ScreenStats(todayText, weekHeader, weekText, monthName, monthText)

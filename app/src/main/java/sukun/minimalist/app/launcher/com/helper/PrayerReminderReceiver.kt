@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import sukun.minimalist.app.launcher.com.R
 import sukun.minimalist.app.launcher.com.data.Constants
 import sukun.minimalist.app.launcher.com.data.Prefs
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,17 +33,35 @@ class PrayerReminderReceiver : BroadcastReceiver() {
 
                 if (prefs.showPrayerOnHome && withinWindow) {
                     if (prefs.azanEnabled) {
-                        AzanPlaybackService.start(appContext, prayerKey)
+                        try {
+                            AzanPlaybackService.start(appContext, prayerKey)
+                        } catch (e: Exception) {
+                            if (e is CancellationException) throw e
+                        }
                     }
-                    showPrayerMarkNotification(appContext, prayerKey)
+                    try {
+                        showPrayerMarkNotification(appContext, prayerKey)
+                    } catch (e: Exception) {
+                        if (e is CancellationException) throw e
+                    }
                 }
 
-                refreshPrayerState(appContext, prefs, forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
+                try {
+                    refreshPrayerState(
+                        appContext,
+                        prefs,
+                        forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE,
+                    )
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                }
                 if (prefs.showPrayerOnHome) {
                     PrayerReminderScheduler.scheduleNextReminder(appContext, prefs)
                 } else {
                     PrayerReminderScheduler.cancelReminder(appContext)
                 }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
             } finally {
                 pendingResult.finish()
             }

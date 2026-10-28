@@ -14,6 +14,7 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.ColorDrawable
 import android.os.BatteryManager
 import android.os.Build
+import android.os.SystemClock
 import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
@@ -110,6 +111,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private var mindfulMorningUnmaskJob: Job? = null
     private var systemTimeReceiver: BroadcastReceiver? = null
     private var currentPrayerState: PrayerState? = null
+    private val prayerRefreshBackoffStartMs = 5_000L
+    private val prayerRefreshBackoffMaxMs = 60_000L
     private var defaultHomeAppsPaddingTop = 0
     private var defaultHomeAppsPaddingBottom = 0
     private var topCornerStackRunnable: Runnable? = null
@@ -1075,6 +1078,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private fun startPrayerTicker() {
         if (prayerJob?.isActive == true) return
         prayerJob = viewLifecycleOwner.lifecycleScope.launch {
+            var nextRefreshElapsed = 0L
+            var retryDelayMs = prayerRefreshBackoffStartMs
             while (isActive) {
                 if (prefs.prayerSourceMode == Constants.PrayerSource.GOOGLE) break
                 val prayerState = currentPrayerState
@@ -1084,10 +1089,19 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                     break
                 }
                 if (prayerState.remainingMillis() <= 0L) {
-                    viewModel.refreshPrayerData(forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE)
+                    val now = SystemClock.elapsedRealtime()
+                    if (!viewModel.isPrayerRefreshRunning() && now >= nextRefreshElapsed) {
+                        viewModel.refreshPrayerData(
+                            forceLocationRefresh = prefs.prayerSourceMode == Constants.PrayerSource.DEVICE
+                        )
+                        nextRefreshElapsed = now + retryDelayMs
+                        retryDelayMs = (retryDelayMs * 2).coerceAtMost(prayerRefreshBackoffMaxMs)
+                    }
                     delay(1000)
                     continue
                 }
+                nextRefreshElapsed = 0L
+                retryDelayMs = prayerRefreshBackoffStartMs
                 binding.prayerText?.text = prayerState.toOverlayText(requireContext())
                 binding.prayerText?.isVisible = true
                 bringOverlayViewsToFront()

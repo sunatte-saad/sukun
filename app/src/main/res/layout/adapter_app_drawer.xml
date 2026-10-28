@@ -32,8 +32,8 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="@string/app"
-            android:textColor="?attr/primaryColor" />
+            android:textColor="?attr/primaryColor"
+            tools:text="@string/app" />
     </LinearLayout>
 
     <ImageView

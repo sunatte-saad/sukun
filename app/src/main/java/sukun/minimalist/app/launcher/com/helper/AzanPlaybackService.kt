@@ -14,6 +14,8 @@ import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.HandlerThread
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import sukun.minimalist.app.launcher.com.R
@@ -22,7 +24,13 @@ import sukun.minimalist.app.launcher.com.data.Prefs
 
 class AzanPlaybackService : Service() {
 
+    private val playbackThread = HandlerThread("sukun-azan").apply { start() }
+    private val playbackHandler = Handler(playbackThread.looper)
+
+    @Volatile
     private var mediaPlayer: MediaPlayer? = null
+    @Volatile
+    private var playbackToken = 0
     private var screenOffReceiver: BroadcastReceiver? = null
     private var audioManager: AudioManager? = null
     private var boostedAlarmVolumeFrom: Int? = null
@@ -38,7 +46,8 @@ class AzanPlaybackService : Service() {
         val prayerKey = intent?.getStringExtra(Constants.EXTRA_PRAYER_KEY).orEmpty()
         startForeground(Constants.Prayer.NOTIFICATION_ID, buildNotification(prayerKey))
         registerScreenOffStopReceiver()
-        playAzan(prayerKey)
+        val token = ++playbackToken
+        playbackHandler.post { playAzan(token) }
         return START_NOT_STICKY
     }
 
@@ -50,16 +59,22 @@ class AzanPlaybackService : Service() {
             }
         }
         screenOffReceiver = null
-        mediaPlayer?.stopSafely()
-        mediaPlayer?.release()
+        playbackToken++
+        val player = mediaPlayer
         mediaPlayer = null
-        restoreAlarmVolume()
+        playbackHandler.post {
+            releasePlayer(player)
+            restoreAlarmVolume()
+        }
+        playbackThread.quitSafely()
         super.onDestroy()
     }
 
-    private fun playAzan(prayerKey: String) {
-        mediaPlayer?.stopSafely()
-        mediaPlayer?.release()
+    private fun playAzan(token: Int) {
+        if (token != playbackToken) return
+        releasePlayer(mediaPlayer)
+        mediaPlayer = null
+        if (token != playbackToken) return
 
         val prefs = Prefs(applicationContext)
         val cachedFile = getAzanPlaybackFile(applicationContext, prefs.azanSound)
@@ -77,7 +92,6 @@ class AzanPlaybackService : Service() {
         }
 
         val player = MediaPlayer()
-        mediaPlayer = player
         try {
             boostAlarmVolume()
             player.setAudioAttributes(
@@ -92,15 +106,43 @@ class AzanPlaybackService : Service() {
             } else {
                 player.setDataSource(applicationContext, customUri!!)
             }
-            player.setOnCompletionListener { stopSelf() }
+            if (token != playbackToken) {
+                player.release()
+                return
+            }
+            mediaPlayer = player
+            player.setOnPreparedListener {
+                if (token != playbackToken || mediaPlayer !== player) return@setOnPreparedListener
+                try {
+                    player.start()
+                } catch (_: Exception) {
+                    stopSelf()
+                }
+            }
+            player.setOnCompletionListener {
+                if (token == playbackToken && mediaPlayer === player) stopSelf()
+            }
             player.setOnErrorListener { _, _, _ ->
-                stopSelf()
+                if (token == playbackToken && mediaPlayer === player) stopSelf()
                 true
             }
-            player.prepare()
-            player.start()
+            player.prepareAsync()
         } catch (_: Exception) {
+            if (mediaPlayer === player) mediaPlayer = null
+            releasePlayer(player)
             stopSelf()
+        }
+    }
+
+    private fun releasePlayer(player: MediaPlayer?) {
+        if (player == null) return
+        player.setOnPreparedListener(null)
+        player.setOnCompletionListener(null)
+        player.setOnErrorListener(null)
+        player.stopSafely()
+        try {
+            player.release()
+        } catch (_: Exception) {
         }
     }
 

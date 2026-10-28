@@ -16,6 +16,8 @@ class MyAccessibilityService : AccessibilityService() {
     private var notificationShadeActive = false
     private var lastBlockedPackage: String? = null
     private var actionReceiverRegistered = false
+    private var focusAllowedPackages: Set<String>? = null
+    private var focusAllowedPackagesKey: String? = null
 
     private val actionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -87,7 +89,7 @@ class MyAccessibilityService : AccessibilityService() {
         ) {
             return true
         }
-        return packageName !in applicationContext.getFocusModeAllowedPackages(prefs)
+        return packageName !in focusModeAllowedPackages()
     }
 
     private fun updateNotificationShadeState(packageName: String, eventType: Int) {
@@ -114,6 +116,28 @@ class MyAccessibilityService : AccessibilityService() {
                 lastBlockedPackage = null
             }
         }
+    }
+
+    private fun focusModeAllowedPackages(): Set<String> {
+        val key = focusAllowedPackagesKey()
+        val cached = focusAllowedPackages
+        if (cached != null && focusAllowedPackagesKey == key) return cached
+        val resolved = applicationContext.getFocusModeAllowedPackages(prefs)
+        focusAllowedPackagesKey = key
+        focusAllowedPackages = resolved
+        return resolved
+    }
+
+    private fun focusAllowedPackagesKey(): String {
+        val count = prefs.homeAppsNum
+        val builder = StringBuilder()
+        builder.append(count)
+        for (location in 1..count) {
+            builder.append('\n').append(prefs.getAppPackage(location))
+        }
+        builder.append('\n').append(prefs.clockAppPackage)
+        builder.append('\n').append(prefs.calendarAppPackage)
+        return builder.toString()
     }
 
     private fun registerActionReceiver() {
