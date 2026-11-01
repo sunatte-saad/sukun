@@ -49,6 +49,7 @@ object Constants {
     object ClockStyle {
         const val STANDARD = "standard"
         const val DAY_RING = "day_ring"
+        const val GLASS_HOUR = "glass_hour"
     }
 
     object SwipeDownAction {

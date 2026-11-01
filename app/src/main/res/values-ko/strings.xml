@@ -212,6 +212,8 @@
     <string name="clock_style">시계 스타일</string>
     <string name="clock_style_standard">표준</string>
     <string name="clock_style_day_ring">하루 링</string>
+    <string name="clock_style_glass_hour">유리 모래시계</string>
+    <string name="glass_hour_clock_description">유리 모래시계, %1$s</string>
     <string name="day_start_hour">하루 시작 시간</string>
     <string name="day_end_hour">하루 종료 시간</string>
     <string name="day_start_hour_title">하루 시작 시간 설정</string>

@@ -212,6 +212,8 @@
     <string name="clock_style">Stile orologio</string>
     <string name="clock_style_standard">Standard</string>
     <string name="clock_style_day_ring">Anello del giorno</string>
+    <string name="clock_style_glass_hour">Ora di vetro</string>
+    <string name="glass_hour_clock_description">Orologio di vetro, %1$s</string>
     <string name="day_start_hour">Ora di inizio giornata</string>
     <string name="day_end_hour">Ora di fine giornata</string>
     <string name="day_start_hour_title">Imposta ora di inizio giornata</string>

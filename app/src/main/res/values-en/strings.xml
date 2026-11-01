@@ -244,6 +244,8 @@
     <string name="clock_style">Clock style</string>
     <string name="clock_style_standard">Standard</string>
     <string name="clock_style_day_ring">Day ring</string>
+    <string name="clock_style_glass_hour">Glass hour</string>
+    <string name="glass_hour_clock_description">Glass hour clock, %1$s</string>
     <string name="day_start_hour">Day start hour</string>
     <string name="day_end_hour">Day end hour</string>
     <string name="day_start_hour_title">Set day start hour</string>

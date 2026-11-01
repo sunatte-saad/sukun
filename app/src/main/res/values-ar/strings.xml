@@ -212,6 +212,8 @@
     <string name="clock_style">نمط الساعة</string>
     <string name="clock_style_standard">قياسي</string>
     <string name="clock_style_day_ring">حلقة اليوم</string>
+    <string name="clock_style_glass_hour">الساعة الزجاجية</string>
+    <string name="glass_hour_clock_description">الساعة الزجاجية، %1$s</string>
     <string name="day_start_hour">ساعة بدء اليوم</string>
     <string name="day_end_hour">ساعة نهاية اليوم</string>
     <string name="day_start_hour_title">تعيين ساعة بدء اليوم</string>

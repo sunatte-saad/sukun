@@ -212,6 +212,8 @@
     <string name="clock_style">Saat stili</string>
     <string name="clock_style_standard">Standart</string>
     <string name="clock_style_day_ring">Gün halkası</string>
+    <string name="clock_style_glass_hour">Cam saat</string>
+    <string name="glass_hour_clock_description">Cam saat, %1$s</string>
     <string name="day_start_hour">Gün başlangıç saati</string>
     <string name="day_end_hour">Gün bitiş saati</string>
     <string name="day_start_hour_title">Gün başlangıç saatini ayarla</string>

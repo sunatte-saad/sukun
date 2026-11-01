@@ -219,6 +219,8 @@ Appuyez pour ouvrir les prévisions</string>
     <string name="clock_style">Style d\'horloge</string>
     <string name="clock_style_standard">Standard</string>
     <string name="clock_style_day_ring">Anneau du jour</string>
+    <string name="clock_style_glass_hour">Heure de verre</string>
+    <string name="glass_hour_clock_description">Horloge de verre, %1$s</string>
     <string name="day_start_hour">Heure de début de journée</string>
     <string name="day_end_hour">Heure de fin de journée</string>
     <string name="day_start_hour_title">Définir l\'heure de début de journée</string>

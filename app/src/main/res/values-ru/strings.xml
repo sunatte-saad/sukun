@@ -212,6 +212,8 @@
     <string name="clock_style">Стиль часов</string>
     <string name="clock_style_standard">Стандартный</string>
     <string name="clock_style_day_ring">Кольцо дня</string>
+    <string name="clock_style_glass_hour">Стеклянный час</string>
+    <string name="glass_hour_clock_description">Стеклянные часы, %1$s</string>
     <string name="day_start_hour">Час начала дня</string>
     <string name="day_end_hour">Час окончания дня</string>
     <string name="day_start_hour_title">Задать час начала дня</string>

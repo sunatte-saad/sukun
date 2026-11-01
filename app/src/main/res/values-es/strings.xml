@@ -219,6 +219,8 @@ Toca para abrir el pronóstico</string>
     <string name="clock_style">Estilo de reloj</string>
     <string name="clock_style_standard">Estándar</string>
     <string name="clock_style_day_ring">Anillo del día</string>
+    <string name="clock_style_glass_hour">Hora de cristal</string>
+    <string name="glass_hour_clock_description">Reloj de cristal, %1$s</string>
     <string name="day_start_hour">Hora de inicio del día</string>
     <string name="day_end_hour">Hora de fin del día</string>
     <string name="day_start_hour_title">Establecer hora de inicio del día</string>

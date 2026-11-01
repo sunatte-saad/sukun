@@ -214,6 +214,8 @@
     <string name="clock_style">Gaya jam</string>
     <string name="clock_style_standard">Standar</string>
     <string name="clock_style_day_ring">Lingkaran hari</string>
+    <string name="clock_style_glass_hour">Jam kaca</string>
+    <string name="glass_hour_clock_description">Jam kaca, %1$s</string>
     <string name="day_start_hour">Jam mulai hari</string>
     <string name="day_end_hour">Jam akhir hari</string>
     <string name="day_start_hour_title">Atur jam mulai hari</string>

@@ -199,11 +199,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             R.id.date -> openCalendarApp()
             R.id.ringClock -> openClockApp()
             R.id.ringDate -> openCalendarApp()
+            R.id.glassHourClock -> openClockApp()
+            R.id.glassHourDate -> openCalendarApp()
             R.id.prayerText -> openGooglePrayerTimesFromHome()
             R.id.weatherText -> openGoogleWeather()
             R.id.remindersBellContainer -> openReminders()
             R.id.todoIconContainer -> openTodoList()
             R.id.focusModeIconRingContainer,
+            R.id.focusModeIconGlassContainer,
             R.id.focusModeIconStandardContainer,
             -> startFocusModeFromHome()
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
@@ -265,7 +268,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 prefs.clockAppUser = ""
             }
 
-            R.id.ringClock -> {
+            R.id.ringClock,
+            R.id.glassHourClock,
+            -> {
                 showAppList(Constants.FLAG_SET_CLOCK_APP)
                 prefs.clockAppPackage = ""
                 prefs.clockAppClassName = ""
@@ -279,7 +284,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 prefs.calendarAppUser = ""
             }
 
-            R.id.ringDate -> {
+            R.id.ringDate,
+            R.id.glassHourDate,
+            -> {
                 showAppList(Constants.FLAG_SET_CALENDAR_APP)
                 prefs.calendarAppPackage = ""
                 prefs.calendarAppClassName = ""
@@ -359,6 +366,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.date.setOnTouchListener(getViewSwipeTouchListener(context, binding.date))
         binding.ringClock.setOnTouchListener(getViewSwipeTouchListener(context, binding.ringClock))
         binding.ringDate.setOnTouchListener(getViewSwipeTouchListener(context, binding.ringDate))
+        binding.glassHourClock.setOnTouchListener(getViewSwipeTouchListener(context, binding.glassHourClock))
+        binding.glassHourDate.setOnTouchListener(getViewSwipeTouchListener(context, binding.glassHourDate))
         binding.weatherText?.setOnTouchListener(getViewSwipeTouchListener(context, binding.weatherText!!))
         binding.prayerText?.let { prayerText ->
             prayerText.setOnTouchListener(getViewSwipeTouchListener(context, prayerText))
@@ -369,6 +378,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.todoIconContainer.setOnTouchListener(getViewSwipeTouchListener(context, binding.todoIconContainer))
         binding.focusModeIconRingContainer.setOnTouchListener(
             getViewSwipeTouchListener(context, binding.focusModeIconRingContainer)
+        )
+        binding.focusModeIconGlassContainer.setOnTouchListener(
+            getViewSwipeTouchListener(context, binding.focusModeIconGlassContainer)
         )
         binding.focusModeIconStandardContainer.setOnTouchListener(
             getViewSwipeTouchListener(context, binding.focusModeIconStandardContainer)
@@ -403,10 +415,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.date.setOnClickListener(this)
         binding.ringClock.setOnClickListener(this)
         binding.ringDate.setOnClickListener(this)
+        binding.glassHourClock.setOnClickListener(this)
+        binding.glassHourDate.setOnClickListener(this)
         binding.clock.setOnLongClickListener(this)
         binding.date.setOnLongClickListener(this)
         binding.ringClock.setOnLongClickListener(this)
         binding.ringDate.setOnLongClickListener(this)
+        binding.glassHourClock.setOnLongClickListener(this)
+        binding.glassHourDate.setOnLongClickListener(this)
         binding.setDefaultLauncher.setOnClickListener { viewModel.resetLauncherLiveData.call() }
         binding.setDefaultLauncher.setOnLongClickListener {
             openHomeSettings()
@@ -418,6 +434,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.remindersBellContainer.setOnClickListener(this)
         binding.todoIconContainer.setOnClickListener(this)
         binding.focusModeIconRingContainer.setOnClickListener(this)
+        binding.focusModeIconGlassContainer.setOnClickListener(this)
         binding.focusModeIconStandardContainer.setOnClickListener(this)
         binding.tvScreenTime?.setOnClickListener(this)
         binding.tvScreenTime?.setOnLongClickListener(this)
@@ -444,6 +461,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         updateFocusModeIconAppearance()
         binding.readabilityScrim.alpha = if (isLight) 1f else 0.55f
         binding.dayProgressRingView.invalidate()
+        binding.glassHourClock.invalidate()
     }
 
     private fun readableTextViews(): List<TextView> = listOfNotNull(
@@ -451,6 +469,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.date,
         binding.ringClock,
         binding.ringDate,
+        binding.glassHourDate,
         binding.weatherText,
         binding.prayerText,
         binding.focusModeStatus,
@@ -500,19 +519,27 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     private fun populateDateTime() {
         binding.dateTimeLayout.isVisible = prefs.dateTimeVisibility != Constants.DateTime.OFF
-        val showRingClock = prefs.dateTimeVisibility == Constants.DateTime.ON
-                && PremiumAccess.effectiveClockStyle(prefs) == Constants.ClockStyle.DAY_RING
-        binding.dateTimeStandardLayout.isVisible = binding.dateTimeLayout.isVisible && !showRingClock
+        val clockStyle = PremiumAccess.effectiveClockStyle(prefs)
+        val showTime = prefs.dateTimeVisibility == Constants.DateTime.ON
+        val showRingClock = showTime && clockStyle == Constants.ClockStyle.DAY_RING
+        val showGlassHour = showTime && clockStyle == Constants.ClockStyle.GLASS_HOUR
+        binding.dateTimeStandardLayout.isVisible =
+            binding.dateTimeLayout.isVisible && !showRingClock && !showGlassHour
         binding.ringClockLayout.isVisible = binding.dateTimeLayout.isVisible && showRingClock
-        binding.clock.isVisible = Constants.DateTime.isTimeVisible(prefs.dateTimeVisibility) && !showRingClock
-        binding.date?.isVisible = Constants.DateTime.isDateVisible(prefs.dateTimeVisibility) && !showRingClock
+        binding.glassHourClockLayout.isVisible = binding.dateTimeLayout.isVisible && showGlassHour
+        binding.clock.isVisible =
+            Constants.DateTime.isTimeVisible(prefs.dateTimeVisibility) && !showRingClock && !showGlassHour
+        binding.date?.isVisible =
+            Constants.DateTime.isDateVisible(prefs.dateTimeVisibility) && !showRingClock && !showGlassHour
         binding.ringClock.isVisible = showRingClock
         binding.ringDate.isVisible = showRingClock
+        binding.glassHourClock.isVisible = showGlassHour
+        binding.glassHourDate.isVisible = showGlassHour
         if (binding.clock.isVisible) applyClockTimeFormat(binding.clock)
         if (binding.ringClock.isVisible) applyClockTimeFormat(binding.ringClock)
         updateDateTimeDisplay()
         applyDateTimeLayoutAlignment(prefs.homeAlignment)
-        updateFocusModeIconPlacement(showRingClock)
+        updateFocusModeIconPlacement(showRingClock, showGlassHour)
         if (binding.dateTimeLayout.isVisible) startDateTimeTicker()
         else stopDateTimeTicker()
         positionOverlayText()
@@ -540,6 +567,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
         binding.date?.text = defaultDateText.replace(".,", ",")
         binding.ringDate.text = ringDateText.replace(".,", ",")
+        binding.glassHourDate.text = ringDateText.replace(".,", ",")
         updateDayProgressClock()
     }
 
@@ -554,6 +582,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             else -> (nowMinutes - startMinutes).toFloat() / (endMinutes - startMinutes).toFloat()
         }
         binding.dayProgressRingView.setElapsedFraction(elapsedFraction)
+        if (binding.glassHourClockLayout.isVisible) {
+            binding.glassHourClock.setTime(
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                prefs.timeFormat24h,
+            )
+            binding.glassHourClock.setElapsedFraction(elapsedFraction)
+        }
     }
 
     private fun populateWeather(weather: WeatherData?) {
@@ -695,8 +731,10 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val alpha = if (active) 1f else 0.42f
         val tint = ColorStateList.valueOf(color)
         binding.focusModeIconRing.imageTintList = tint
+        binding.focusModeIconGlass.imageTintList = tint
         binding.focusModeIconStandard.imageTintList = tint
         binding.focusModeIconRingContainer.alpha = alpha
+        binding.focusModeIconGlassContainer.alpha = alpha
         binding.focusModeIconStandardContainer.alpha = alpha
     }
 
@@ -839,7 +877,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     }
 
     private fun iconsBelowRing(binding: FragmentHomeBinding): Boolean {
-        if (!binding.ringClockLayout.isVisible) return false
+        if (!binding.ringClockLayout.isVisible && !binding.glassHourClockLayout.isVisible) return false
         return overlaySharesIconColumn(prefs.homeAlignment)
     }
 
@@ -864,6 +902,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val visibleClockBottom = when {
             binding.ringClockLayout.isVisible ->
                 binding.dateTimeLayout.top + binding.ringClockLayout.top + binding.ringClockLayout.height
+            binding.glassHourClockLayout.isVisible ->
+                binding.dateTimeLayout.top + binding.glassHourClockLayout.top + binding.glassHourClockLayout.height
             binding.dateTimeStandardLayout.isVisible ->
                 binding.dateTimeLayout.top + binding.dateTimeStandardLayout.top + binding.dateTimeStandardLayout.height
             else -> layoutBottom
@@ -1153,6 +1193,16 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val top = if (binding.dateTimeLayout.top > 0) binding.dateTimeLayout.top else 56.dpToPx()
         val contentHeight = when {
             binding.ringClockLayout.isVisible -> 220.dpToPx()
+            binding.glassHourClockLayout.isVisible -> {
+                val clockHeight = binding.glassHourClock.layoutParams?.height?.takeIf { it > 0 }
+                    ?: 196.dpToPx()
+                val dateHeight = measuredOrDimen(
+                    binding.glassHourDate,
+                    R.dimen.date_size,
+                    scaleWithTextSize = true,
+                )
+                clockHeight + dateHeight
+            }
             else -> {
                 var height = 0
                 if (binding.clock.isVisible) {
@@ -1176,9 +1226,9 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             val ringBottom = getDateTimeBottom() ?: estimatedDateTimeBottom(binding)
             return ringBottom + spacing
         }
-        if (binding.ringClockLayout.isVisible) {
-            val ringBottom = getDateTimeBottom() ?: estimatedDateTimeBottom(binding)
-            return ringBottom + spacing
+        if (binding.ringClockLayout.isVisible || binding.glassHourClockLayout.isVisible) {
+            val clockBottom = getDateTimeBottom() ?: estimatedDateTimeBottom(binding)
+            return clockBottom + spacing
         }
         val dateTimeTop = binding.dateTimeLayout.top.takeIf { it > 0 } ?: 56.dpToPx()
         return dateTimeTop + spacing
@@ -1261,11 +1311,12 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         }
     }
 
-    private fun updateFocusModeIconPlacement(showRingClock: Boolean) {
+    private fun updateFocusModeIconPlacement(showRingClock: Boolean, showGlassHour: Boolean) {
         val showFocus = prefs.showFocusOnHome
         binding.focusModeIconRingContainer.isVisible = showFocus && showRingClock
-        binding.focusModeIconStandardContainer.isVisible = showFocus && !showRingClock
-        if (showFocus && !showRingClock) positionFocusModeStandardIcon()
+        binding.focusModeIconGlassContainer.isVisible = showFocus && showGlassHour
+        binding.focusModeIconStandardContainer.isVisible = showFocus && !showRingClock && !showGlassHour
+        if (showFocus && !showRingClock && !showGlassHour) positionFocusModeStandardIcon()
     }
 
     private fun positionFocusModeStandardIcon() {

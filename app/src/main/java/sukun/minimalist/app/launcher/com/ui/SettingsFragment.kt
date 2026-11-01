@@ -535,6 +535,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.clockStyle -> binding.clockStyleSelectLayout?.visibility = View.VISIBLE
             R.id.clockStyleStandard -> selectClockStyle(Constants.ClockStyle.STANDARD)
             R.id.clockStyleDayRing -> selectClockStyle(Constants.ClockStyle.DAY_RING)
+            R.id.clockStyleGlassHour -> selectClockStyle(Constants.ClockStyle.GLASS_HOUR)
             R.id.timeFormat -> binding.timeFormatSelectLayout?.visibility = View.VISIBLE
             R.id.timeFormat12h -> selectTimeFormat(use24h = false)
             R.id.timeFormat24h -> selectTimeFormat(use24h = true)
@@ -723,6 +724,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.clockStyle.setOnClickListener(this)
         binding.clockStyleStandard?.setOnClickListener(this)
         binding.clockStyleDayRing?.setOnClickListener(this)
+        binding.clockStyleGlassHour?.setOnClickListener(this)
         binding.timeFormat?.setOnClickListener(this)
         binding.timeFormat12h?.setOnClickListener(this)
         binding.timeFormat24h?.setOnClickListener(this)
@@ -1260,6 +1262,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.chimeSoundCustom?.alpha = alpha
         binding.mindfulMorningSeverityHard?.alpha = alpha
         binding.clockStyleDayRing?.alpha = alpha
+        binding.clockStyleGlassHour?.alpha = alpha
     }
 
     private fun showUpgradeDialog() {
@@ -1900,8 +1903,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.dateTimeOptionsLayout.isVisible = prefs.dateTimeVisibility != Constants.DateTime.OFF
         val clockStyle = PremiumAccess.effectiveClockStyle(prefs)
         binding.clockStyle.text = getString(
-            if (clockStyle == Constants.ClockStyle.DAY_RING) R.string.clock_style_day_ring
-            else R.string.clock_style_standard
+            when (clockStyle) {
+                Constants.ClockStyle.DAY_RING -> R.string.clock_style_day_ring
+                Constants.ClockStyle.GLASS_HOUR -> R.string.clock_style_glass_hour
+                else -> R.string.clock_style_standard
+            }
         )
         binding.timeFormat?.text = getString(
             if (prefs.timeFormat24h) R.string.reminder_time_format_24h
@@ -1910,14 +1916,16 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.timeFormatSelectLayout?.visibility = View.GONE
         binding.dayStartHour.text = formatHourLabel(prefs.dayStartHour)
         binding.dayEndHour.text = formatHourLabel(prefs.dayEndHour)
-        val showDayRingHours = prefs.dateTimeVisibility == Constants.DateTime.ON
-                && clockStyle == Constants.ClockStyle.DAY_RING
-        binding.dayHoursRow?.isVisible = showDayRingHours
+        val showDayFillHours = prefs.dateTimeVisibility == Constants.DateTime.ON &&
+            (clockStyle == Constants.ClockStyle.DAY_RING || clockStyle == Constants.ClockStyle.GLASS_HOUR)
+        binding.dayHoursRow?.isVisible = showDayFillHours
     }
 
     private fun selectClockStyle(selectedStyle: String) {
         binding.clockStyleSelectLayout?.visibility = View.GONE
-        if (selectedStyle == Constants.ClockStyle.DAY_RING && !canUsePremiumFeature()) return
+        val premiumStyle = selectedStyle == Constants.ClockStyle.DAY_RING ||
+            selectedStyle == Constants.ClockStyle.GLASS_HOUR
+        if (premiumStyle && !canUsePremiumFeature()) return
         if (prefs.clockStyle == selectedStyle) return
         prefs.clockStyle = selectedStyle
         populateDateTime()

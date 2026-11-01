@@ -45,10 +45,13 @@ object PremiumAccess {
     fun lockedAlpha(prefs: Prefs): Float = if (hasPremiumAccess(prefs)) 1f else LOCKED_ALPHA
 
     fun effectiveClockStyle(prefs: Prefs): String {
-        return if (prefs.clockStyle == Constants.ClockStyle.DAY_RING && !hasPremiumAccess(prefs)) {
+        val style = prefs.clockStyle
+        val premiumStyle = style == Constants.ClockStyle.DAY_RING ||
+            style == Constants.ClockStyle.GLASS_HOUR
+        return if (premiumStyle && !hasPremiumAccess(prefs)) {
             Constants.ClockStyle.STANDARD
         } else {
-            prefs.clockStyle
+            style
         }
     }
 

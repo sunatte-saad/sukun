@@ -212,6 +212,8 @@
     <string name="clock_style">Uhrstil</string>
     <string name="clock_style_standard">Standard</string>
     <string name="clock_style_day_ring">Tagesring</string>
+    <string name="clock_style_glass_hour">Glasstunde</string>
+    <string name="glass_hour_clock_description">Glasstunde, %1$s</string>
     <string name="day_start_hour">Tagesbeginn-Stunde</string>
     <string name="day_end_hour">Tagesende-Stunde</string>
     <string name="day_start_hour_title">Tagesbeginn-Stunde festlegen</string>

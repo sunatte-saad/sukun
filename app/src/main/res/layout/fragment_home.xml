@@ -140,6 +140,55 @@
                 </FrameLayout>
             </LinearLayout>
         </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/glassHourClockLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <sukun.minimalist.app.launcher.com.widget.GlassHourClockView
+                android:id="@+id/glassHourClock"
+                android:layout_width="188sp"
+                android:layout_height="196sp"
+                android:clickable="true"
+                android:contentDescription="@string/clock_style_glass_hour"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/glassHourDate"
+                style="@style/TextDefault"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:maxLines="2"
+                android:textAlignment="center"
+                android:textSize="@dimen/date_size"
+                tools:text="Sunday, 11 April" />
+
+            <FrameLayout
+                android:id="@+id/focusModeIconGlassContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:clickable="true"
+                android:contentDescription="@string/start_focus_mode"
+                android:focusable="true"
+                android:visibility="gone">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/focusModeIconGlass"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_rect_shade_color"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_focus" />
+            </FrameLayout>
+        </LinearLayout>
     </LinearLayout>
 
     <FrameLayout

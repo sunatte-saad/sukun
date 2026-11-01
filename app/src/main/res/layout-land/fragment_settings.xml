@@ -692,7 +692,8 @@
                             android:animateLayoutChanges="true"
                             android:background="@drawable/rounded_primary_gradient"
                             android:elevation="8dp"
-                            android:orientation="horizontal"
+                            android:gravity="end"
+                            android:orientation="vertical"
                             android:outlineAmbientShadowColor="@color/colorPrimaryDark"
                             android:outlineSpotShadowColor="@color/colorPrimaryDark"
                             android:paddingHorizontal="12dp"
@@ -700,17 +701,11 @@
                             android:visibility="gone"
                             tools:ignore="UnusedAttribute">
 
-                            <Space
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1" />
-
                             <TextView
                                 android:id="@+id/clockStyleStandard"
                                 style="@style/TextSmallBold"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginEnd="24dp"
                                 android:gravity="center"
                                 android:paddingVertical="6dp"
                                 android:text="@string/clock_style_standard" />
@@ -723,6 +718,15 @@
                                 android:gravity="center"
                                 android:paddingVertical="6dp"
                                 android:text="@string/clock_style_day_ring" />
+
+                            <TextView
+                                android:id="@+id/clockStyleGlassHour"
+                                style="@style/TextSmallBold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingVertical="6dp"
+                                android:text="@string/clock_style_glass_hour" />
                         </LinearLayout>
                     </FrameLayout>
 

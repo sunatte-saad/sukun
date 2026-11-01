@@ -212,6 +212,8 @@
     <string name="clock_style">时钟样式</string>
     <string name="clock_style_standard">标准</string>
     <string name="clock_style_day_ring">日环</string>
+    <string name="clock_style_glass_hour">玻璃沙漏</string>
+    <string name="glass_hour_clock_description">玻璃沙漏时钟，%1$s</string>
     <string name="day_start_hour">日起始小时</string>
     <string name="day_end_hour">日结束小时</string>
     <string name="day_start_hour_title">设置日起始小时</string>
